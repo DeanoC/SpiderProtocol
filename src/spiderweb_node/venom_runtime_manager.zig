@@ -4,7 +4,7 @@ const namespace_driver = @import("namespace_driver.zig");
 const supervisor_loop_sleep_ms: u64 = 25;
 const runtime_stats_last_error_max: usize = 256;
 
-pub const ServiceSupervisionPolicy = struct {
+pub const VenomSupervisionPolicy = struct {
     health_check_interval_ms: u64 = 5_000,
     restart_backoff_ms: u64 = 500,
     restart_backoff_max_ms: u64 = 30_000,
@@ -12,7 +12,7 @@ pub const ServiceSupervisionPolicy = struct {
     auto_disable_on_failures: bool = false,
 };
 
-pub const ServiceRuntimeStats = struct {
+pub const VenomRuntimeStats = struct {
     enabled: bool,
     running: bool,
     start_attempts_total: u64,
@@ -24,17 +24,17 @@ pub const ServiceRuntimeStats = struct {
     last_error_len: usize = 0,
     last_error_buf: [runtime_stats_last_error_max]u8 = [_]u8{0} ** runtime_stats_last_error_max,
 
-    pub fn lastError(self: *const ServiceRuntimeStats) ?[]const u8 {
+    pub fn lastError(self: *const VenomRuntimeStats) ?[]const u8 {
         if (self.last_error_len == 0) return null;
         return self.last_error_buf[0..self.last_error_len];
     }
 };
 
-pub const ParsedServiceRegistration = struct {
+pub const ParsedVenomRegistration = struct {
     descriptor: namespace_driver.VenomDescriptor,
-    policy: ServiceSupervisionPolicy,
+    policy: VenomSupervisionPolicy,
 
-    pub fn deinit(self: *ParsedServiceRegistration, allocator: std.mem.Allocator) void {
+    pub fn deinit(self: *ParsedVenomRegistration, allocator: std.mem.Allocator) void {
         self.descriptor.deinit(allocator);
         self.* = undefined;
     }
@@ -43,14 +43,14 @@ pub const ParsedServiceRegistration = struct {
 pub const RuntimeManager = struct {
     allocator: std.mem.Allocator,
     mutex: std.Thread.Mutex = .{},
-    services: std.ArrayListUnmanaged(ManagedService) = .{},
+    venoms: std.ArrayListUnmanaged(ManagedVenom) = .{},
     supervisor_thread: ?std.Thread = null,
     stop_requested: std.atomic.Value(bool) = std.atomic.Value(bool).init(false),
 
-    const ManagedService = struct {
+    const ManagedVenom = struct {
         descriptor: namespace_driver.VenomDescriptor,
         driver: ?namespace_driver.DriverHandle = null,
-        policy: ServiceSupervisionPolicy = .{},
+        policy: VenomSupervisionPolicy = .{},
 
         enabled: bool = true,
         running: bool = false,
@@ -66,26 +66,26 @@ pub const RuntimeManager = struct {
         last_healthy_ms: i64 = 0,
         last_error: ?[]u8 = null,
 
-        fn deinit(self: *ManagedService, allocator: std.mem.Allocator) void {
+        fn deinit(self: *ManagedVenom, allocator: std.mem.Allocator) void {
             self.descriptor.deinit(allocator);
             if (self.last_error) |value| allocator.free(value);
             self.* = undefined;
         }
 
-        fn setLastError(self: *ManagedService, allocator: std.mem.Allocator, detail: []const u8) void {
+        fn setLastError(self: *ManagedVenom, allocator: std.mem.Allocator, detail: []const u8) void {
             if (self.last_error) |value| allocator.free(value);
             self.last_error = allocator.dupe(u8, detail) catch null;
         }
 
-        fn clearLastError(self: *ManagedService, allocator: std.mem.Allocator) void {
+        fn clearLastError(self: *ManagedVenom, allocator: std.mem.Allocator) void {
             if (self.last_error) |value| {
                 allocator.free(value);
                 self.last_error = null;
             }
         }
 
-        fn runtimeStats(self: *const ManagedService) ServiceRuntimeStats {
-            var stats: ServiceRuntimeStats = .{
+        fn runtimeStats(self: *const ManagedVenom) VenomRuntimeStats {
+            var stats: VenomRuntimeStats = .{
                 .enabled = self.enabled,
                 .running = self.running,
                 .start_attempts_total = self.start_attempts_total,
@@ -114,8 +114,8 @@ pub const RuntimeManager = struct {
         self.stopAll();
         self.mutex.lock();
         defer self.mutex.unlock();
-        for (self.services.items) |*service| service.deinit(self.allocator);
-        self.services.deinit(self.allocator);
+        for (self.venoms.items) |*service| service.deinit(self.allocator);
+        self.venoms.deinit(self.allocator);
     }
 
     pub fn register(self: *RuntimeManager, descriptor: *const namespace_driver.VenomDescriptor, driver: ?namespace_driver.DriverHandle) !void {
@@ -126,19 +126,19 @@ pub const RuntimeManager = struct {
         self: *RuntimeManager,
         descriptor: *const namespace_driver.VenomDescriptor,
         driver: ?namespace_driver.DriverHandle,
-        policy: ServiceSupervisionPolicy,
+        policy: VenomSupervisionPolicy,
     ) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
 
-        if (self.findServiceIndexLocked(descriptor.venom_id) != null) {
-            return error.DuplicateServiceId;
+        if (self.findVenomIndexLocked(descriptor.venom_id) != null) {
+            return error.DuplicateVenomId;
         }
 
         var normalized = policy;
         normalizePolicy(&normalized);
 
-        try self.services.append(self.allocator, .{
+        try self.venoms.append(self.allocator, .{
             .descriptor = try descriptor.clone(self.allocator),
             .driver = driver,
             .policy = normalized,
@@ -155,12 +155,12 @@ pub const RuntimeManager = struct {
         const now_ms = std.time.milliTimestamp();
         var has_supervised_drivers = false;
 
-        for (self.services.items) |*service| {
+        for (self.venoms.items) |*service| {
             if (service.driver == null) continue;
             has_supervised_drivers = true;
             service.enabled = true;
             service.backoff_until_ms = 0;
-            self.startServiceLocked(service, now_ms);
+            self.startVenomLocked(service, now_ms);
         }
 
         if (has_supervised_drivers and self.supervisor_thread == null) {
@@ -178,8 +178,8 @@ pub const RuntimeManager = struct {
         self.supervisor_thread = null;
 
         const now_ms = std.time.milliTimestamp();
-        for (self.services.items) |*service| {
-            self.stopServiceLocked(service, now_ms, .offline);
+        for (self.venoms.items) |*service| {
+            self.stopVenomLocked(service, now_ms, .offline);
             service.enabled = false;
             service.backoff_until_ms = 0;
             service.next_health_check_ms = 0;
@@ -189,81 +189,81 @@ pub const RuntimeManager = struct {
         if (thread_to_join) |thread| thread.join();
     }
 
-    pub fn enableService(self: *RuntimeManager, venom_id: []const u8) !void {
+    pub fn enableVenom(self: *RuntimeManager, venom_id: []const u8) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
 
-        const idx = self.findServiceIndexLocked(venom_id) orelse return error.ServiceNotFound;
-        const service = &self.services.items[idx];
+        const idx = self.findVenomIndexLocked(venom_id) orelse return error.VenomNotFound;
+        const service = &self.venoms.items[idx];
         service.enabled = true;
         service.backoff_until_ms = 0;
 
         if (service.driver != null and !service.running) {
-            self.startServiceLocked(service, std.time.milliTimestamp());
+            self.startVenomLocked(service, std.time.milliTimestamp());
         }
     }
 
-    pub fn disableService(self: *RuntimeManager, venom_id: []const u8) !void {
+    pub fn disableVenom(self: *RuntimeManager, venom_id: []const u8) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
 
-        const idx = self.findServiceIndexLocked(venom_id) orelse return error.ServiceNotFound;
-        const service = &self.services.items[idx];
+        const idx = self.findVenomIndexLocked(venom_id) orelse return error.VenomNotFound;
+        const service = &self.venoms.items[idx];
         service.enabled = false;
         service.backoff_until_ms = 0;
-        self.stopServiceLocked(service, std.time.milliTimestamp(), .offline);
+        self.stopVenomLocked(service, std.time.milliTimestamp(), .offline);
     }
 
-    pub fn restartService(self: *RuntimeManager, venom_id: []const u8) !void {
+    pub fn restartVenom(self: *RuntimeManager, venom_id: []const u8) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
 
-        const idx = self.findServiceIndexLocked(venom_id) orelse return error.ServiceNotFound;
-        const service = &self.services.items[idx];
+        const idx = self.findVenomIndexLocked(venom_id) orelse return error.VenomNotFound;
+        const service = &self.venoms.items[idx];
         service.enabled = true;
         service.backoff_until_ms = 0;
-        self.stopServiceLocked(service, std.time.milliTimestamp(), .degraded);
-        self.startServiceLocked(service, std.time.milliTimestamp());
+        self.stopVenomLocked(service, std.time.milliTimestamp(), .degraded);
+        self.startVenomLocked(service, std.time.milliTimestamp());
     }
 
-    pub fn serviceState(self: *RuntimeManager, venom_id: []const u8) ?namespace_driver.ServiceState {
+    pub fn venomState(self: *RuntimeManager, venom_id: []const u8) ?namespace_driver.VenomState {
         self.mutex.lock();
         defer self.mutex.unlock();
-        const idx = self.findServiceIndexLocked(venom_id) orelse return null;
-        return self.services.items[idx].descriptor.state;
+        const idx = self.findVenomIndexLocked(venom_id) orelse return null;
+        return self.venoms.items[idx].descriptor.state;
     }
 
-    pub fn serviceRuntimeStats(self: *RuntimeManager, venom_id: []const u8) ?ServiceRuntimeStats {
+    pub fn venomRuntimeStats(self: *RuntimeManager, venom_id: []const u8) ?VenomRuntimeStats {
         self.mutex.lock();
         defer self.mutex.unlock();
-        const idx = self.findServiceIndexLocked(venom_id) orelse return null;
-        return self.services.items[idx].runtimeStats();
+        const idx = self.findVenomIndexLocked(venom_id) orelse return null;
+        return self.venoms.items[idx].runtimeStats();
     }
 
-    pub fn registerFromServiceJson(self: *RuntimeManager, service_json: []const u8) !void {
-        var parsed = try parseVenomRegistrationFromVenomJson(self.allocator, service_json);
+    pub fn registerFromVenomJson(self: *RuntimeManager, venom_json: []const u8) !void {
+        var parsed = try parseVenomRegistrationFromVenomJson(self.allocator, venom_json);
         defer parsed.deinit(self.allocator);
         try self.registerWithPolicy(&parsed.descriptor, null, parsed.policy);
     }
 
-    fn findServiceIndexLocked(self: *RuntimeManager, venom_id: []const u8) ?usize {
-        for (self.services.items, 0..) |service, idx| {
+    fn findVenomIndexLocked(self: *RuntimeManager, venom_id: []const u8) ?usize {
+        for (self.venoms.items, 0..) |service, idx| {
             if (std.mem.eql(u8, service.descriptor.venom_id, venom_id)) return idx;
         }
         return null;
     }
 
-    fn startServiceLocked(self: *RuntimeManager, service: *ManagedService, now_ms: i64) void {
+    fn startVenomLocked(self: *RuntimeManager, service: *ManagedVenom, now_ms: i64) void {
         const driver = service.driver orelse return;
 
         service.start_attempts_total +%= 1;
         driver.start(self.allocator) catch |err| {
-            self.setServiceStateLocked(service, .degraded, now_ms);
+            self.setVenomStateLocked(service, .degraded, now_ms);
             service.running = false;
             service.setLastError(self.allocator, @errorName(err));
             service.consecutive_failures +%= 1;
             self.applyFailurePolicyLocked(service, now_ms);
-            std.log.warn("service start failed ({s}): {s}", .{ service.descriptor.venom_id, @errorName(err) });
+            std.log.warn("venom start failed ({s}): {s}", .{ service.descriptor.venom_id, @errorName(err) });
             return;
         };
 
@@ -274,7 +274,7 @@ pub const RuntimeManager = struct {
         }
 
         service.running = true;
-        self.setServiceStateLocked(service, .online, now_ms);
+        self.setVenomStateLocked(service, .online, now_ms);
         service.consecutive_failures = 0;
         service.backoff_until_ms = 0;
         service.last_start_ms = now_ms;
@@ -283,11 +283,11 @@ pub const RuntimeManager = struct {
         service.clearLastError(self.allocator);
     }
 
-    fn stopServiceLocked(
+    fn stopVenomLocked(
         self: *RuntimeManager,
-        service: *ManagedService,
+        service: *ManagedVenom,
         now_ms: i64,
-        target_state: namespace_driver.ServiceState,
+        target_state: namespace_driver.VenomState,
     ) void {
         if (service.driver) |driver| {
             if (service.running) {
@@ -296,17 +296,17 @@ pub const RuntimeManager = struct {
         }
         service.running = false;
         service.last_stop_ms = now_ms;
-        self.setServiceStateLocked(service, target_state, now_ms);
+        self.setVenomStateLocked(service, target_state, now_ms);
     }
 
-    fn applyFailurePolicyLocked(self: *RuntimeManager, service: *ManagedService, now_ms: i64) void {
+    fn applyFailurePolicyLocked(self: *RuntimeManager, service: *ManagedVenom, now_ms: i64) void {
         if (service.policy.auto_disable_on_failures and
             service.policy.max_consecutive_failures > 0 and
             service.consecutive_failures >= service.policy.max_consecutive_failures)
         {
             service.enabled = false;
             service.backoff_until_ms = 0;
-            self.setServiceStateLocked(service, .offline, now_ms);
+            self.setVenomStateLocked(service, .offline, now_ms);
             return;
         }
 
@@ -320,26 +320,26 @@ pub const RuntimeManager = struct {
 
     fn recordHealthFailureLocked(
         self: *RuntimeManager,
-        service: *ManagedService,
+        service: *ManagedVenom,
         now_ms: i64,
         detail: []const u8,
-        state: namespace_driver.ServiceState,
+        state: namespace_driver.VenomState,
     ) void {
         service.setLastError(self.allocator, detail);
         service.consecutive_failures +%= 1;
-        self.stopServiceLocked(service, now_ms, state);
+        self.stopVenomLocked(service, now_ms, state);
         self.applyFailurePolicyLocked(service, now_ms);
         if (!service.enabled) {
-            self.setServiceStateLocked(service, .offline, now_ms);
+            self.setVenomStateLocked(service, .offline, now_ms);
         } else {
-            self.setServiceStateLocked(service, .degraded, now_ms);
+            self.setVenomStateLocked(service, .degraded, now_ms);
         }
     }
 
-    fn setServiceStateLocked(
+    fn setVenomStateLocked(
         self: *RuntimeManager,
-        service: *ManagedService,
-        next: namespace_driver.ServiceState,
+        service: *ManagedVenom,
+        next: namespace_driver.VenomState,
         now_ms: i64,
     ) void {
         _ = self;
@@ -355,13 +355,13 @@ pub const RuntimeManager = struct {
 
         const now_ms = std.time.milliTimestamp();
 
-        for (self.services.items) |*service| {
+        for (self.venoms.items) |*service| {
             if (service.driver == null) continue;
             if (!service.enabled) continue;
 
             if (!service.running) {
                 if (service.backoff_until_ms > now_ms) continue;
-                self.startServiceLocked(service, now_ms);
+                self.startVenomLocked(service, now_ms);
                 continue;
             }
 
@@ -382,7 +382,7 @@ pub const RuntimeManager = struct {
                 if (service.descriptor.state != .online or service.last_healthy_ms == 0) {
                     service.last_healthy_ms = now_ms;
                 }
-                self.setServiceStateLocked(service, .online, now_ms);
+                self.setVenomStateLocked(service, .online, now_ms);
                 service.consecutive_failures = 0;
                 service.clearLastError(self.allocator);
                 continue;
@@ -403,15 +403,15 @@ pub const RuntimeManager = struct {
 
 pub fn parseVenomRegistrationFromVenomJson(
     allocator: std.mem.Allocator,
-    service_json: []const u8,
-) !ParsedServiceRegistration {
+    venom_json: []const u8,
+) !ParsedVenomRegistration {
     return .{
-        .descriptor = try parseVenomDescriptor(allocator, service_json),
-        .policy = try parseServiceSupervisionPolicy(allocator, service_json),
+        .descriptor = try parseVenomDescriptor(allocator, venom_json),
+        .policy = try parseVenomSupervisionPolicy(allocator, venom_json),
     };
 }
 
-fn normalizePolicy(policy: *ServiceSupervisionPolicy) void {
+fn normalizePolicy(policy: *VenomSupervisionPolicy) void {
     if (policy.health_check_interval_ms == 0) policy.health_check_interval_ms = 5_000;
     if (policy.restart_backoff_max_ms == 0) policy.restart_backoff_max_ms = 30_000;
     if (policy.restart_backoff_ms > policy.restart_backoff_max_ms) {
@@ -419,7 +419,7 @@ fn normalizePolicy(policy: *ServiceSupervisionPolicy) void {
     }
 }
 
-fn computeBackoffMs(policy: ServiceSupervisionPolicy, consecutive_failures: u32) u64 {
+fn computeBackoffMs(policy: VenomSupervisionPolicy, consecutive_failures: u32) u64 {
     if (policy.restart_backoff_ms == 0 or consecutive_failures == 0) return 0;
 
     var backoff = policy.restart_backoff_ms;
@@ -438,9 +438,9 @@ fn computeBackoffMs(policy: ServiceSupervisionPolicy, consecutive_failures: u32)
 
 fn parseVenomDescriptor(
     allocator: std.mem.Allocator,
-    service_json: []const u8,
+    venom_json: []const u8,
 ) !namespace_driver.VenomDescriptor {
-    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, service_json, .{});
+    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, venom_json, .{});
     defer parsed.deinit();
     if (parsed.value != .object) return error.InvalidServiceCatalog;
 
@@ -454,7 +454,7 @@ fn parseVenomDescriptor(
         .venom_id = try allocator.dupe(u8, venom_id),
         .kind = try allocator.dupe(u8, kind),
         .version = try allocator.dupe(u8, version),
-        .state = parseServiceState(state_raw),
+        .state = parseVenomState(state_raw),
         .runtime_type = parseRuntimeType(obj),
         .capabilities_json = if (obj.get("capabilities")) |value|
             if (value == .object) try std.fmt.allocPrint(allocator, "{f}", .{std.json.fmt(value, .{})}) else try allocator.dupe(u8, "{}")
@@ -489,7 +489,7 @@ fn parseVenomDescriptor(
                 try descriptor.mounts.append(allocator, .{
                     .mount_id = try allocator.dupe(u8, mount_id),
                     .mount_path = try allocator.dupe(u8, mount_path),
-                    .state = parseServiceState(mount_state_raw),
+                    .state = parseVenomState(mount_state_raw),
                 });
             }
         }
@@ -498,11 +498,11 @@ fn parseVenomDescriptor(
     return descriptor;
 }
 
-fn parseServiceSupervisionPolicy(
+fn parseVenomSupervisionPolicy(
     allocator: std.mem.Allocator,
-    service_json: []const u8,
-) !ServiceSupervisionPolicy {
-    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, service_json, .{});
+    venom_json: []const u8,
+) !VenomSupervisionPolicy {
+    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, venom_json, .{});
     defer parsed.deinit();
     if (parsed.value != .object) return error.InvalidServiceCatalog;
 
@@ -512,7 +512,7 @@ fn parseServiceSupervisionPolicy(
     const supervision = runtime.object.get("supervision") orelse return .{};
     if (supervision != .object) return error.InvalidServiceCatalog;
 
-    var policy = ServiceSupervisionPolicy{};
+    var policy = VenomSupervisionPolicy{};
 
     if (supervision.object.get("health_check_interval_ms")) |value| {
         if (value != .integer or value.integer < 0) return error.InvalidServiceCatalog;
@@ -551,7 +551,7 @@ fn parseRuntimeType(obj: std.json.ObjectMap) namespace_driver.RuntimeType {
     return .builtin;
 }
 
-fn parseServiceState(raw: []const u8) namespace_driver.ServiceState {
+fn parseVenomState(raw: []const u8) namespace_driver.VenomState {
     if (std.mem.eql(u8, raw, "degraded")) return .degraded;
     if (std.mem.eql(u8, raw, "offline")) return .offline;
     return .online;
@@ -590,7 +590,7 @@ test "venom_runtime_manager: rejects duplicate service ids" {
     defer descriptor.deinit(allocator);
 
     try manager.register(&descriptor, null);
-    try std.testing.expectError(error.DuplicateServiceId, manager.register(&descriptor, null));
+    try std.testing.expectError(error.DuplicateVenomId, manager.register(&descriptor, null));
 }
 
 test "venom_runtime_manager: registers descriptor from service json" {
@@ -598,17 +598,17 @@ test "venom_runtime_manager: registers descriptor from service json" {
     var manager = RuntimeManager.init(allocator);
     defer manager.deinit();
 
-    try manager.registerFromServiceJson(
+    try manager.registerFromVenomJson(
         "{\"venom_id\":\"camera-main\",\"kind\":\"camera\",\"version\":\"1\",\"state\":\"degraded\",\"endpoints\":[\"/nodes/node-1/camera\"],\"capabilities\":{\"still\":true},\"mounts\":[{\"mount_id\":\"camera-main\",\"mount_path\":\"/nodes/node-1/camera\",\"state\":\"offline\"}],\"runtime\":{\"type\":\"native_proc\",\"supervision\":{\"health_check_interval_ms\":10,\"restart_backoff_ms\":20}},\"permissions\":{\"default\":\"deny-by-default\"},\"schema\":{\"model\":\"namespace\"}}",
     );
 
-    try std.testing.expectEqual(@as(usize, 1), manager.services.items.len);
-    try std.testing.expect(manager.services.items[0].descriptor.runtime_type == .native_proc);
-    try std.testing.expect(manager.services.items[0].descriptor.state == .degraded);
-    try std.testing.expectEqual(@as(usize, 1), manager.services.items[0].descriptor.mounts.items.len);
-    try std.testing.expect(manager.services.items[0].descriptor.mounts.items[0].state == .offline);
-    try std.testing.expectEqual(@as(u64, 10), manager.services.items[0].policy.health_check_interval_ms);
-    try std.testing.expectEqual(@as(u64, 20), manager.services.items[0].policy.restart_backoff_ms);
+    try std.testing.expectEqual(@as(usize, 1), manager.venoms.items.len);
+    try std.testing.expect(manager.venoms.items[0].descriptor.runtime_type == .native_proc);
+    try std.testing.expect(manager.venoms.items[0].descriptor.state == .degraded);
+    try std.testing.expectEqual(@as(usize, 1), manager.venoms.items[0].descriptor.mounts.items.len);
+    try std.testing.expect(manager.venoms.items[0].descriptor.mounts.items[0].state == .offline);
+    try std.testing.expectEqual(@as(u64, 10), manager.venoms.items[0].policy.health_check_interval_ms);
+    try std.testing.expectEqual(@as(u64, 20), manager.venoms.items[0].policy.restart_backoff_ms);
 }
 
 test "venom_runtime_manager: accepts venom_id alias in service json" {
@@ -616,12 +616,12 @@ test "venom_runtime_manager: accepts venom_id alias in service json" {
     var manager = RuntimeManager.init(allocator);
     defer manager.deinit();
 
-    try manager.registerFromServiceJson(
+    try manager.registerFromVenomJson(
         "{\"venom_id\":\"web-search\",\"kind\":\"search\",\"version\":\"1\",\"state\":\"online\",\"runtime\":{\"type\":\"native_proc\"}}",
     );
 
-    try std.testing.expectEqual(@as(usize, 1), manager.services.items.len);
-    try std.testing.expectEqualStrings("web-search", manager.services.items[0].descriptor.venom_id);
+    try std.testing.expectEqual(@as(usize, 1), manager.venoms.items.len);
+    try std.testing.expectEqualStrings("web-search", manager.venoms.items[0].descriptor.venom_id);
 }
 
 const MockDriver = struct {
@@ -747,8 +747,8 @@ test "venom_runtime_manager: supervisor retries start with backoff" {
     const deadline = std.time.milliTimestamp() + 2_000;
     var online = false;
     while (std.time.milliTimestamp() < deadline) {
-        const stats = manager.serviceRuntimeStats("svc-supervise") orelse return error.TestExpectedResponse;
-        const state = manager.serviceState("svc-supervise") orelse return error.TestExpectedResponse;
+        const stats = manager.venomRuntimeStats("svc-supervise") orelse return error.TestExpectedResponse;
+        const state = manager.venomState("svc-supervise") orelse return error.TestExpectedResponse;
         if (stats.running and stats.start_attempts_total >= 2 and state == .online) {
             online = true;
             break;
@@ -785,7 +785,7 @@ test "venom_runtime_manager: auto disables after consecutive failures" {
     const deadline = std.time.milliTimestamp() + 2_000;
     var disabled = false;
     while (std.time.milliTimestamp() < deadline) {
-        const stats = manager.serviceRuntimeStats("svc-auto-disable") orelse return error.TestExpectedResponse;
+        const stats = manager.venomRuntimeStats("svc-auto-disable") orelse return error.TestExpectedResponse;
         if (!stats.enabled and !stats.running) {
             disabled = true;
             break;
@@ -794,7 +794,7 @@ test "venom_runtime_manager: auto disables after consecutive failures" {
     }
 
     try std.testing.expect(disabled);
-    try std.testing.expectEqual(namespace_driver.ServiceState.offline, manager.serviceState("svc-auto-disable").?);
+    try std.testing.expectEqual(namespace_driver.VenomState.offline, manager.venomState("svc-auto-disable").?);
 
     const snap = mock.snapshot();
     try std.testing.expect(snap.stop_calls >= 1);
@@ -819,10 +819,10 @@ test "venom_runtime_manager: runtime stats include transition and recovery detai
     defer manager.stopAll();
 
     const degraded_deadline = std.time.milliTimestamp() + 2_000;
-    var degraded_stats: ?ServiceRuntimeStats = null;
+    var degraded_stats: ?VenomRuntimeStats = null;
     while (std.time.milliTimestamp() < degraded_deadline) {
-        const stats = manager.serviceRuntimeStats("svc-transition-details") orelse return error.TestExpectedResponse;
-        const state = manager.serviceState("svc-transition-details") orelse return error.TestExpectedResponse;
+        const stats = manager.venomRuntimeStats("svc-transition-details") orelse return error.TestExpectedResponse;
+        const state = manager.venomState("svc-transition-details") orelse return error.TestExpectedResponse;
         if (state == .degraded and stats.lastError() != null and stats.last_transition_ms > 0) {
             degraded_stats = stats;
             break;
@@ -837,10 +837,10 @@ test "venom_runtime_manager: runtime stats include transition and recovery detai
     mock.setHealthMode(.online);
 
     const recovered_deadline = std.time.milliTimestamp() + 2_000;
-    var recovered_stats: ?ServiceRuntimeStats = null;
+    var recovered_stats: ?VenomRuntimeStats = null;
     while (std.time.milliTimestamp() < recovered_deadline) {
-        const stats = manager.serviceRuntimeStats("svc-transition-details") orelse return error.TestExpectedResponse;
-        const state = manager.serviceState("svc-transition-details") orelse return error.TestExpectedResponse;
+        const stats = manager.venomRuntimeStats("svc-transition-details") orelse return error.TestExpectedResponse;
+        const state = manager.venomState("svc-transition-details") orelse return error.TestExpectedResponse;
         if (state == .online and stats.lastError() == null and stats.last_healthy_ms >= degraded.last_transition_ms) {
             recovered_stats = stats;
             break;

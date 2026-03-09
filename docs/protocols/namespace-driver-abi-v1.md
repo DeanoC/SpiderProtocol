@@ -3,7 +3,7 @@
 Status: active
 
 This document defines the first executable runtime contract for node-exported
-namespace services.
+namespace Venoms.
 
 ## Scope
 
@@ -15,9 +15,9 @@ ABI v1 standardizes three runtime modes with the same namespace control surface:
 
 ## Manifest Contract
 
-Service manifests that should expose a live executable namespace must include:
+Venom manifests that should expose a live executable namespace must include:
 
-- `service_id` (`string`)
+- `venom_id` (`string`)
 - `runtime.type` (`native_proc` | `native_inproc` | `wasm`)
 - `runtime.abi = "namespace-driver-v1"` (recommended; treated as metadata)
 - runtime path field for selected mode:
@@ -30,7 +30,7 @@ Service manifests that should expose a live executable namespace must include:
 - `runtime.max_memory_bytes` (`u64`, optional; wasm only)
 - `runtime.entrypoint` (`string`, optional; wasm only)
 
-If the runtime-specific path field is omitted, the service can still be
+If the runtime-specific path field is omitted, the Venom can still be
 published in the catalog, but no executable namespace export is created.
 
 For `native_inproc`, when `runtime.abi` is present it must be
@@ -38,10 +38,10 @@ For `native_inproc`, when `runtime.abi` is present it must be
 
 ## Namespace Projection
 
-For each executable service, the node runtime creates a namespace export with:
+For each executable Venom, the node runtime creates a namespace export with:
 
-- export name: `<service_id>`
-- source id/path seed: `service:<service_id>`
+- export name: `<venom_id>`
+- source id/path seed: `venom:<venom_id>`
 
 Projected files:
 
@@ -94,7 +94,7 @@ Runtime control:
   - clears `last_error.txt`
   - `status.json` becomes `"idle"` (or `"offline"` when disabled)
 - write JSON object payload to `config.json`
-  - persists as service runtime config state
+  - persists as Venom runtime config state
   - reflected in `health.json` metadata
   - supports optional lifecycle supervision policy:
     - `supervision.max_consecutive_failures` (`u64`, default `0` = disabled)

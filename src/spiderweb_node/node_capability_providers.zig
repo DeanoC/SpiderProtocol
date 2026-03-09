@@ -6,32 +6,32 @@ pub const NodeLabelArg = struct {
     value: []const u8,
 };
 
-pub const ExtraServiceArg = struct {
+pub const ExtraVenomArg = struct {
     venom_id: []const u8,
-    service_json: []const u8,
+    venom_json: []const u8,
 };
 
 pub const Registry = struct {
     allocator: std.mem.Allocator,
-    enable_fs_service: bool = true,
+    enable_fs_venom: bool = true,
     fs_export_count: usize = 0,
     fs_rw_export_count: usize = 0,
     terminal_ids: std.ArrayListUnmanaged([]u8) = .{},
     labels: std.ArrayListUnmanaged(NodeLabel) = .{},
-    extra_services: std.ArrayListUnmanaged(ExtraService) = .{},
+    extra_venoms: std.ArrayListUnmanaged(ExtraVenom) = .{},
 
     pub const InitOptions = struct {
-        enable_fs_service: bool = true,
+        enable_fs_venom: bool = true,
         export_specs: []const fs_node_ops.ExportSpec = &.{},
         terminal_ids: []const []const u8 = &.{},
         labels: []const NodeLabelArg = &.{},
-        extra_services: []const ExtraServiceArg = &.{},
+        extra_venoms: []const ExtraVenomArg = &.{},
     };
 
     pub fn init(allocator: std.mem.Allocator, options: InitOptions) !Registry {
         var registry = Registry{
             .allocator = allocator,
-            .enable_fs_service = options.enable_fs_service,
+            .enable_fs_venom = options.enable_fs_venom,
             .fs_export_count = options.export_specs.len,
             .fs_rw_export_count = countRwExports(options.export_specs),
         };
@@ -59,8 +59,8 @@ pub const Registry = struct {
             });
         }
 
-        for (options.extra_services) |item| {
-            try registry.addExtraService(item.venom_id, item.service_json);
+        for (options.extra_venoms) |item| {
+            try registry.addExtraVenom(item.venom_id, item.venom_json);
         }
 
         return registry;
@@ -69,7 +69,7 @@ pub const Registry = struct {
     pub fn clone(self: *const Registry, allocator: std.mem.Allocator) !Registry {
         var copy = Registry{
             .allocator = allocator,
-            .enable_fs_service = self.enable_fs_service,
+            .enable_fs_venom = self.enable_fs_venom,
             .fs_export_count = self.fs_export_count,
             .fs_rw_export_count = self.fs_rw_export_count,
         };
@@ -86,10 +86,10 @@ pub const Registry = struct {
             });
         }
 
-        for (self.extra_services.items) |service| {
-            try copy.extra_services.append(allocator, .{
+        for (self.extra_venoms.items) |service| {
+            try copy.extra_venoms.append(allocator, .{
                 .venom_id = try allocator.dupe(u8, service.venom_id),
-                .service_json = try allocator.dupe(u8, service.service_json),
+                .venom_json = try allocator.dupe(u8, service.venom_json),
             });
         }
 
@@ -101,27 +101,27 @@ pub const Registry = struct {
         self.terminal_ids.deinit(self.allocator);
         for (self.labels.items) |*label| label.deinit(self.allocator);
         self.labels.deinit(self.allocator);
-        for (self.extra_services.items) |*service| service.deinit(self.allocator);
-        self.extra_services.deinit(self.allocator);
+        for (self.extra_venoms.items) |*service| service.deinit(self.allocator);
+        self.extra_venoms.deinit(self.allocator);
         self.* = undefined;
     }
 
-    pub fn clearExtraServices(self: *Registry) void {
-        for (self.extra_services.items) |*service| service.deinit(self.allocator);
-        self.extra_services.clearRetainingCapacity();
+    pub fn clearExtraVenoms(self: *Registry) void {
+        for (self.extra_venoms.items) |*service| service.deinit(self.allocator);
+        self.extra_venoms.clearRetainingCapacity();
     }
 
-    pub fn addExtraService(self: *Registry, venom_id: []const u8, service_json: []const u8) !void {
+    pub fn addExtraVenom(self: *Registry, venom_id: []const u8, venom_json: []const u8) !void {
         try validateIdentifier(venom_id, 128);
-        if (serviceIdExists(self, venom_id)) return error.InvalidProviderConfig;
-        try validateExtraServiceJson(self.allocator, venom_id, service_json);
-        try self.extra_services.append(self.allocator, .{
+        if (venomIdExists(self, venom_id)) return error.InvalidProviderConfig;
+        try validateExtraVenomJson(self.allocator, venom_id, venom_json);
+        try self.extra_venoms.append(self.allocator, .{
             .venom_id = try self.allocator.dupe(u8, venom_id),
-            .service_json = try self.allocator.dupe(u8, service_json),
+            .venom_json = try self.allocator.dupe(u8, venom_json),
         });
     }
 
-    pub fn buildServiceUpsertPayload(
+    pub fn buildVenomUpsertPayload(
         self: *const Registry,
         allocator: std.mem.Allocator,
         node_id: []const u8,
@@ -163,23 +163,23 @@ pub const Registry = struct {
         }
 
         try out.appendSlice(allocator, ",\"venoms\":[");
-        var service_count: usize = 0;
+        var venom_count: usize = 0;
 
-        if (self.enable_fs_service) {
-            try appendFsService(self, allocator, &out, node_id);
-            service_count += 1;
+        if (self.enable_fs_venom) {
+            try appendFsVenom(self, allocator, &out, node_id);
+            venom_count += 1;
         }
 
         for (self.terminal_ids.items) |terminal_id| {
-            if (service_count > 0) try out.append(allocator, ',');
-            try appendTerminalService(allocator, &out, node_id, terminal_id);
-            service_count += 1;
+            if (venom_count > 0) try out.append(allocator, ',');
+            try appendTerminalVenom(allocator, &out, node_id, terminal_id);
+            venom_count += 1;
         }
 
-        for (self.extra_services.items) |service| {
-            if (service_count > 0) try out.append(allocator, ',');
-            try out.appendSlice(allocator, service.service_json);
-            service_count += 1;
+        for (self.extra_venoms.items) |service| {
+            if (venom_count > 0) try out.append(allocator, ',');
+            try out.appendSlice(allocator, service.venom_json);
+            venom_count += 1;
         }
 
         try out.appendSlice(allocator, "]}");
@@ -198,13 +198,13 @@ const NodeLabel = struct {
     }
 };
 
-const ExtraService = struct {
+const ExtraVenom = struct {
     venom_id: []u8,
-    service_json: []u8,
+    venom_json: []u8,
 
-    fn deinit(self: *ExtraService, allocator: std.mem.Allocator) void {
+    fn deinit(self: *ExtraVenom, allocator: std.mem.Allocator) void {
         allocator.free(self.venom_id);
-        allocator.free(self.service_json);
+        allocator.free(self.venom_json);
         self.* = undefined;
     }
 };
@@ -217,26 +217,26 @@ fn countRwExports(specs: []const fs_node_ops.ExportSpec) usize {
     return rw_count;
 }
 
-fn serviceIdExists(registry: *const Registry, venom_id: []const u8) bool {
-    if (registry.enable_fs_service and std.mem.eql(u8, venom_id, "fs")) return true;
+fn venomIdExists(registry: *const Registry, venom_id: []const u8) bool {
+    if (registry.enable_fs_venom and std.mem.eql(u8, venom_id, "fs")) return true;
     for (registry.terminal_ids.items) |terminal_id| {
         const prefix = "terminal-";
         if (venom_id.len != prefix.len + terminal_id.len) continue;
         if (!std.mem.startsWith(u8, venom_id, prefix)) continue;
         if (std.mem.eql(u8, venom_id[prefix.len..], terminal_id)) return true;
     }
-    for (registry.extra_services.items) |item| {
+    for (registry.extra_venoms.items) |item| {
         if (std.mem.eql(u8, item.venom_id, venom_id)) return true;
     }
     return false;
 }
 
-fn validateExtraServiceJson(
+fn validateExtraVenomJson(
     allocator: std.mem.Allocator,
     expected_venom_id: []const u8,
-    service_json: []const u8,
+    venom_json: []const u8,
 ) !void {
-    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, service_json, .{});
+    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, venom_json, .{});
     defer parsed.deinit();
     if (parsed.value != .object) return error.InvalidProviderConfig;
 
@@ -254,7 +254,7 @@ fn validateExtraServiceJson(
     if (endpoints_val != .array or endpoints_val.array.items.len == 0) return error.InvalidProviderConfig;
 }
 
-fn appendFsService(
+fn appendFsVenom(
     registry: *const Registry,
     allocator: std.mem.Allocator,
     out: *std.ArrayListUnmanaged(u8),
@@ -276,7 +276,7 @@ fn appendFsService(
     );
 }
 
-fn appendTerminalService(
+fn appendTerminalVenom(
     allocator: std.mem.Allocator,
     out: *std.ArrayListUnmanaged(u8),
     node_id: []const u8,
@@ -339,7 +339,7 @@ fn jsonEscape(allocator: std.mem.Allocator, value: []const u8) ![]u8 {
 test "node_capability_providers: build service upsert payload includes fs and terminal" {
     const allocator = std.testing.allocator;
     var registry = try Registry.init(allocator, .{
-        .enable_fs_service = true,
+        .enable_fs_venom = true,
         .export_specs = &[_]fs_node_ops.ExportSpec{
             .{ .name = "work", .path = ".", .ro = false },
             .{ .name = "read-only", .path = "/tmp", .ro = true },
@@ -352,7 +352,7 @@ test "node_capability_providers: build service upsert payload includes fs and te
     });
     defer registry.deinit();
 
-    const payload = try registry.buildServiceUpsertPayload(
+    const payload = try registry.buildVenomUpsertPayload(
         allocator,
         "node-99",
         "secret-abc",
@@ -383,16 +383,16 @@ test "node_capability_providers: duplicate terminal id rejected" {
 test "node_capability_providers: supports extra namespace service payloads" {
     const allocator = std.testing.allocator;
     var registry = try Registry.init(allocator, .{
-        .enable_fs_service = false,
+        .enable_fs_venom = false,
     });
     defer registry.deinit();
 
     const camera_json =
         \\{"venom_id":"camera-main","kind":"camera","version":"1","state":"online","endpoints":["/nodes/node-1/camera"],"capabilities":{"still":true},"mounts":[{"mount_id":"camera-main","mount_path":"/nodes/node-1/camera","state":"online"}],"ops":{"model":"namespace","style":"plan9"},"runtime":{"type":"native_proc","abi":"namespace-driver-v1"},"permissions":{"default":"deny-by-default"},"schema":{"model":"namespace-mount"}}
     ;
-    try registry.addExtraService("camera-main", camera_json);
+    try registry.addExtraVenom("camera-main", camera_json);
 
-    const payload = try registry.buildServiceUpsertPayload(
+    const payload = try registry.buildVenomUpsertPayload(
         allocator,
         "node-1",
         "secret-xyz",
@@ -414,10 +414,10 @@ test "node_capability_providers: rejects malformed extra service payloads" {
 
     try std.testing.expectError(
         error.InvalidProviderConfig,
-        registry.addExtraService("camera-main", "{\"venom_id\":\"other\",\"kind\":\"camera\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/camera\"]}"),
+        registry.addExtraVenom("camera-main", "{\"venom_id\":\"other\",\"kind\":\"camera\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/camera\"]}"),
     );
     try std.testing.expectError(
         error.InvalidProviderConfig,
-        registry.addExtraService("camera-main", "{\"venom_id\":\"camera-main\",\"kind\":\"camera\",\"state\":\"online\",\"endpoints\":[]}"),
+        registry.addExtraVenom("camera-main", "{\"venom_id\":\"camera-main\",\"kind\":\"camera\",\"state\":\"online\",\"endpoints\":[]}"),
     );
 }

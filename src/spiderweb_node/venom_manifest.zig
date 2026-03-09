@@ -1,21 +1,21 @@
 const std = @import("std");
 
-pub const LoadedService = struct {
+pub const LoadedVenom = struct {
     venom_id: []u8,
-    service_json: []u8,
+    venom_json: []u8,
 
-    pub fn deinit(self: *LoadedService, allocator: std.mem.Allocator) void {
+    pub fn deinit(self: *LoadedVenom, allocator: std.mem.Allocator) void {
         allocator.free(self.venom_id);
-        allocator.free(self.service_json);
+        allocator.free(self.venom_json);
         self.* = undefined;
     }
 };
 
-pub fn loadServiceManifestFile(
+pub fn loadVenomManifestFile(
     allocator: std.mem.Allocator,
     manifest_path: []const u8,
     node_id: []const u8,
-) !?LoadedService {
+) !?LoadedVenom {
     const raw = try std.fs.cwd().readFileAlloc(allocator, manifest_path, 1024 * 1024);
     defer allocator.free(raw);
 
@@ -96,7 +96,7 @@ pub fn loadServiceManifestFile(
     const escaped_state = try jsonEscape(allocator, state);
     defer allocator.free(escaped_state);
 
-    const service_json = if (help_md) |help| blk: {
+    const venom_json = if (help_md) |help| blk: {
         const escaped_help = try jsonEscape(allocator, help);
         defer allocator.free(escaped_help);
         break :blk try std.fmt.allocPrint(
@@ -112,15 +112,15 @@ pub fn loadServiceManifestFile(
 
     return .{
         .venom_id = venom_id,
-        .service_json = service_json,
+        .venom_json = venom_json,
     };
 }
 
-pub fn loadServiceManifestDirectory(
+pub fn loadVenomManifestDirectory(
     allocator: std.mem.Allocator,
     dir_path: []const u8,
     node_id: []const u8,
-    out: *std.ArrayListUnmanaged(LoadedService),
+    out: *std.ArrayListUnmanaged(LoadedVenom),
 ) !void {
     var dir = try std.fs.cwd().openDir(dir_path, .{ .iterate = true });
     defer dir.close();
@@ -131,7 +131,7 @@ pub fn loadServiceManifestDirectory(
         if (!std.mem.endsWith(u8, entry.name, ".json")) continue;
         const path = try std.fs.path.join(allocator, &.{ dir_path, entry.name });
         defer allocator.free(path);
-        const loaded = try loadServiceManifestFile(allocator, path, node_id);
+        const loaded = try loadVenomManifestFile(allocator, path, node_id);
         if (loaded) |item| {
             try out.append(allocator, item);
         }
@@ -394,16 +394,16 @@ test "venom_manifest: loads enabled manifest with node_id template" {
     const abs = try tmp.dir.realpathAlloc(allocator, "camera.json");
     defer allocator.free(abs);
 
-    const loaded = try loadServiceManifestFile(allocator, abs, "node-77");
+    const loaded = try loadVenomManifestFile(allocator, abs, "node-77");
     try std.testing.expect(loaded != null);
     var service = loaded.?;
     defer service.deinit(allocator);
 
     try std.testing.expect(std.mem.eql(u8, service.venom_id, "camera-main"));
-    try std.testing.expect(std.mem.indexOf(u8, service.service_json, "\"/nodes/node-77/camera\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, service.service_json, "\"runtime\":{\"type\":\"native_proc\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, service.service_json, "\"invoke_template\":") != null);
-    try std.testing.expect(std.mem.indexOf(u8, service.service_json, "\"capture\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, service.venom_json, "\"/nodes/node-77/camera\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, service.venom_json, "\"runtime\":{\"type\":\"native_proc\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, service.venom_json, "\"invoke_template\":") != null);
+    try std.testing.expect(std.mem.indexOf(u8, service.venom_json, "\"capture\"") != null);
 }
 
 test "venom_manifest: disabled manifest is ignored" {
@@ -425,7 +425,7 @@ test "venom_manifest: disabled manifest is ignored" {
     const abs = try tmp.dir.realpathAlloc(allocator, "disabled.json");
     defer allocator.free(abs);
 
-    const loaded = try loadServiceManifestFile(allocator, abs, "node-77");
+    const loaded = try loadVenomManifestFile(allocator, abs, "node-77");
     try std.testing.expect(loaded == null);
 }
 
@@ -448,12 +448,12 @@ test "venom_manifest: accepts venom_id alias and emits venom ABI metadata" {
     const abs = try tmp.dir.realpathAlloc(allocator, "venom.json");
     defer allocator.free(abs);
 
-    const loaded = try loadServiceManifestFile(allocator, abs, "node-22");
+    const loaded = try loadVenomManifestFile(allocator, abs, "node-22");
     try std.testing.expect(loaded != null);
     var service = loaded.?;
     defer service.deinit(allocator);
 
     try std.testing.expectEqualStrings("doc-convert", service.venom_id);
-    try std.testing.expect(std.mem.indexOf(u8, service.service_json, "\"venom_id\":\"doc-convert\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, service.service_json, "\"abi\":\"venom-driver-v1\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, service.venom_json, "\"venom_id\":\"doc-convert\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, service.venom_json, "\"abi\":\"venom-driver-v1\"") != null);
 }

@@ -28,9 +28,9 @@ const fsrpc_node_proto_id: i64 = 2;
 const control_node_not_found_code = "node_not_found";
 const control_node_auth_failed_code = "node_auth_failed";
 const inproc_helper_max_io_bytes: usize = 1024 * 1024;
-const namespace_service_schema_default_json =
+const namespace_venom_schema_default_json =
     "{\"model\":\"namespace-service-v1\",\"control\":{\"invoke\":\"control/invoke.json\",\"reset\":\"control/reset\",\"enable\":\"control/enable\",\"disable\":\"control/disable\",\"restart\":\"control/restart\"},\"result\":\"result.json\",\"status\":\"status.json\",\"last_error\":\"last_error.txt\",\"metrics\":\"metrics.json\",\"config\":\"config.json\",\"health\":\"health.json\",\"host\":\"HOST.json\"}";
-const namespace_service_invoke_template_default_json = "{}";
+const namespace_venom_invoke_template_default_json = "{}";
 
 const PairMode = enum {
     invite,
@@ -169,30 +169,30 @@ const ControlPairingOptions = struct {
     reconnect_backoff_max_ms: u64,
 };
 
-const SharedServiceRegistry = struct {
+const SharedVenomRegistry = struct {
     allocator: std.mem.Allocator,
     mutex: std.Thread.Mutex = .{},
     registry: node_capability_providers.Registry,
 
-    fn init(allocator: std.mem.Allocator, initial: *const node_capability_providers.Registry) !SharedServiceRegistry {
+    fn init(allocator: std.mem.Allocator, initial: *const node_capability_providers.Registry) !SharedVenomRegistry {
         return .{
             .allocator = allocator,
             .registry = try initial.clone(allocator),
         };
     }
 
-    fn deinit(self: *SharedServiceRegistry) void {
+    fn deinit(self: *SharedVenomRegistry) void {
         self.registry.deinit();
         self.* = undefined;
     }
 
-    fn snapshot(self: *SharedServiceRegistry) !node_capability_providers.Registry {
+    fn snapshot(self: *SharedVenomRegistry) !node_capability_providers.Registry {
         self.mutex.lock();
         defer self.mutex.unlock();
         return self.registry.clone(self.allocator);
     }
 
-    fn replaceFrom(self: *SharedServiceRegistry, incoming: *const node_capability_providers.Registry) !void {
+    fn replaceFrom(self: *SharedVenomRegistry, incoming: *const node_capability_providers.Registry) !void {
         const next = try incoming.clone(self.allocator);
         self.mutex.lock();
         var old = self.registry;
@@ -207,7 +207,7 @@ const LeaseRefreshContext = struct {
     connect: ControlConnectOptions,
     state_path: []u8,
     fs_url: []u8,
-    shared_service_registry: *SharedServiceRegistry,
+    shared_venom_registry: *SharedVenomRegistry,
     lease_ttl_ms: u64,
     refresh_interval_ms: u64,
     reconnect_backoff_ms: u64,
@@ -220,7 +220,7 @@ const LeaseRefreshContext = struct {
         connect: ControlConnectOptions,
         state_path: []const u8,
         fs_url: []const u8,
-        shared_service_registry: *SharedServiceRegistry,
+        shared_venom_registry: *SharedVenomRegistry,
         lease_ttl_ms: u64,
         refresh_interval_ms: u64,
         reconnect_backoff_ms: u64,
@@ -234,7 +234,7 @@ const LeaseRefreshContext = struct {
             },
             .state_path = try allocator.dupe(u8, state_path),
             .fs_url = try allocator.dupe(u8, fs_url),
-            .shared_service_registry = shared_service_registry,
+            .shared_venom_registry = shared_venom_registry,
             .lease_ttl_ms = lease_ttl_ms,
             .refresh_interval_ms = refresh_interval_ms,
             .reconnect_backoff_ms = reconnect_backoff_ms,
@@ -277,13 +277,13 @@ const LeaseRefreshContext = struct {
     }
 };
 
-const NamespaceServiceExportSpecOwned = struct {
+const NamespaceVenomExportSpecOwned = struct {
     name: []u8,
     path: []u8,
     source_id: []u8,
     desc: []u8,
     venom_id: []u8,
-    runtime_kind: fs_node_ops.NamespaceServiceRuntimeKind = .native_proc,
+    runtime_kind: fs_node_ops.NamespaceVenomRuntimeKind = .native_proc,
     executable_path: ?[]u8 = null,
     library_path: ?[]u8 = null,
     module_path: ?[]u8 = null,
@@ -296,7 +296,7 @@ const NamespaceServiceExportSpecOwned = struct {
     schema_json: ?[]u8 = null,
     invoke_template_json: ?[]u8 = null,
 
-    fn deinit(self: *NamespaceServiceExportSpecOwned, allocator: std.mem.Allocator) void {
+    fn deinit(self: *NamespaceVenomExportSpecOwned, allocator: std.mem.Allocator) void {
         allocator.free(self.name);
         allocator.free(self.path);
         allocator.free(self.source_id);
@@ -314,7 +314,7 @@ const NamespaceServiceExportSpecOwned = struct {
         self.* = undefined;
     }
 
-    fn asExportSpec(self: *const NamespaceServiceExportSpecOwned) fs_node_ops.ExportSpec {
+    fn asExportSpec(self: *const NamespaceVenomExportSpecOwned) fs_node_ops.ExportSpec {
         return .{
             .name = self.name,
             .path = self.path,
@@ -322,7 +322,7 @@ const NamespaceServiceExportSpecOwned = struct {
             .desc = self.desc,
             .source_kind = .namespace,
             .source_id = self.source_id,
-            .namespace_service = .{
+            .namespace_venom = .{
                 .venom_id = self.venom_id,
                 .runtime_kind = self.runtime_kind,
                 .executable_path = self.executable_path,
@@ -399,12 +399,12 @@ const RuntimeProbeDriverStore = struct {
     fn driverFromServiceJson(
         self: *RuntimeProbeDriverStore,
         descriptor: *const namespace_driver.VenomDescriptor,
-        service_json: []const u8,
+        venom_json: []const u8,
     ) !?namespace_driver.DriverHandle {
         const maybe_ctx = try runtimeProbeDriverContextFromServiceJson(
             self.allocator,
             descriptor,
-            service_json,
+            venom_json,
         );
         const ctx = maybe_ctx orelse return null;
         errdefer {
@@ -422,11 +422,11 @@ const RuntimeProbeDriverStore = struct {
 fn runtimeProbeDriverContextFromServiceJson(
     allocator: std.mem.Allocator,
     descriptor: *const namespace_driver.VenomDescriptor,
-    service_json: []const u8,
+    venom_json: []const u8,
 ) !?*RuntimeProbeDriverCtx {
     if (descriptor.runtime_type == .builtin) return null;
 
-    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, service_json, .{});
+    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, venom_json, .{});
     defer parsed.deinit();
     if (parsed.value != .object) return error.InvalidArguments;
 
@@ -716,23 +716,23 @@ pub fn main() !void {
     var manifest_reload_interval_ms: u64 = default_manifest_reload_interval_ms;
     var reconnect_backoff_ms: u64 = default_control_backoff_ms;
     var reconnect_backoff_max_ms: u64 = default_control_backoff_max_ms;
-    var enable_fs_service = true;
+    var enable_fs_venom = true;
     var terminal_ids = std.ArrayListUnmanaged([]const u8){};
     defer terminal_ids.deinit(allocator);
-    var service_labels = std.ArrayListUnmanaged(node_capability_providers.NodeLabelArg){};
-    defer service_labels.deinit(allocator);
+    var node_labels = std.ArrayListUnmanaged(node_capability_providers.NodeLabelArg){};
+    defer node_labels.deinit(allocator);
     var venom_manifest_paths = std.ArrayListUnmanaged([]const u8){};
     defer venom_manifest_paths.deinit(allocator);
-    var services_dirs = std.ArrayListUnmanaged([]const u8){};
-    defer services_dirs.deinit(allocator);
-    var terminal_namespace_exports = std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned){};
+    var venom_dirs = std.ArrayListUnmanaged([]const u8){};
+    defer venom_dirs.deinit(allocator);
+    var terminal_namespace_exports = std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned){};
     defer {
-        deinitNamespaceServiceExportList(allocator, &terminal_namespace_exports);
+        deinitNamespaceVenomExportList(allocator, &terminal_namespace_exports);
         terminal_namespace_exports.deinit(allocator);
     }
-    var runtime_namespace_exports = std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned){};
+    var runtime_namespace_exports = std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned){};
     defer {
-        deinitNamespaceServiceExportList(allocator, &runtime_namespace_exports);
+        deinitNamespaceVenomExportList(allocator, &runtime_namespace_exports);
         runtime_namespace_exports.deinit(allocator);
     }
     var effective_exports = std.ArrayListUnmanaged(fs_node_ops.ExportSpec){};
@@ -811,8 +811,8 @@ pub fn main() !void {
             i += 1;
             if (i >= args.len) return error.InvalidArguments;
             reconnect_backoff_max_ms = try std.fmt.parseInt(u64, args[i], 10);
-        } else if (std.mem.eql(u8, arg, "--no-fs-service")) {
-            enable_fs_service = false;
+        } else if (std.mem.eql(u8, arg, "--no-fs-venom")) {
+            enable_fs_venom = false;
         } else if (std.mem.eql(u8, arg, "--terminal-id")) {
             i += 1;
             if (i >= args.len) return error.InvalidArguments;
@@ -820,15 +820,15 @@ pub fn main() !void {
         } else if (std.mem.eql(u8, arg, "--label")) {
             i += 1;
             if (i >= args.len) return error.InvalidArguments;
-            try service_labels.append(allocator, try parseLabelArg(args[i]));
-        } else if (std.mem.eql(u8, arg, "--service-manifest")) {
+            try node_labels.append(allocator, try parseLabelArg(args[i]));
+        } else if (std.mem.eql(u8, arg, "--venom-manifest")) {
             i += 1;
             if (i >= args.len) return error.InvalidArguments;
             try venom_manifest_paths.append(allocator, args[i]);
-        } else if (std.mem.eql(u8, arg, "--services-dir")) {
+        } else if (std.mem.eql(u8, arg, "--venoms-dir")) {
             i += 1;
             if (i >= args.len) return error.InvalidArguments;
-            try services_dirs.append(allocator, args[i]);
+            try venom_dirs.append(allocator, args[i]);
         } else if (std.mem.eql(u8, arg, "--help") or std.mem.eql(u8, arg, "-h")) {
             try printHelp();
             return;
@@ -855,15 +855,15 @@ pub fn main() !void {
         try std.fmt.allocPrint(allocator, "ws://{s}:{d}/v2/fs", .{ bind_addr, port });
     defer if (advertised_fs_url == null) allocator.free(effective_fs_url);
 
-    var service_registry = try node_capability_providers.Registry.init(allocator, .{
-        .enable_fs_service = enable_fs_service,
+    var venom_registry = try node_capability_providers.Registry.init(allocator, .{
+        .enable_fs_venom = enable_fs_venom,
         .export_specs = exports.items,
         .terminal_ids = terminal_ids.items,
-        .labels = service_labels.items,
+        .labels = node_labels.items,
     });
-    defer service_registry.deinit();
-    var shared_service_registry = try SharedServiceRegistry.init(allocator, &service_registry);
-    defer shared_service_registry.deinit();
+    defer venom_registry.deinit();
+    var shared_venom_registry = try SharedVenomRegistry.init(allocator, &venom_registry);
+    defer shared_venom_registry.deinit();
 
     if (control_url) |control_url_value| {
         const pairing_fs_url = if (advertised_fs_url != null) effective_fs_url else "";
@@ -934,14 +934,14 @@ pub fn main() !void {
                     }
                 }
 
-                service_registry.clearExtraServices();
-                deinitNamespaceServiceExportList(allocator, &runtime_namespace_exports);
-                try loadConfiguredManifestServices(
+                venom_registry.clearExtraVenoms();
+                deinitNamespaceVenomExportList(allocator, &runtime_namespace_exports);
+                try loadConfiguredManifestVenoms(
                     allocator,
                     state.node_id.?,
                     venom_manifest_paths.items,
-                    services_dirs.items,
-                    &service_registry,
+                    venom_dirs.items,
+                    &venom_registry,
                     &runtime_namespace_exports,
                 );
                 try rebuildEffectiveExportSpecs(
@@ -951,14 +951,14 @@ pub fn main() !void {
                     runtime_namespace_exports.items,
                     &effective_exports,
                 );
-                service_registry.fs_export_count = countFilesystemExportSpecs(effective_exports.items);
-                service_registry.fs_rw_export_count = countRwExportSpecs(effective_exports.items);
-                try shared_service_registry.replaceFrom(&service_registry);
+                venom_registry.fs_export_count = countFilesystemExportSpecs(effective_exports.items);
+                venom_registry.fs_rw_export_count = countRwExportSpecs(effective_exports.items);
+                try shared_venom_registry.replaceFrom(&venom_registry);
 
-                upsertNodeServiceCatalog(
+                upsertNodeVenomCatalog(
                     allocator,
                     control_connect,
-                    &service_registry,
+                    &venom_registry,
                     &state,
                 ) catch |err| switch (err) {
                     error.ControlNodeIdentityRejected => {
@@ -967,7 +967,7 @@ pub fn main() !void {
                         try saveNodePairState(allocator, state_path, &state);
                         continue;
                     },
-                    else => std.log.warn("initial node service catalog upsert failed: {s}", .{@errorName(err)}),
+                    else => std.log.warn("initial node Venom catalog upsert failed: {s}", .{@errorName(err)}),
                 };
 
                 routed_fs_url = try buildControlRoutedFsUrl(
@@ -981,7 +981,7 @@ pub fn main() !void {
                     control_connect,
                     state_path,
                     routed_fs_url,
-                    &service_registry,
+                    &venom_registry,
                     lease_ttl_ms,
                 ) catch |err| switch (err) {
                     error.ControlNodeIdentityRejected => {
@@ -1008,7 +1008,7 @@ pub fn main() !void {
                 },
                 state_path,
                 routed_fs_url,
-                &shared_service_registry,
+                &shared_venom_registry,
                 lease_ttl_ms,
                 refresh_interval_ms,
                 reconnect_backoff_ms,
@@ -1042,9 +1042,9 @@ pub fn main() !void {
                 exports.items,
                 terminal_namespace_exports.items,
                 venom_manifest_paths.items,
-                services_dirs.items,
-                &service_registry,
-                &shared_service_registry,
+                venom_dirs.items,
+                &venom_registry,
+                &shared_venom_registry,
                 state_path,
                 manifest_reload_interval_ms,
                 reconnect_backoff_ms,
@@ -1076,14 +1076,14 @@ pub fn main() !void {
         }
     }
 
-    service_registry.clearExtraServices();
-    deinitNamespaceServiceExportList(allocator, &runtime_namespace_exports);
-    try loadConfiguredManifestServices(
+    venom_registry.clearExtraVenoms();
+    deinitNamespaceVenomExportList(allocator, &runtime_namespace_exports);
+    try loadConfiguredManifestVenoms(
         allocator,
         node_name,
         venom_manifest_paths.items,
-        services_dirs.items,
-        &service_registry,
+        venom_dirs.items,
+        &venom_registry,
         &runtime_namespace_exports,
     );
     try rebuildEffectiveExportSpecs(
@@ -1093,9 +1093,9 @@ pub fn main() !void {
         runtime_namespace_exports.items,
         &effective_exports,
     );
-    service_registry.fs_export_count = countFilesystemExportSpecs(effective_exports.items);
-    service_registry.fs_rw_export_count = countRwExportSpecs(effective_exports.items);
-    try shared_service_registry.replaceFrom(&service_registry);
+    venom_registry.fs_export_count = countFilesystemExportSpecs(effective_exports.items);
+    venom_registry.fs_rw_export_count = countRwExportSpecs(effective_exports.items);
+    try shared_venom_registry.replaceFrom(&venom_registry);
 
     std.log.info("Starting spiderweb-fs-node on {s}:{d}", .{ bind_addr, port });
     if (auth_token != null) {
@@ -1337,7 +1337,7 @@ fn buildTerminalNamespaceExports(
     allocator: std.mem.Allocator,
     terminal_ids: []const []const u8,
     self_executable_path: []const u8,
-    out: *std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned),
+    out: *std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned),
 ) !void {
     var seen = std.StringHashMapUnmanaged(void){};
     defer seen.deinit(allocator);
@@ -1356,7 +1356,7 @@ fn buildTerminalNamespaceExports(
         const desc = try std.fmt.allocPrint(allocator, "Terminal namespace service ({s})", .{terminal_id});
         errdefer allocator.free(desc);
 
-        var spec = NamespaceServiceExportSpecOwned{
+        var spec = NamespaceVenomExportSpecOwned{
             .name = venom_id,
             .path = endpoint,
             .source_id = source_id,
@@ -1450,22 +1450,22 @@ fn countFilesystemExportSpecs(specs: []const fs_node_ops.ExportSpec) usize {
     return total;
 }
 
-fn loadConfiguredManifestServices(
+fn loadConfiguredManifestVenoms(
     allocator: std.mem.Allocator,
     node_id: []const u8,
     manifest_paths: []const []const u8,
     service_dirs: []const []const u8,
     registry: *node_capability_providers.Registry,
-    runtime_namespace_exports: *std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned),
+    runtime_namespace_exports: *std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned),
 ) !void {
-    var loaded = std.ArrayListUnmanaged(venom_manifest.LoadedService){};
+    var loaded = std.ArrayListUnmanaged(venom_manifest.LoadedVenom){};
     defer {
         for (loaded.items) |*item| item.deinit(allocator);
         loaded.deinit(allocator);
     }
 
     for (manifest_paths) |manifest_path| {
-        const maybe_loaded = try venom_manifest.loadServiceManifestFile(
+        const maybe_loaded = try venom_manifest.loadVenomManifestFile(
             allocator,
             manifest_path,
             node_id,
@@ -1474,7 +1474,7 @@ fn loadConfiguredManifestServices(
     }
 
     for (service_dirs) |dir_path| {
-        try venom_manifest.loadServiceManifestDirectory(
+        try venom_manifest.loadVenomManifestDirectory(
             allocator,
             dir_path,
             node_id,
@@ -1495,36 +1495,36 @@ fn loadConfiguredManifestServices(
     }
 
     for (loaded.items) |item| {
-        try validateServiceRuntimeConfig(allocator, item.service_json);
-        try runtime_manager.registerFromServiceJson(item.service_json);
-        if (try buildNamespaceServiceExportFromServiceJson(allocator, item.service_json)) |service_export| {
+        try validateVenomRuntimeConfig(allocator, item.venom_json);
+        try runtime_manager.registerFromVenomJson(item.venom_json);
+        if (try buildNamespaceVenomExportFromVenomJson(allocator, item.venom_json)) |service_export| {
             try runtime_namespace_exports.append(allocator, service_export);
         }
-        try registry.addExtraService(item.venom_id, item.service_json);
-        std.log.info("Loaded service manifest: {s}", .{item.venom_id});
+        try registry.addExtraVenom(item.venom_id, item.venom_json);
+        std.log.info("Loaded Venom manifest: {s}", .{item.venom_id});
     }
 
     try runtime_manager.startAll();
     runtime_manager.stopAll();
 }
 
-fn buildNamespaceServiceExportFromServiceJson(
+fn buildNamespaceVenomExportFromVenomJson(
     allocator: std.mem.Allocator,
-    service_json: []const u8,
-) !?NamespaceServiceExportSpecOwned {
-    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, service_json, .{});
+    venom_json: []const u8,
+) !?NamespaceVenomExportSpecOwned {
+    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, venom_json, .{});
     defer parsed.deinit();
     if (parsed.value != .object) return error.InvalidArguments;
 
     const obj = parsed.value.object;
-    const venom_id = getRequiredStringAlias(obj, "venom_id", "service_id") orelse return error.InvalidArguments;
+    const venom_id = getRequiredString(obj, "venom_id") orelse return error.InvalidArguments;
     const runtime = obj.get("runtime") orelse return null;
     if (runtime != .object) return null;
     const runtime_type = if (runtime.object.get("type")) |value|
         if (value == .string and value.string.len > 0) value.string else return error.InvalidArguments
     else
         "builtin";
-    const runtime_kind: fs_node_ops.NamespaceServiceRuntimeKind = if (std.mem.eql(u8, runtime_type, "native_proc"))
+    const runtime_kind: fs_node_ops.NamespaceVenomRuntimeKind = if (std.mem.eql(u8, runtime_type, "native_proc"))
         .native_proc
     else if (std.mem.eql(u8, runtime_type, "native_inproc"))
         .native_inproc
@@ -1586,14 +1586,14 @@ fn buildNamespaceServiceExportFromServiceJson(
         allocator,
         obj,
         "schema",
-        namespace_service_schema_default_json,
+        namespace_venom_schema_default_json,
     );
     errdefer allocator.free(schema_json);
     const invoke_template_json = try dupOptionalObjectJson(
         allocator,
         obj,
         "invoke_template",
-        namespace_service_invoke_template_default_json,
+        namespace_venom_invoke_template_default_json,
     );
     errdefer allocator.free(invoke_template_json);
 
@@ -1603,7 +1603,7 @@ fn buildNamespaceServiceExportFromServiceJson(
         .wasm => if (module_path == null) return null,
     }
 
-    var owned = NamespaceServiceExportSpecOwned{
+    var owned = NamespaceVenomExportSpecOwned{
         .name = try std.fmt.allocPrint(allocator, "svc-{s}", .{venom_id}),
         .path = try std.fmt.allocPrint(allocator, "service:{s}", .{venom_id}),
         .source_id = try std.fmt.allocPrint(allocator, "service:{s}", .{venom_id}),
@@ -1637,9 +1637,9 @@ fn buildNamespaceServiceExportFromServiceJson(
     return owned;
 }
 
-fn deinitNamespaceServiceExportList(
+fn deinitNamespaceVenomExportList(
     allocator: std.mem.Allocator,
-    list: *std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned),
+    list: *std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned),
 ) void {
     for (list.items) |*item| item.deinit(allocator);
     list.clearRetainingCapacity();
@@ -1648,8 +1648,8 @@ fn deinitNamespaceServiceExportList(
 fn rebuildEffectiveExportSpecs(
     allocator: std.mem.Allocator,
     base_exports: []const fs_node_ops.ExportSpec,
-    static_namespace_exports: []const NamespaceServiceExportSpecOwned,
-    runtime_namespace_exports: []const NamespaceServiceExportSpecOwned,
+    static_namespace_exports: []const NamespaceVenomExportSpecOwned,
+    runtime_namespace_exports: []const NamespaceVenomExportSpecOwned,
     out: *std.ArrayListUnmanaged(fs_node_ops.ExportSpec),
 ) !void {
     out.clearRetainingCapacity();
@@ -1677,11 +1677,11 @@ fn rebuildEffectiveExportSpecs(
     }
 }
 
-fn validateServiceRuntimeConfig(
+fn validateVenomRuntimeConfig(
     allocator: std.mem.Allocator,
-    service_json: []const u8,
+    venom_json: []const u8,
 ) !void {
-    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, service_json, .{});
+    var parsed = try std.json.parseFromSlice(std.json.Value, allocator, venom_json, .{});
     defer parsed.deinit();
     if (parsed.value != .object) return error.InvalidArguments;
 
@@ -1814,6 +1814,13 @@ fn validateServiceRuntimeConfig(
     return error.InvalidArguments;
 }
 
+fn getRequiredString(obj: std.json.ObjectMap, key: []const u8) ?[]const u8 {
+    if (obj.get(key)) |value| {
+        if (value == .string and value.string.len > 0) return value.string;
+    }
+    return null;
+}
+
 fn getRequiredStringAlias(obj: std.json.ObjectMap, primary: []const u8, alias: []const u8) ?[]const u8 {
     if (obj.get(primary)) |value| {
         if (value == .string and value.string.len > 0) return value.string;
@@ -1829,15 +1836,15 @@ fn isSupportedDriverAbi(value: []const u8) bool {
         std.mem.eql(u8, value, plugin_loader_native.venom_abi_name);
 }
 
-fn upsertNodeServiceCatalog(
+fn upsertNodeVenomCatalog(
     allocator: std.mem.Allocator,
     connect: ControlConnectOptions,
-    service_registry: *const node_capability_providers.Registry,
+    venom_registry: *const node_capability_providers.Registry,
     state: *const NodePairState,
 ) !void {
     const node_id = state.node_id orelse return error.MissingField;
     const node_secret = state.node_secret orelse return error.MissingField;
-    const payload = try service_registry.buildServiceUpsertPayload(
+    const payload = try venom_registry.buildVenomUpsertPayload(
         allocator,
         node_id,
         node_secret,
@@ -2142,13 +2149,13 @@ fn leaseRefreshThreadMain(ctx: *LeaseRefreshContext) void {
                 };
 
                 failures = 0;
-                var registry_snapshot = ctx.shared_service_registry.snapshot() catch |clone_err| {
+                var registry_snapshot = ctx.shared_venom_registry.snapshot() catch |clone_err| {
                     std.log.warn("lease refresh: snapshot service registry failed: {s}", .{@errorName(clone_err)});
                     std.log.debug("node lease refreshed: node={s} lease_expires_at_ms={d}", .{ state.node_id.?, state.lease_expires_at_ms });
                     continue;
                 };
                 defer registry_snapshot.deinit();
-                upsertNodeServiceCatalog(
+                upsertNodeVenomCatalog(
                     ctx.allocator,
                     ctx.connect,
                     &registry_snapshot,
@@ -2220,7 +2227,7 @@ fn refreshNodeLeaseOnce(
     connect: ControlConnectOptions,
     state_path: []const u8,
     fs_url: []const u8,
-    service_registry: *const node_capability_providers.Registry,
+    venom_registry: *const node_capability_providers.Registry,
     lease_ttl_ms: u64,
 ) !void {
     var state = try loadNodePairState(allocator, state_path);
@@ -2254,7 +2261,7 @@ fn refreshNodeLeaseOnce(
             var joined = try parseNodeJoinPayload(allocator, payload_json);
             errdefer joined.deinit(allocator);
             try tryApplyLeaseRefresh(allocator, state_path, &state, joined);
-            try upsertNodeServiceCatalog(allocator, connect, service_registry, &state);
+            try upsertNodeVenomCatalog(allocator, connect, venom_registry, &state);
         },
         .remote_error => |remote| {
             std.log.warn("initial lease refresh rejected: code={s} message={s}", .{ remote.code, remote.message });
@@ -2268,14 +2275,14 @@ fn refreshControlRuntimeForNode(
     allocator: std.mem.Allocator,
     state: *const NodePairState,
     base_exports: []const fs_node_ops.ExportSpec,
-    static_namespace_exports: []const NamespaceServiceExportSpecOwned,
+    static_namespace_exports: []const NamespaceVenomExportSpecOwned,
     venom_manifest_paths: []const []const u8,
-    services_dirs: []const []const u8,
-    service_registry: *node_capability_providers.Registry,
-    shared_service_registry: *SharedServiceRegistry,
+    venom_dirs: []const []const u8,
+    venom_registry: *node_capability_providers.Registry,
+    shared_venom_registry: *SharedVenomRegistry,
     runtime_manager: *venom_runtime_manager.RuntimeManager,
     runtime_probe_store: *RuntimeProbeDriverStore,
-    runtime_namespace_exports: *std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned),
+    runtime_namespace_exports: *std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned),
     effective_exports: *std.ArrayListUnmanaged(fs_node_ops.ExportSpec),
     service: *fs_node_service.NodeService,
     runtime_state_path: []const u8,
@@ -2284,14 +2291,14 @@ fn refreshControlRuntimeForNode(
     const node_id = state.node_id orelse return error.MissingField;
     const node_secret = state.node_secret orelse return error.MissingField;
 
-    service_registry.clearExtraServices();
-    deinitNamespaceServiceExportList(allocator, runtime_namespace_exports);
-    try loadConfiguredManifestServices(
+    venom_registry.clearExtraVenoms();
+    deinitNamespaceVenomExportList(allocator, runtime_namespace_exports);
+    try loadConfiguredManifestVenoms(
         allocator,
         node_id,
         venom_manifest_paths,
-        services_dirs,
-        service_registry,
+        venom_dirs,
+        venom_registry,
         runtime_namespace_exports,
     );
     try rebuildEffectiveExportSpecs(
@@ -2301,10 +2308,10 @@ fn refreshControlRuntimeForNode(
         runtime_namespace_exports.items,
         effective_exports,
     );
-    service_registry.fs_export_count = countFilesystemExportSpecs(effective_exports.items);
-    service_registry.fs_rw_export_count = countRwExportSpecs(effective_exports.items);
+    venom_registry.fs_export_count = countFilesystemExportSpecs(effective_exports.items);
+    venom_registry.fs_rw_export_count = countRwExportSpecs(effective_exports.items);
 
-    const next_payload = try service_registry.buildServiceUpsertPayload(
+    const next_payload = try venom_registry.buildVenomUpsertPayload(
         allocator,
         node_id,
         node_secret,
@@ -2338,13 +2345,13 @@ fn refreshControlRuntimeForNode(
     service.* = next_service;
     old_service.deinit();
 
-    try syncServiceRuntimeManagerFromRegistry(
+    try syncVenomRuntimeManagerFromRegistry(
         allocator,
-        service_registry,
+        venom_registry,
         runtime_manager,
         runtime_probe_store,
     );
-    try shared_service_registry.replaceFrom(service_registry);
+    try shared_venom_registry.replaceFrom(venom_registry);
 
     if (last_manifest_payload.*) |previous| allocator.free(previous);
     last_manifest_payload.* = next_payload;
@@ -2355,9 +2362,9 @@ fn refreshControlRuntimeForNode(
     return true;
 }
 
-fn syncServiceRuntimeManagerFromRegistry(
+fn syncVenomRuntimeManagerFromRegistry(
     allocator: std.mem.Allocator,
-    service_registry: *const node_capability_providers.Registry,
+    venom_registry: *const node_capability_providers.Registry,
     runtime_manager: *venom_runtime_manager.RuntimeManager,
     runtime_probe_store: *RuntimeProbeDriverStore,
 ) !void {
@@ -2365,15 +2372,15 @@ fn syncServiceRuntimeManagerFromRegistry(
     runtime_manager.deinit();
     runtime_probe_store.clear();
     runtime_manager.* = venom_runtime_manager.RuntimeManager.init(allocator);
-    for (service_registry.extra_services.items) |service| {
+    for (venom_registry.extra_venoms.items) |service| {
         var parsed = try venom_runtime_manager.parseVenomRegistrationFromVenomJson(
             allocator,
-            service.service_json,
+            service.venom_json,
         );
         defer parsed.deinit(allocator);
         const driver = try runtime_probe_store.driverFromServiceJson(
             &parsed.descriptor,
-            service.service_json,
+            service.venom_json,
         );
         try runtime_manager.registerWithPolicy(
             &parsed.descriptor,
@@ -2386,45 +2393,45 @@ fn syncServiceRuntimeManagerFromRegistry(
 
 fn applyRuntimeManagerStateToServiceRegistry(
     allocator: std.mem.Allocator,
-    service_registry: *node_capability_providers.Registry,
+    venom_registry: *node_capability_providers.Registry,
     runtime_manager: *venom_runtime_manager.RuntimeManager,
 ) !bool {
     var changed = false;
-    for (service_registry.extra_services.items) |*entry| {
-        const state = runtime_manager.serviceState(entry.venom_id) orelse continue;
-        const stats = runtime_manager.serviceRuntimeStats(entry.venom_id) orelse continue;
-        const next_json = try renderServiceJsonWithRuntimeProbeState(
+    for (venom_registry.extra_venoms.items) |*entry| {
+        const state = runtime_manager.venomState(entry.venom_id) orelse continue;
+        const stats = runtime_manager.venomRuntimeStats(entry.venom_id) orelse continue;
+        const next_json = try renderVenomJsonWithRuntimeProbeState(
             allocator,
-            entry.service_json,
+            entry.venom_json,
             state,
             stats,
         );
-        if (std.mem.eql(u8, next_json, entry.service_json)) {
+        if (std.mem.eql(u8, next_json, entry.venom_json)) {
             allocator.free(next_json);
             continue;
         }
-        allocator.free(entry.service_json);
-        entry.service_json = next_json;
+        allocator.free(entry.venom_json);
+        entry.venom_json = next_json;
         changed = true;
     }
     return changed;
 }
 
-fn renderServiceJsonWithRuntimeProbeState(
+fn renderVenomJsonWithRuntimeProbeState(
     allocator: std.mem.Allocator,
-    service_json: []const u8,
-    state: namespace_driver.ServiceState,
-    stats: venom_runtime_manager.ServiceRuntimeStats,
+    venom_json: []const u8,
+    state: namespace_driver.VenomState,
+    stats: venom_runtime_manager.VenomRuntimeStats,
 ) ![]u8 {
     var arena = std.heap.ArenaAllocator.init(allocator);
     defer arena.deinit();
     const temp_allocator = arena.allocator();
 
-    var parsed = try std.json.parseFromSlice(std.json.Value, temp_allocator, service_json, .{});
+    var parsed = try std.json.parseFromSlice(std.json.Value, temp_allocator, venom_json, .{});
     defer parsed.deinit();
-    if (parsed.value != .object) return allocator.dupe(u8, service_json);
+    if (parsed.value != .object) return allocator.dupe(u8, venom_json);
 
-    const state_name = serviceStateJsonName(state);
+    const state_name = venomStateJsonName(state);
     const root = &parsed.value.object;
     try jsonObjectPutString(root, "state", state_name);
 
@@ -2469,7 +2476,7 @@ fn renderServiceJsonWithRuntimeProbeState(
     return allocator.dupe(u8, rendered);
 }
 
-fn serviceStateJsonName(state: namespace_driver.ServiceState) []const u8 {
+fn venomStateJsonName(state: namespace_driver.VenomState) []const u8 {
     return switch (state) {
         .online => "online",
         .degraded => "degraded",
@@ -2520,19 +2527,19 @@ fn runControlRoutedNodeService(
     allocator: std.mem.Allocator,
     connect: ControlConnectOptions,
     base_exports: []const fs_node_ops.ExportSpec,
-    static_namespace_exports: []const NamespaceServiceExportSpecOwned,
+    static_namespace_exports: []const NamespaceVenomExportSpecOwned,
     venom_manifest_paths: []const []const u8,
-    services_dirs: []const []const u8,
-    service_registry: *node_capability_providers.Registry,
-    shared_service_registry: *SharedServiceRegistry,
+    venom_dirs: []const []const u8,
+    venom_registry: *node_capability_providers.Registry,
+    shared_venom_registry: *SharedVenomRegistry,
     state_path: []const u8,
     manifest_reload_interval_ms: u64,
     reconnect_backoff_ms: u64,
     reconnect_backoff_max_ms: u64,
 ) !void {
-    var runtime_namespace_exports = std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned){};
+    var runtime_namespace_exports = std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned){};
     defer {
-        deinitNamespaceServiceExportList(allocator, &runtime_namespace_exports);
+        deinitNamespaceVenomExportList(allocator, &runtime_namespace_exports);
         runtime_namespace_exports.deinit(allocator);
     }
     var effective_exports = std.ArrayListUnmanaged(fs_node_ops.ExportSpec){};
@@ -2579,9 +2586,9 @@ fn runControlRoutedNodeService(
             base_exports,
             static_namespace_exports,
             venom_manifest_paths,
-            services_dirs,
-            service_registry,
-            shared_service_registry,
+            venom_dirs,
+            venom_registry,
+            shared_venom_registry,
             &runtime_manager,
             &runtime_probe_store,
             &runtime_namespace_exports,
@@ -2655,9 +2662,9 @@ fn runControlRoutedNodeService(
                         base_exports,
                         static_namespace_exports,
                         venom_manifest_paths,
-                        services_dirs,
-                        service_registry,
-                        shared_service_registry,
+                        venom_dirs,
+                        venom_registry,
+                        shared_venom_registry,
                         &runtime_manager,
                         &runtime_probe_store,
                         &runtime_namespace_exports,
@@ -2674,7 +2681,7 @@ fn runControlRoutedNodeService(
                     const overlay_changed = blk: {
                         break :blk applyRuntimeManagerStateToServiceRegistry(
                             allocator,
-                            service_registry,
+                            venom_registry,
                             &runtime_manager,
                         ) catch |sync_err| {
                             std.log.warn("control tunnel: runtime state overlay failed after reload: {s}", .{@errorName(sync_err)});
@@ -2682,13 +2689,13 @@ fn runControlRoutedNodeService(
                         };
                     };
                     _ = overlay_changed;
-                    shared_service_registry.replaceFrom(service_registry) catch |replace_err| {
+                    shared_venom_registry.replaceFrom(venom_registry) catch |replace_err| {
                         std.log.warn("control tunnel: shared service registry replace failed after reload: {s}", .{@errorName(replace_err)});
                     };
-                    upsertNodeServiceCatalog(
+                    upsertNodeVenomCatalog(
                         allocator,
                         connect,
-                        service_registry,
+                        venom_registry,
                         &state,
                     ) catch |upsert_err| switch (upsert_err) {
                         error.ControlNodeIdentityRejected => return error.ControlNodeIdentityRejected,
@@ -2702,20 +2709,20 @@ fn runControlRoutedNodeService(
             if (now_ms >= next_probe_sync_ms) {
                 const probe_changed = applyRuntimeManagerStateToServiceRegistry(
                     allocator,
-                    service_registry,
+                    venom_registry,
                     &runtime_manager,
                 ) catch |sync_err| blk: {
                     std.log.warn("control tunnel: runtime probe state sync failed: {s}", .{@errorName(sync_err)});
                     break :blk false;
                 };
                 if (probe_changed) {
-                    shared_service_registry.replaceFrom(service_registry) catch |replace_err| {
+                    shared_venom_registry.replaceFrom(venom_registry) catch |replace_err| {
                         std.log.warn("control tunnel: shared service registry replace failed: {s}", .{@errorName(replace_err)});
                     };
-                    upsertNodeServiceCatalog(
+                    upsertNodeVenomCatalog(
                         allocator,
                         connect,
-                        service_registry,
+                        venom_registry,
                         &state,
                     ) catch |upsert_err| switch (upsert_err) {
                         error.ControlNodeIdentityRejected => return error.ControlNodeIdentityRejected,
@@ -3467,8 +3474,8 @@ fn printHelp() !void {
         \\                    [--control-url <ws-url> [--control-auth-token <token>] [--pair-mode <invite|request>] [--invite-token <token>]
         \\                     [--operator-token <token>] [--node-name <name>] [--fs-url <ws-url>] [--state-file <path>]
         \\                     [--lease-ttl-ms <ms>] [--refresh-interval-ms <ms>] [--manifest-reload-interval-ms <ms>] [--reconnect-backoff-ms <ms>] [--reconnect-backoff-max-ms <ms>]
-        \\                     [--no-fs-service] [--terminal-id <id>] [--label <key=value>]
-        \\                     [--service-manifest <path>] [--services-dir <path>]]
+        \\                     [--no-fs-venom] [--terminal-id <id>] [--label <key=value>]
+        \\                     [--venom-manifest <path>] [--venoms-dir <path>]]
         \\
         \\Examples:
         \\  spiderweb-fs-node --export work=.:rw
@@ -3478,8 +3485,8 @@ fn printHelp() !void {
         \\  spiderweb-fs-node --control-url ws://127.0.0.1:18790/ --pair-mode invite --invite-token invite-abc --node-name clawz --fs-url ws://10.0.0.8:18891/v2/fs
         \\  spiderweb-fs-node --control-url ws://127.0.0.1:18790/ --pair-mode request --node-name edge-1 --state-file ./node-state.json
         \\  spiderweb-fs-node --control-url ws://127.0.0.1:18790/ --pair-mode request --terminal-id 1 --terminal-id 2 --label site=hq --label tier=edge
-        \\  spiderweb-fs-node --control-url ws://127.0.0.1:18790/ --pair-mode request --services-dir ./services.d
-        \\  spiderweb-fs-node --service-manifest ./services.d/camera.json
+        \\  spiderweb-fs-node --control-url ws://127.0.0.1:18790/ --pair-mode request --venoms-dir ./services.d
+        \\  spiderweb-fs-node --venom-manifest ./services.d/camera.json
         \\  (control auth token can come from SPIDERWEB_AUTH_TOKEN when --control-url is used)
         \\  (standalone fs auth token can come from SPIDERWEB_FS_NODE_AUTH_TOKEN when --control-url is not used)
         \\
@@ -3524,16 +3531,16 @@ test "fs_node_main: loads extra services from manifest file" {
     defer allocator.free(manifest_path);
 
     var registry = try node_capability_providers.Registry.init(allocator, .{
-        .enable_fs_service = false,
+        .enable_fs_venom = false,
     });
     defer registry.deinit();
-    var runtime_exports = std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned){};
+    var runtime_exports = std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned){};
     defer {
-        deinitNamespaceServiceExportList(allocator, &runtime_exports);
+        deinitNamespaceVenomExportList(allocator, &runtime_exports);
         runtime_exports.deinit(allocator);
     }
 
-    try loadConfiguredManifestServices(
+    try loadConfiguredManifestVenoms(
         allocator,
         "node-5",
         &.{manifest_path},
@@ -3542,7 +3549,7 @@ test "fs_node_main: loads extra services from manifest file" {
         &runtime_exports,
     );
 
-    const payload = try registry.buildServiceUpsertPayload(
+    const payload = try registry.buildVenomUpsertPayload(
         allocator,
         "node-5",
         "secret",
@@ -3584,16 +3591,16 @@ test "fs_node_main: loads wasm non-fs service and creates runtime namespace expo
     defer allocator.free(manifest_path);
 
     var registry = try node_capability_providers.Registry.init(allocator, .{
-        .enable_fs_service = false,
+        .enable_fs_venom = false,
     });
     defer registry.deinit();
-    var runtime_exports = std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned){};
+    var runtime_exports = std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned){};
     defer {
-        deinitNamespaceServiceExportList(allocator, &runtime_exports);
+        deinitNamespaceVenomExportList(allocator, &runtime_exports);
         runtime_exports.deinit(allocator);
     }
 
-    try loadConfiguredManifestServices(
+    try loadConfiguredManifestVenoms(
         allocator,
         "node-9",
         &.{manifest_path},
@@ -3607,7 +3614,7 @@ test "fs_node_main: loads wasm non-fs service and creates runtime namespace expo
     try std.testing.expectEqualStrings("doc-convert", runtime_exports.items[0].venom_id);
     try std.testing.expectEqualStrings("./drivers/convert.wasm", runtime_exports.items[0].module_path.?);
 
-    const payload = try registry.buildServiceUpsertPayload(
+    const payload = try registry.buildVenomUpsertPayload(
         allocator,
         "node-9",
         "secret",
@@ -3622,11 +3629,11 @@ test "fs_node_main: loads wasm non-fs service and creates runtime namespace expo
 
 test "fs_node_main: runtime validator accepts declarative runtime metadata" {
     const allocator = std.testing.allocator;
-    try validateServiceRuntimeConfig(
+    try validateVenomRuntimeConfig(
         allocator,
         "{\"venom_id\":\"camera-main\",\"kind\":\"camera\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/camera\"],\"runtime\":{\"type\":\"native_proc\"}}",
     );
-    try validateServiceRuntimeConfig(
+    try validateVenomRuntimeConfig(
         allocator,
         "{\"venom_id\":\"pdf-wasm\",\"kind\":\"converter\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/convert\"],\"runtime\":{\"type\":\"wasm\"}}",
     );
@@ -3635,13 +3642,13 @@ test "fs_node_main: runtime validator accepts declarative runtime metadata" {
 test "fs_node_main: native_proc namespace export is built only when executable path is provided" {
     const allocator = std.testing.allocator;
 
-    const missing_path = try buildNamespaceServiceExportFromServiceJson(
+    const missing_path = try buildNamespaceVenomExportFromVenomJson(
         allocator,
         "{\"venom_id\":\"camera-main\",\"kind\":\"camera\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/camera\"],\"runtime\":{\"type\":\"native_proc\"}}",
     );
     try std.testing.expect(missing_path == null);
 
-    const with_path = try buildNamespaceServiceExportFromServiceJson(
+    const with_path = try buildNamespaceVenomExportFromVenomJson(
         allocator,
         "{\"venom_id\":\"camera-main\",\"kind\":\"camera\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/camera\"],\"runtime\":{\"type\":\"native_proc\",\"executable_path\":\"./camera-driver\",\"args\":[\"--mode\",\"still\"]},\"schema\":{\"model\":\"camera-v1\",\"input\":\"control/invoke.json\"},\"invoke_template\":{\"op\":\"capture\",\"arguments\":{\"mode\":\"still\"}}}",
     );
@@ -3656,7 +3663,7 @@ test "fs_node_main: native_proc namespace export is built only when executable p
     try std.testing.expect(std.mem.indexOf(u8, export_spec.schema_json.?, "\"camera-v1\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, export_spec.invoke_template_json.?, "\"capture\"") != null);
 
-    const inproc_export = try buildNamespaceServiceExportFromServiceJson(
+    const inproc_export = try buildNamespaceVenomExportFromVenomJson(
         allocator,
         "{\"venom_id\":\"camera-inproc\",\"kind\":\"camera\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/camera\"],\"runtime\":{\"type\":\"native_inproc\",\"library_path\":\"./camera-driver-inproc.so\",\"timeout_ms\":15000}}",
     );
@@ -3667,7 +3674,7 @@ test "fs_node_main: native_proc namespace export is built only when executable p
     try std.testing.expectEqualStrings("./camera-driver-inproc.so", inproc_spec.library_path.?);
     try std.testing.expectEqual(@as(u64, 15_000), inproc_spec.timeout_ms);
 
-    const wasm_export = try buildNamespaceServiceExportFromServiceJson(
+    const wasm_export = try buildNamespaceVenomExportFromVenomJson(
         allocator,
         "{\"venom_id\":\"pdf-wasm\",\"kind\":\"converter\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/convert\"],\"runtime\":{\"type\":\"wasm\",\"module_path\":\"./drivers/pdf.wasm\",\"entrypoint\":\"invoke\",\"fuel\":1234,\"max_memory_bytes\":65536}}",
     );
@@ -3685,7 +3692,7 @@ test "fs_node_main: runtime validator rejects unknown runtime type" {
     const allocator = std.testing.allocator;
     try std.testing.expectError(
         error.InvalidArguments,
-        validateServiceRuntimeConfig(
+        validateVenomRuntimeConfig(
             allocator,
             "{\"venom_id\":\"bad\",\"kind\":\"custom\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/custom\"],\"runtime\":{\"type\":\"mystery\"}}",
         ),
@@ -3696,7 +3703,7 @@ test "fs_node_main: runtime validator rejects unsupported native_inproc abi mark
     const allocator = std.testing.allocator;
     try std.testing.expectError(
         error.InvalidArguments,
-        validateServiceRuntimeConfig(
+        validateVenomRuntimeConfig(
             allocator,
             "{\"venom_id\":\"camera\",\"kind\":\"camera\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/camera\"],\"runtime\":{\"type\":\"native_inproc\",\"abi\":\"legacy-v0\"}}",
         ),
@@ -3760,9 +3767,9 @@ test "fs_node_main: runtime state path derives from node state path" {
 
 test "fs_node_main: terminal ids build executable namespace exports" {
     const allocator = std.testing.allocator;
-    var terminal_exports = std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned){};
+    var terminal_exports = std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned){};
     defer {
-        deinitNamespaceServiceExportList(allocator, &terminal_exports);
+        deinitNamespaceVenomExportList(allocator, &terminal_exports);
         terminal_exports.deinit(allocator);
     }
 
@@ -3850,20 +3857,20 @@ test "fs_node_main: refreshControlRuntimeForNode detects manifest changes" {
     defer state.deinit(allocator);
 
     var registry = try node_capability_providers.Registry.init(allocator, .{
-        .enable_fs_service = false,
+        .enable_fs_venom = false,
         .export_specs = &.{},
     });
     defer registry.deinit();
-    var shared_registry = try SharedServiceRegistry.init(allocator, &registry);
+    var shared_registry = try SharedVenomRegistry.init(allocator, &registry);
     defer shared_registry.deinit();
 
     var runtime_probe_store = RuntimeProbeDriverStore.init(allocator);
     defer runtime_probe_store.deinit();
     var runtime_manager = venom_runtime_manager.RuntimeManager.init(allocator);
     defer runtime_manager.deinit();
-    var runtime_exports = std.ArrayListUnmanaged(NamespaceServiceExportSpecOwned){};
+    var runtime_exports = std.ArrayListUnmanaged(NamespaceVenomExportSpecOwned){};
     defer {
-        deinitNamespaceServiceExportList(allocator, &runtime_exports);
+        deinitNamespaceVenomExportList(allocator, &runtime_exports);
         runtime_exports.deinit(allocator);
     }
     var effective_exports = std.ArrayListUnmanaged(fs_node_ops.ExportSpec){};
@@ -3891,7 +3898,7 @@ test "fs_node_main: refreshControlRuntimeForNode detects manifest changes" {
         &last_payload,
     );
     try std.testing.expect(changed_initial);
-    try std.testing.expectEqual(@as(usize, 1), registry.extra_services.items.len);
+    try std.testing.expectEqual(@as(usize, 1), registry.extra_venoms.items.len);
     try std.testing.expect(last_payload != null);
 
     const changed_noop = try refreshControlRuntimeForNode(
@@ -3942,10 +3949,10 @@ test "fs_node_main: refreshControlRuntimeForNode detects manifest changes" {
         &last_payload,
     );
     try std.testing.expect(changed_update);
-    try std.testing.expectEqualStrings("hot-b", registry.extra_services.items[0].venom_id);
+    try std.testing.expectEqualStrings("hot-b", registry.extra_venoms.items[0].venom_id);
 }
 
-test "fs_node_main: syncServiceRuntimeManagerFromRegistry probes runtime drivers" {
+test "fs_node_main: syncVenomRuntimeManagerFromRegistry probes runtime drivers" {
     const allocator = std.testing.allocator;
     var temp = std.testing.tmpDir(.{});
     defer temp.cleanup();
@@ -3960,43 +3967,43 @@ test "fs_node_main: syncServiceRuntimeManagerFromRegistry probes runtime drivers
     });
 
     var registry = try node_capability_providers.Registry.init(allocator, .{
-        .enable_fs_service = false,
+        .enable_fs_venom = false,
     });
     defer registry.deinit();
 
     const escaped_exec = try jsonEscape(allocator, executable_path);
     defer allocator.free(escaped_exec);
-    const service_json = try std.fmt.allocPrint(
+    const venom_json = try std.fmt.allocPrint(
         allocator,
-        "{{\"venom_id\":\"svc-probe\",\"kind\":\"tooling\",\"version\":\"1\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/services/svc-probe\"],\"mounts\":[{{\"mount_id\":\"svc-probe\",\"mount_path\":\"/nodes/node-1/services/svc-probe\",\"state\":\"online\"}}],\"ops\":{{\"model\":\"namespace\",\"style\":\"plan9\"}},\"runtime\":{{\"type\":\"native_proc\",\"abi\":\"namespace-driver-v1\",\"executable_path\":\"{s}\",\"supervision\":{{\"health_check_interval_ms\":10,\"restart_backoff_ms\":5,\"restart_backoff_max_ms\":20}}}},\"permissions\":{{\"default\":\"deny-by-default\"}},\"schema\":{{\"model\":\"namespace-mount\"}}}}",
+        "{{\"venom_id\":\"svc-probe\",\"kind\":\"tooling\",\"version\":\"1\",\"state\":\"online\",\"endpoints\":[\"/nodes/node-1/venoms/svc-probe\"],\"mounts\":[{{\"mount_id\":\"svc-probe\",\"mount_path\":\"/nodes/node-1/venoms/svc-probe\",\"state\":\"online\"}}],\"ops\":{{\"model\":\"namespace\",\"style\":\"plan9\"}},\"runtime\":{{\"type\":\"native_proc\",\"abi\":\"namespace-driver-v1\",\"executable_path\":\"{s}\",\"supervision\":{{\"health_check_interval_ms\":10,\"restart_backoff_ms\":5,\"restart_backoff_max_ms\":20}}}},\"permissions\":{{\"default\":\"deny-by-default\"}},\"schema\":{{\"model\":\"namespace-mount\"}}}}",
         .{escaped_exec},
     );
-    defer allocator.free(service_json);
+    defer allocator.free(venom_json);
 
-    try registry.addExtraService("svc-probe", service_json);
+    try registry.addExtraVenom("svc-probe", venom_json);
 
     var runtime_probe_store = RuntimeProbeDriverStore.init(allocator);
     defer runtime_probe_store.deinit();
     var runtime_manager = venom_runtime_manager.RuntimeManager.init(allocator);
     defer runtime_manager.deinit();
 
-    try syncServiceRuntimeManagerFromRegistry(
+    try syncVenomRuntimeManagerFromRegistry(
         allocator,
         &registry,
         &runtime_manager,
         &runtime_probe_store,
     );
 
-    const initial_stats = runtime_manager.serviceRuntimeStats("svc-probe") orelse return error.TestExpectedResponse;
+    const initial_stats = runtime_manager.venomRuntimeStats("svc-probe") orelse return error.TestExpectedResponse;
     try std.testing.expect(initial_stats.running);
-    try std.testing.expectEqual(namespace_driver.ServiceState.online, runtime_manager.serviceState("svc-probe").?);
+    try std.testing.expectEqual(namespace_driver.VenomState.online, runtime_manager.venomState("svc-probe").?);
 
     try temp.dir.deleteFile("probe-driver");
 
     const deadline = std.time.milliTimestamp() + 2_000;
     var degraded = false;
     while (std.time.milliTimestamp() < deadline) {
-        const state = runtime_manager.serviceState("svc-probe") orelse return error.TestExpectedResponse;
+        const state = runtime_manager.venomState("svc-probe") orelse return error.TestExpectedResponse;
         if (state != .online) {
             degraded = true;
             break;
@@ -4022,25 +4029,25 @@ test "fs_node_main: runtime probe state overlays service catalog json" {
     });
 
     var registry = try node_capability_providers.Registry.init(allocator, .{
-        .enable_fs_service = false,
+        .enable_fs_venom = false,
     });
     defer registry.deinit();
 
     const escaped_exec = try jsonEscape(allocator, executable_path);
     defer allocator.free(escaped_exec);
-    const service_json = try std.fmt.allocPrint(
+    const venom_json = try std.fmt.allocPrint(
         allocator,
-        "{{\"venom_id\":\"svc-runtime-overlay\",\"kind\":\"tooling\",\"version\":\"1\",\"state\":\"offline\",\"endpoints\":[\"/nodes/node-1/services/svc-runtime-overlay\"],\"mounts\":[{{\"mount_id\":\"svc-runtime-overlay\",\"mount_path\":\"/nodes/node-1/services/svc-runtime-overlay\",\"state\":\"offline\"}}],\"ops\":{{\"model\":\"namespace\",\"style\":\"plan9\"}},\"runtime\":{{\"type\":\"native_proc\",\"abi\":\"namespace-driver-v1\",\"executable_path\":\"{s}\",\"supervision\":{{\"health_check_interval_ms\":10,\"restart_backoff_ms\":5,\"restart_backoff_max_ms\":20}}}},\"permissions\":{{\"default\":\"deny-by-default\"}},\"schema\":{{\"model\":\"namespace-mount\"}}}}",
+        "{{\"venom_id\":\"svc-runtime-overlay\",\"kind\":\"tooling\",\"version\":\"1\",\"state\":\"offline\",\"endpoints\":[\"/nodes/node-1/venoms/svc-runtime-overlay\"],\"mounts\":[{{\"mount_id\":\"svc-runtime-overlay\",\"mount_path\":\"/nodes/node-1/venoms/svc-runtime-overlay\",\"state\":\"offline\"}}],\"ops\":{{\"model\":\"namespace\",\"style\":\"plan9\"}},\"runtime\":{{\"type\":\"native_proc\",\"abi\":\"namespace-driver-v1\",\"executable_path\":\"{s}\",\"supervision\":{{\"health_check_interval_ms\":10,\"restart_backoff_ms\":5,\"restart_backoff_max_ms\":20}}}},\"permissions\":{{\"default\":\"deny-by-default\"}},\"schema\":{{\"model\":\"namespace-mount\"}}}}",
         .{escaped_exec},
     );
-    defer allocator.free(service_json);
-    try registry.addExtraService("svc-runtime-overlay", service_json);
+    defer allocator.free(venom_json);
+    try registry.addExtraVenom("svc-runtime-overlay", venom_json);
 
     var runtime_probe_store = RuntimeProbeDriverStore.init(allocator);
     defer runtime_probe_store.deinit();
     var runtime_manager = venom_runtime_manager.RuntimeManager.init(allocator);
     defer runtime_manager.deinit();
-    try syncServiceRuntimeManagerFromRegistry(
+    try syncVenomRuntimeManagerFromRegistry(
         allocator,
         &registry,
         &runtime_manager,
@@ -4053,15 +4060,15 @@ test "fs_node_main: runtime probe state overlays service catalog json" {
         &runtime_manager,
     );
     try std.testing.expect(first_overlay);
-    try std.testing.expect(std.mem.indexOf(u8, registry.extra_services.items[0].service_json, "\"supervision_status\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, registry.extra_services.items[0].service_json, "\"state\":\"online\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, registry.extra_services.items[0].service_json, "\"last_healthy_ms\":") != null);
-    try std.testing.expect(std.mem.indexOf(u8, registry.extra_services.items[0].service_json, "\"last_error\":null") != null);
+    try std.testing.expect(std.mem.indexOf(u8, registry.extra_venoms.items[0].venom_json, "\"supervision_status\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, registry.extra_venoms.items[0].venom_json, "\"state\":\"online\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, registry.extra_venoms.items[0].venom_json, "\"last_healthy_ms\":") != null);
+    try std.testing.expect(std.mem.indexOf(u8, registry.extra_venoms.items[0].venom_json, "\"last_error\":null") != null);
 
     try temp.dir.deleteFile("probe-driver");
     const degraded_deadline = std.time.milliTimestamp() + 2_000;
     while (std.time.milliTimestamp() < degraded_deadline) {
-        const state = runtime_manager.serviceState("svc-runtime-overlay") orelse return error.TestExpectedResponse;
+        const state = runtime_manager.venomState("svc-runtime-overlay") orelse return error.TestExpectedResponse;
         if (state != .online) break;
         std.Thread.sleep(20 * std.time.ns_per_ms);
     }
@@ -4072,9 +4079,9 @@ test "fs_node_main: runtime probe state overlays service catalog json" {
         &runtime_manager,
     );
     try std.testing.expect(degraded_overlay);
-    try std.testing.expect(std.mem.indexOf(u8, registry.extra_services.items[0].service_json, "\"state\":\"degraded\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, registry.extra_services.items[0].service_json, "\"last_error\":\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, registry.extra_services.items[0].service_json, "\"last_transition_ms\":") != null);
+    try std.testing.expect(std.mem.indexOf(u8, registry.extra_venoms.items[0].venom_json, "\"state\":\"degraded\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, registry.extra_venoms.items[0].venom_json, "\"last_error\":\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, registry.extra_venoms.items[0].venom_json, "\"last_transition_ms\":") != null);
 
     try temp.dir.writeFile(.{
         .sub_path = "probe-driver",
@@ -4082,7 +4089,7 @@ test "fs_node_main: runtime probe state overlays service catalog json" {
     });
     const recover_deadline = std.time.milliTimestamp() + 2_000;
     while (std.time.milliTimestamp() < recover_deadline) {
-        const state = runtime_manager.serviceState("svc-runtime-overlay") orelse return error.TestExpectedResponse;
+        const state = runtime_manager.venomState("svc-runtime-overlay") orelse return error.TestExpectedResponse;
         if (state == .online) break;
         std.Thread.sleep(20 * std.time.ns_per_ms);
     }
@@ -4093,8 +4100,8 @@ test "fs_node_main: runtime probe state overlays service catalog json" {
         &runtime_manager,
     );
     try std.testing.expect(recovered_overlay);
-    try std.testing.expect(std.mem.indexOf(u8, registry.extra_services.items[0].service_json, "\"state\":\"online\"") != null);
-    try std.testing.expect(std.mem.indexOf(u8, registry.extra_services.items[0].service_json, "\"last_error\":null") != null);
+    try std.testing.expect(std.mem.indexOf(u8, registry.extra_venoms.items[0].venom_json, "\"state\":\"online\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, registry.extra_venoms.items[0].venom_json, "\"last_error\":null") != null);
 
     const no_churn_overlay = try applyRuntimeManagerStateToServiceRegistry(
         allocator,

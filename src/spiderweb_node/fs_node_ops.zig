@@ -25,12 +25,12 @@ const gdrive_spool_file_suffix: []const u8 = ".tmp";
 const gdrive_spool_default_limit_bytes: u64 = 512 * 1024 * 1024;
 const namespace_protocol_json =
     "{\"channel\":\"acheron\",\"version\":\"acheron-1\",\"ops\":[\"t_version\",\"t_attach\",\"t_walk\",\"t_open\",\"t_read\",\"t_write\",\"t_stat\",\"t_clunk\",\"t_flush\"]}";
-const namespace_service_schema_json =
+const namespace_venom_schema_json =
     "{\"model\":\"namespace-service-v1\",\"control\":{\"invoke\":\"control/invoke.json\",\"reset\":\"control/reset\",\"enable\":\"control/enable\",\"disable\":\"control/disable\",\"restart\":\"control/restart\"},\"result\":\"result.json\",\"status\":\"status.json\",\"last_error\":\"last_error.txt\",\"metrics\":\"metrics.json\",\"config\":\"config.json\",\"health\":\"health.json\",\"host\":\"HOST.json\"}";
-const namespace_service_invoke_template_json = "{}";
+const namespace_venom_invoke_template_json = "{}";
 const max_read_bytes: u32 = 1024 * 1024;
 const max_write_bytes: usize = 1024 * 1024;
-const namespace_service_default_timeout_ms: u64 = 30_000;
+const namespace_venom_default_timeout_ms: u64 = 30_000;
 
 pub const ExportSpec = struct {
     name: []const u8,
@@ -42,7 +42,7 @@ pub const ExportSpec = struct {
     gdrive_credential_handle: ?[]const u8 = null,
     native_watch: ?bool = null,
     case_sensitive: ?bool = null,
-    namespace_service: ?NamespaceServiceSpec = null,
+    namespace_venom: ?NamespaceVenomSpec = null,
 };
 
 const ExportConfig = struct {
@@ -57,18 +57,18 @@ const ExportConfig = struct {
     gdrive_credential_handle: ?[]u8,
     native_watch: bool,
     case_sensitive: bool,
-    namespace_service: ?NamespaceServiceConfig,
+    namespace_venom: ?NamespaceVenomConfig,
 };
 
-pub const NamespaceServiceSpec = struct {
+pub const NamespaceVenomSpec = struct {
     venom_id: []const u8,
-    runtime_kind: NamespaceServiceRuntimeKind = .native_proc,
+    runtime_kind: NamespaceVenomRuntimeKind = .native_proc,
     executable_path: ?[]const u8 = null,
     library_path: ?[]const u8 = null,
     module_path: ?[]const u8 = null,
     wasm_entrypoint: ?[]const u8 = null,
     args: []const []const u8 = &.{},
-    timeout_ms: u64 = namespace_service_default_timeout_ms,
+    timeout_ms: u64 = namespace_venom_default_timeout_ms,
     fuel: ?u64 = null,
     max_memory_bytes: ?u64 = null,
     help_md: ?[]const u8 = null,
@@ -76,12 +76,12 @@ pub const NamespaceServiceSpec = struct {
     invoke_template_json: ?[]const u8 = null,
 };
 
-pub const NamespaceServiceRuntimeKind = enum {
+pub const NamespaceVenomRuntimeKind = enum {
     native_proc,
     native_inproc,
     wasm,
 
-    fn asString(self: NamespaceServiceRuntimeKind) []const u8 {
+    fn asString(self: NamespaceVenomRuntimeKind) []const u8 {
         return switch (self) {
             .native_proc => "native_proc",
             .native_inproc => "native_inproc",
@@ -90,22 +90,22 @@ pub const NamespaceServiceRuntimeKind = enum {
     }
 };
 
-const NamespaceServiceConfig = struct {
+const NamespaceVenomConfig = struct {
     venom_id: []u8,
-    runtime_kind: NamespaceServiceRuntimeKind = .native_proc,
+    runtime_kind: NamespaceVenomRuntimeKind = .native_proc,
     executable_path: ?[]u8 = null,
     library_path: ?[]u8 = null,
     module_path: ?[]u8 = null,
     wasm_entrypoint: ?[]u8 = null,
     args: std.ArrayListUnmanaged([]u8) = .{},
-    timeout_ms: u64 = namespace_service_default_timeout_ms,
+    timeout_ms: u64 = namespace_venom_default_timeout_ms,
     fuel: ?u64 = null,
     max_memory_bytes: ?u64 = null,
     help_md: ?[]u8 = null,
     schema_json: ?[]u8 = null,
     invoke_template_json: ?[]u8 = null,
 
-    fn deinit(self: *NamespaceServiceConfig, allocator: std.mem.Allocator) void {
+    fn deinit(self: *NamespaceVenomConfig, allocator: std.mem.Allocator) void {
         allocator.free(self.venom_id);
         if (self.executable_path) |value| allocator.free(value);
         if (self.library_path) |value| allocator.free(value);
@@ -258,7 +258,7 @@ const NamespaceOpenHandle = struct {
     caps: HandleCaps,
 };
 
-const NamespaceServiceRuntimeStats = struct {
+const NamespaceVenomRuntimeStats = struct {
     invokes_total: u64 = 0,
     failures_total: u64 = 0,
     consecutive_failures: u64 = 0,
@@ -270,23 +270,23 @@ const NamespaceServiceRuntimeStats = struct {
     last_exit_code: i32 = 0,
 };
 
-const NamespaceServiceSupervisionPolicy = struct {
+const NamespaceVenomSupervisionPolicy = struct {
     max_consecutive_failures: u64 = 0,
     max_consecutive_timeouts: u64 = 0,
     cooldown_ms: u64 = 0,
     auto_disable_on_threshold: bool = true,
 };
 
-const NamespaceServiceRuntimeControl = struct {
+const NamespaceVenomRuntimeControl = struct {
     enabled: bool = true,
     restarts_total: u64 = 0,
     last_control_ms: i64 = 0,
     last_control_op: []u8,
     config_json: []u8,
-    supervision: NamespaceServiceSupervisionPolicy = .{},
+    supervision: NamespaceVenomSupervisionPolicy = .{},
     cooldown_until_ms: i64 = 0,
 
-    fn init(allocator: std.mem.Allocator) !NamespaceServiceRuntimeControl {
+    fn init(allocator: std.mem.Allocator) !NamespaceVenomRuntimeControl {
         return .{
             .enabled = true,
             .last_control_op = try allocator.dupe(u8, "init"),
@@ -294,7 +294,7 @@ const NamespaceServiceRuntimeControl = struct {
         };
     }
 
-    fn deinit(self: *NamespaceServiceRuntimeControl, allocator: std.mem.Allocator) void {
+    fn deinit(self: *NamespaceVenomRuntimeControl, allocator: std.mem.Allocator) void {
         allocator.free(self.last_control_op);
         allocator.free(self.config_json);
         self.* = undefined;
@@ -423,8 +423,8 @@ pub const NodeOps = struct {
     handles: std.AutoHashMapUnmanaged(u64, OpenHandle) = .{},
     namespace_handles: std.AutoHashMapUnmanaged(u64, NamespaceOpenHandle) = .{},
     namespace_exports: std.AutoHashMapUnmanaged(usize, NamespaceExport) = .{},
-    namespace_service_stats: std.AutoHashMapUnmanaged(usize, NamespaceServiceRuntimeStats) = .{},
-    namespace_service_runtime: std.AutoHashMapUnmanaged(usize, NamespaceServiceRuntimeControl) = .{},
+    namespace_venom_stats: std.AutoHashMapUnmanaged(usize, NamespaceVenomRuntimeStats) = .{},
+    namespace_venom_runtime: std.AutoHashMapUnmanaged(usize, NamespaceVenomRuntimeControl) = .{},
     gdrive_handles: std.AutoHashMapUnmanaged(u64, GdriveOpenHandle) = .{},
     gdrive_write_handles: std.AutoHashMapUnmanaged(u64, GdriveWriteHandle) = .{},
     gdrive_nodes: std.AutoHashMapUnmanaged(u64, GdriveNode) = .{},
@@ -490,10 +490,10 @@ pub const NodeOps = struct {
         var namespace_it = self.namespace_exports.valueIterator();
         while (namespace_it.next()) |ns_export| ns_export.deinit(self.allocator);
         self.namespace_exports.deinit(self.allocator);
-        self.namespace_service_stats.deinit(self.allocator);
-        var runtime_it = self.namespace_service_runtime.valueIterator();
+        self.namespace_venom_stats.deinit(self.allocator);
+        var runtime_it = self.namespace_venom_runtime.valueIterator();
         while (runtime_it.next()) |runtime| runtime.deinit(self.allocator);
-        self.namespace_service_runtime.deinit(self.allocator);
+        self.namespace_venom_runtime.deinit(self.allocator);
         self.gdrive_handles.deinit(self.allocator);
         var gdrive_write_it = self.gdrive_write_handles.valueIterator();
         while (gdrive_write_it.next()) |handle| {
@@ -520,7 +520,7 @@ pub const NodeOps = struct {
             self.allocator.free(export_cfg.desc);
             self.allocator.free(export_cfg.source_id);
             if (export_cfg.gdrive_credential_handle) |handle| self.allocator.free(handle);
-            if (export_cfg.namespace_service) |*service| service.deinit(self.allocator);
+            if (export_cfg.namespace_venom) |*service| service.deinit(self.allocator);
         }
         self.exports.deinit(self.allocator);
         self.pending_events.deinit(self.allocator);
@@ -649,10 +649,10 @@ pub const NodeOps = struct {
         var first = true;
 
         for (self.exports.items, 0..) |export_cfg, export_index| {
-            const service_cfg = export_cfg.namespace_service orelse continue;
+            const service_cfg = export_cfg.namespace_venom orelse continue;
             if (!std.mem.startsWith(u8, export_cfg.source_id, "service:")) continue;
-            const runtime = self.namespace_service_runtime.get(export_index) orelse continue;
-            const stats = self.namespace_service_stats.get(export_index) orelse NamespaceServiceRuntimeStats{};
+            const runtime = self.namespace_venom_runtime.get(export_index) orelse continue;
+            const stats = self.namespace_venom_stats.get(export_index) orelse NamespaceVenomRuntimeStats{};
             const ns = self.namespace_exports.getPtr(export_index) orelse continue;
 
             const result_content = namespaceFileContentByPath(ns, "/result.json") orelse "";
@@ -713,34 +713,34 @@ pub const NodeOps = struct {
         defer parsed.deinit();
         if (parsed.value != .object) return error.InvalidPayload;
 
-        const services_value = parsed.value.object.get("venoms") orelse parsed.value.object.get("services") orelse {
+        const venoms_value = parsed.value.object.get("venoms") orelse {
             self.namespace_runtime_state_dirty = false;
             return;
         };
-        if (services_value != .array) return error.InvalidPayload;
+        if (venoms_value != .array) return error.InvalidPayload;
 
-        for (services_value.array.items) |service_value| {
-            if (service_value != .object) return error.InvalidPayload;
-            const venom_id_value = service_value.object.get("venom_id") orelse return error.InvalidPayload;
+        for (venoms_value.array.items) |venom_value| {
+            if (venom_value != .object) return error.InvalidPayload;
+            const venom_id_value = venom_value.object.get("venom_id") orelse return error.InvalidPayload;
             if (venom_id_value != .string or venom_id_value.string.len == 0) return error.InvalidPayload;
             const export_index = self.namespaceServiceExportIndexById(venom_id_value.string) orelse continue;
 
             const runtime = try self.namespaceServiceRuntimePtr(export_index);
             const stats = try self.namespaceServiceStatsPtr(export_index);
 
-            if (service_value.object.get("runtime")) |runtime_value| {
+            if (venom_value.object.get("runtime")) |runtime_value| {
                 if (runtime_value != .object) return error.InvalidPayload;
                 try self.restoreNamespaceRuntimeControl(runtime, runtime_value.object);
             }
-            if (service_value.object.get("stats")) |stats_value| {
+            if (venom_value.object.get("stats")) |stats_value| {
                 if (stats_value != .object) return error.InvalidPayload;
                 try self.restoreNamespaceRuntimeStats(stats, stats_value.object);
             }
 
-            const result_json = try jsonOptionalStringValue(service_value.object, "result_json");
-            const status_json = try jsonOptionalStringValue(service_value.object, "status_json");
-            const last_error = try jsonOptionalStringValue(service_value.object, "last_error");
-            try self.refreshNamespaceServiceRuntimeFiles(
+            const result_json = try jsonOptionalStringValue(venom_value.object, "result_json");
+            const status_json = try jsonOptionalStringValue(venom_value.object, "status_json");
+            const last_error = try jsonOptionalStringValue(venom_value.object, "last_error");
+            try self.refreshNamespaceVenomRuntimeFiles(
                 export_index,
                 result_json,
                 status_json,
@@ -875,16 +875,16 @@ pub const NodeOps = struct {
         else
             null;
         errdefer if (gdrive_credential_handle) |handle| self.allocator.free(handle);
-        var namespace_service = if (source_kind == .namespace)
-            if (spec.namespace_service) |service_spec| blk: {
-                var owned = NamespaceServiceConfig{
+        var namespace_venom = if (source_kind == .namespace)
+            if (spec.namespace_venom) |service_spec| blk: {
+                var owned = NamespaceVenomConfig{
                     .venom_id = try self.allocator.dupe(u8, service_spec.venom_id),
                     .runtime_kind = service_spec.runtime_kind,
                     .executable_path = if (service_spec.executable_path) |value| try self.allocator.dupe(u8, value) else null,
                     .library_path = if (service_spec.library_path) |value| try self.allocator.dupe(u8, value) else null,
                     .module_path = if (service_spec.module_path) |value| try self.allocator.dupe(u8, value) else null,
                     .wasm_entrypoint = if (service_spec.wasm_entrypoint) |value| try self.allocator.dupe(u8, value) else null,
-                    .timeout_ms = if (service_spec.timeout_ms == 0) namespace_service_default_timeout_ms else service_spec.timeout_ms,
+                    .timeout_ms = if (service_spec.timeout_ms == 0) namespace_venom_default_timeout_ms else service_spec.timeout_ms,
                     .fuel = service_spec.fuel,
                     .max_memory_bytes = service_spec.max_memory_bytes,
                     .help_md = if (service_spec.help_md) |value| try self.allocator.dupe(u8, value) else null,
@@ -899,7 +899,7 @@ pub const NodeOps = struct {
             } else null
         else
             null;
-        errdefer if (namespace_service) |*service| service.deinit(self.allocator);
+        errdefer if (namespace_venom) |*service| service.deinit(self.allocator);
         const native_watch = spec.native_watch orelse prepared.default_caps.native_watch;
         const case_sensitive = spec.case_sensitive orelse prepared.default_caps.case_sensitive;
         const export_ro = spec.ro;
@@ -916,7 +916,7 @@ pub const NodeOps = struct {
             .gdrive_credential_handle = gdrive_credential_handle,
             .native_watch = native_watch,
             .case_sensitive = case_sensitive,
-            .namespace_service = namespace_service,
+            .namespace_venom = namespace_venom,
         });
 
         try self.setNodePath(root_node_id, prepared.root_real_path);
@@ -1005,7 +1005,7 @@ pub const NodeOps = struct {
             const control_dir = try self.namespaceCreateNode(export_index, &ns, chat_dir, "control", .dir, true, "");
             _ = try self.namespaceCreateNode(export_index, &ns, control_dir, "input", .file, true, "");
         } else if (std.mem.startsWith(u8, export_cfg.source_id, "service:")) {
-            const maybe_service_cfg = export_cfg.namespace_service;
+            const maybe_service_cfg = export_cfg.namespace_venom;
             const service_help = if (maybe_service_cfg) |service_cfg|
                 if (service_cfg.help_md) |value|
                     value
@@ -1017,16 +1017,16 @@ pub const NodeOps = struct {
                 if (service_cfg.schema_json) |value|
                     value
                 else
-                    namespace_service_schema_json
+                    namespace_venom_schema_json
             else
-                namespace_service_schema_json;
+                namespace_venom_schema_json;
             const invoke_template = if (maybe_service_cfg) |service_cfg|
                 if (service_cfg.invoke_template_json) |value|
                     value
                 else
-                    namespace_service_invoke_template_json
+                    namespace_venom_invoke_template_json
             else
-                namespace_service_invoke_template_json;
+                namespace_venom_invoke_template_json;
             _ = try self.namespaceCreateNode(export_index, &ns, root.id, "README.md", .file, false, service_help);
             _ = try self.namespaceCreateNode(export_index, &ns, root.id, "SCHEMA.json", .file, false, service_schema);
             _ = try self.namespaceCreateNode(export_index, &ns, root.id, "schema.json", .file, false, service_schema);
@@ -1047,7 +1047,7 @@ pub const NodeOps = struct {
             _ = try self.namespaceCreateNode(export_index, &ns, root.id, "config.json", .file, true, runtime.config_json);
             const stats = try self.namespaceServiceStatsPtr(export_index);
             const health_json = if (maybe_service_cfg) |service_cfg|
-                try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats)
+                try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats)
             else
                 try self.allocator.dupe(u8, "{\"state\":\"offline\",\"enabled\":false,\"venom_id\":\"unbound\",\"runtime\":\"none\"}");
             defer self.allocator.free(health_json);
@@ -1513,7 +1513,7 @@ pub const NodeOps = struct {
             });
         }
 
-        self.maybeInvokeNamespaceServiceControl(handle.export_index, ns, node.id) catch |err| switch (err) {
+        self.maybeInvokeNamespaceVenomControl(handle.export_index, ns, node.id) catch |err| switch (err) {
             error.AccessDenied => return DispatchResult.failure(fs_protocol.Errno.EPERM, "service invoke denied"),
             error.InvalidPayload => return DispatchResult.failure(fs_protocol.Errno.EINVAL, "service invoke payload invalid"),
             error.WouldBlock => return DispatchResult.failure(fs_protocol.Errno.EAGAIN, "service invoke cooling down"),
@@ -1722,14 +1722,14 @@ pub const NodeOps = struct {
         return DispatchResult.success(response);
     }
 
-    fn maybeInvokeNamespaceServiceControl(
+    fn maybeInvokeNamespaceVenomControl(
         self: *NodeOps,
         export_index: usize,
         ns: *NamespaceExport,
         node_id: u64,
     ) !void {
         const export_cfg = self.exports.items[export_index];
-        const service_cfg = export_cfg.namespace_service orelse return;
+        const service_cfg = export_cfg.namespace_venom orelse return;
         const node = ns.nodes.get(node_id) orelse return;
         const result_id = namespaceLookupChildNode(ns, ns.root_id, "result.json") orelse return error.FileNotFound;
         const error_id = namespaceLookupChildNode(ns, ns.root_id, "last_error.txt") orelse return error.FileNotFound;
@@ -1757,7 +1757,7 @@ pub const NodeOps = struct {
                 var parsed_config = std.json.parseFromSlice(std.json.Value, self.allocator, payload, .{}) catch return error.InvalidPayload;
                 defer parsed_config.deinit();
                 if (parsed_config.value != .object) return error.InvalidPayload;
-                const supervision = try self.parseNamespaceServiceSupervisionPolicy(parsed_config.value);
+                const supervision = try self.parseNamespaceVenomSupervisionPolicy(parsed_config.value);
                 const rendered = try std.fmt.allocPrint(self.allocator, "{f}", .{std.json.fmt(parsed_config.value, .{})});
                 defer self.allocator.free(rendered);
                 const next_config = try self.allocator.dupe(u8, rendered);
@@ -1769,7 +1769,7 @@ pub const NodeOps = struct {
 
             try self.namespaceServiceSetControlOp(runtime, "config_update", now_ms);
             try self.namespaceSetFileContent(ns, config_id, runtime.config_json);
-            const health_json = try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats);
+            const health_json = try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats);
             defer self.allocator.free(health_json);
             try self.namespaceSetFileContent(ns, health_id, health_json);
             runtime_state_changed = true;
@@ -1782,7 +1782,7 @@ pub const NodeOps = struct {
             try self.namespaceServiceSetControlOp(runtime, "enable", now_ms);
             try self.namespaceSetFileContent(ns, error_id, "");
             try self.namespaceSetFileContent(ns, status_id, "{\"state\":\"idle\"}");
-            const health_json = try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats);
+            const health_json = try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats);
             defer self.allocator.free(health_json);
             try self.namespaceSetFileContent(ns, health_id, health_json);
             runtime_state_changed = true;
@@ -1794,7 +1794,7 @@ pub const NodeOps = struct {
             runtime.cooldown_until_ms = 0;
             try self.namespaceServiceSetControlOp(runtime, "disable", now_ms);
             try self.namespaceSetFileContent(ns, status_id, "{\"state\":\"offline\",\"reason\":\"disabled\"}");
-            const health_json = try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats);
+            const health_json = try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats);
             defer self.allocator.free(health_json);
             try self.namespaceSetFileContent(ns, health_id, health_json);
             runtime_state_changed = true;
@@ -1812,7 +1812,7 @@ pub const NodeOps = struct {
                 status_id,
                 if (runtime.enabled) "{\"state\":\"idle\"}" else "{\"state\":\"offline\",\"reason\":\"disabled\"}",
             );
-            const health_json = try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats);
+            const health_json = try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats);
             defer self.allocator.free(health_json);
             try self.namespaceSetFileContent(ns, health_id, health_json);
             runtime_state_changed = true;
@@ -1831,10 +1831,10 @@ pub const NodeOps = struct {
                 status_id,
                 if (runtime.enabled) "{\"state\":\"idle\"}" else "{\"state\":\"offline\",\"reason\":\"disabled\"}",
             );
-            const metrics_json = try self.renderNamespaceServiceMetricsJson(stats);
+            const metrics_json = try self.renderNamespaceVenomMetricsJson(stats);
             defer self.allocator.free(metrics_json);
             try self.namespaceSetFileContent(ns, metrics_id, metrics_json);
-            const health_json = try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats);
+            const health_json = try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats);
             defer self.allocator.free(health_json);
             try self.namespaceSetFileContent(ns, health_id, health_json);
             runtime_state_changed = true;
@@ -1845,7 +1845,7 @@ pub const NodeOps = struct {
         if (!runtime.enabled) {
             try self.namespaceSetFileContent(ns, error_id, "service runtime disabled");
             try self.namespaceSetFileContent(ns, status_id, "{\"state\":\"offline\",\"reason\":\"disabled\"}");
-            const health_json = try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats);
+            const health_json = try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats);
             defer self.allocator.free(health_json);
             try self.namespaceSetFileContent(ns, health_id, health_json);
             runtime_state_changed = true;
@@ -1866,7 +1866,7 @@ pub const NodeOps = struct {
             defer self.allocator.free(status_json);
             try self.namespaceSetFileContent(ns, status_id, status_json);
             try self.namespaceSetFileContent(ns, error_id, "service runtime cooling down");
-            const health_json = try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats);
+            const health_json = try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats);
             defer self.allocator.free(health_json);
             try self.namespaceSetFileContent(ns, health_id, health_json);
             runtime_state_changed = true;
@@ -1902,7 +1902,7 @@ pub const NodeOps = struct {
         try self.namespaceSetFileContent(ns, status_id, running_status);
         runtime_state_changed = true;
 
-        var invoke_result = try self.executeNamespaceServiceInvocation(&service_cfg, payload);
+        var invoke_result = try self.executeNamespaceVenomInvocation(&service_cfg, payload);
         defer invoke_result.deinit(self.allocator);
         const finished_ms: i64 = std.time.milliTimestamp();
         const duration_ms: u64 = @intCast(@max(@as(i64, 0), finished_ms - started_ms));
@@ -1937,10 +1937,10 @@ pub const NodeOps = struct {
             );
             defer self.allocator.free(status_json);
             try self.namespaceSetFileContent(ns, status_id, status_json);
-            const metrics_json = try self.renderNamespaceServiceMetricsJson(stats);
+            const metrics_json = try self.renderNamespaceVenomMetricsJson(stats);
             defer self.allocator.free(metrics_json);
             try self.namespaceSetFileContent(ns, metrics_id, metrics_json);
-            const health_json = try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats);
+            const health_json = try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats);
             defer self.allocator.free(health_json);
             try self.namespaceSetFileContent(ns, health_id, health_json);
             runtime_state_changed = true;
@@ -2025,10 +2025,10 @@ pub const NodeOps = struct {
         );
         defer self.allocator.free(status_json);
         try self.namespaceSetFileContent(ns, status_id, status_json);
-        const metrics_json = try self.renderNamespaceServiceMetricsJson(stats);
+        const metrics_json = try self.renderNamespaceVenomMetricsJson(stats);
         defer self.allocator.free(metrics_json);
         try self.namespaceSetFileContent(ns, metrics_id, metrics_json);
-        const health_json = try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats);
+        const health_json = try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats);
         defer self.allocator.free(health_json);
         try self.namespaceSetFileContent(ns, health_id, health_json);
         runtime_state_changed = true;
@@ -2048,9 +2048,9 @@ pub const NodeOps = struct {
         }
     };
 
-    fn executeNamespaceServiceInvocation(
+    fn executeNamespaceVenomInvocation(
         self: *NodeOps,
-        service_cfg: *const NamespaceServiceConfig,
+        service_cfg: *const NamespaceVenomConfig,
         payload: []const u8,
     ) !ServiceProcessResult {
         return switch (service_cfg.runtime_kind) {
@@ -2060,14 +2060,14 @@ pub const NodeOps = struct {
                 defer argv.deinit(self.allocator);
                 try argv.append(self.allocator, executable_path);
                 for (service_cfg.args.items) |arg| try argv.append(self.allocator, arg);
-                return self.executeNamespaceServiceCommandArgv(argv.items, payload, service_cfg.timeout_ms);
+                return self.executeNamespaceVenomCommandArgv(argv.items, payload, service_cfg.timeout_ms);
             },
-            .native_inproc => self.executeNamespaceServiceInproc(service_cfg, payload),
-            .wasm => self.executeNamespaceServiceWasm(service_cfg, payload),
+            .native_inproc => self.executeNamespaceVenomInproc(service_cfg, payload),
+            .wasm => self.executeNamespaceVenomWasm(service_cfg, payload),
         };
     }
 
-    fn executeNamespaceServiceCommandArgv(
+    fn executeNamespaceVenomCommandArgv(
         self: *NodeOps,
         command_argv: []const []const u8,
         payload: []const u8,
@@ -2120,14 +2120,14 @@ pub const NodeOps = struct {
         };
     }
 
-    fn executeNamespaceServiceInproc(
+    fn executeNamespaceVenomInproc(
         self: *NodeOps,
-        service_cfg: *const NamespaceServiceConfig,
+        service_cfg: *const NamespaceVenomConfig,
         payload: []const u8,
     ) !ServiceProcessResult {
         const library_path = service_cfg.library_path orelse return error.InvalidArguments;
         if (builtin.is_test) {
-            return self.executeNamespaceServiceInprocDirect(library_path, payload);
+            return self.executeNamespaceVenomInprocDirect(library_path, payload);
         }
         const self_exe = try std.fs.selfExePathAlloc(self.allocator);
         defer self.allocator.free(self_exe);
@@ -2138,10 +2138,10 @@ pub const NodeOps = struct {
         try argv.append(self.allocator, "--internal-inproc-invoke");
         try argv.append(self.allocator, "--library-path");
         try argv.append(self.allocator, library_path);
-        return self.executeNamespaceServiceCommandArgv(argv.items, payload, service_cfg.timeout_ms);
+        return self.executeNamespaceVenomCommandArgv(argv.items, payload, service_cfg.timeout_ms);
     }
 
-    fn executeNamespaceServiceInprocDirect(
+    fn executeNamespaceVenomInprocDirect(
         self: *NodeOps,
         library_path: []const u8,
         payload: []const u8,
@@ -2181,9 +2181,9 @@ pub const NodeOps = struct {
         };
     }
 
-    fn executeNamespaceServiceWasm(
+    fn executeNamespaceVenomWasm(
         self: *NodeOps,
-        service_cfg: *const NamespaceServiceConfig,
+        service_cfg: *const NamespaceVenomConfig,
         payload: []const u8,
     ) !ServiceProcessResult {
         const module_path = service_cfg.module_path orelse return error.InvalidArguments;
@@ -2368,23 +2368,23 @@ pub const NodeOps = struct {
         return try child.wait();
     }
 
-    fn namespaceServiceStatsPtr(self: *NodeOps, export_index: usize) !*NamespaceServiceRuntimeStats {
-        if (self.namespace_service_stats.getPtr(export_index)) |stats| return stats;
-        try self.namespace_service_stats.put(self.allocator, export_index, .{});
-        return self.namespace_service_stats.getPtr(export_index).?;
+    fn namespaceServiceStatsPtr(self: *NodeOps, export_index: usize) !*NamespaceVenomRuntimeStats {
+        if (self.namespace_venom_stats.getPtr(export_index)) |stats| return stats;
+        try self.namespace_venom_stats.put(self.allocator, export_index, .{});
+        return self.namespace_venom_stats.getPtr(export_index).?;
     }
 
-    fn namespaceServiceRuntimePtr(self: *NodeOps, export_index: usize) !*NamespaceServiceRuntimeControl {
-        if (self.namespace_service_runtime.getPtr(export_index)) |runtime| return runtime;
-        var initial = try NamespaceServiceRuntimeControl.init(self.allocator);
+    fn namespaceServiceRuntimePtr(self: *NodeOps, export_index: usize) !*NamespaceVenomRuntimeControl {
+        if (self.namespace_venom_runtime.getPtr(export_index)) |runtime| return runtime;
+        var initial = try NamespaceVenomRuntimeControl.init(self.allocator);
         errdefer initial.deinit(self.allocator);
-        try self.namespace_service_runtime.put(self.allocator, export_index, initial);
-        return self.namespace_service_runtime.getPtr(export_index).?;
+        try self.namespace_venom_runtime.put(self.allocator, export_index, initial);
+        return self.namespace_venom_runtime.getPtr(export_index).?;
     }
 
     fn namespaceServiceExportIndexById(self: *const NodeOps, venom_id: []const u8) ?usize {
         for (self.exports.items, 0..) |export_cfg, export_index| {
-            const service_cfg = export_cfg.namespace_service orelse continue;
+            const service_cfg = export_cfg.namespace_venom orelse continue;
             if (std.mem.eql(u8, service_cfg.venom_id, venom_id)) return export_index;
         }
         return null;
@@ -2392,7 +2392,7 @@ pub const NodeOps = struct {
 
     fn restoreNamespaceRuntimeControl(
         self: *NodeOps,
-        runtime: *NamespaceServiceRuntimeControl,
+        runtime: *NamespaceVenomRuntimeControl,
         obj: std.json.ObjectMap,
     ) !void {
         if (obj.get("enabled")) |value| {
@@ -2420,7 +2420,7 @@ pub const NodeOps = struct {
             const next = try self.allocator.dupe(u8, rendered);
             self.allocator.free(runtime.config_json);
             runtime.config_json = next;
-            runtime.supervision = try self.parseNamespaceServiceSupervisionPolicy(parsed_config.value);
+            runtime.supervision = try self.parseNamespaceVenomSupervisionPolicy(parsed_config.value);
         }
         if (obj.get("cooldown_until_ms")) |value| {
             if (value != .integer) return error.InvalidPayload;
@@ -2446,7 +2446,7 @@ pub const NodeOps = struct {
 
     fn restoreNamespaceRuntimeStats(
         self: *NodeOps,
-        stats: *NamespaceServiceRuntimeStats,
+        stats: *NamespaceVenomRuntimeStats,
         obj: std.json.ObjectMap,
     ) !void {
         _ = self;
@@ -2471,7 +2471,7 @@ pub const NodeOps = struct {
         }
     }
 
-    fn refreshNamespaceServiceRuntimeFiles(
+    fn refreshNamespaceVenomRuntimeFiles(
         self: *NodeOps,
         export_index: usize,
         result_json: ?[]const u8,
@@ -2479,20 +2479,20 @@ pub const NodeOps = struct {
         last_error: ?[]const u8,
     ) !void {
         const export_cfg = self.exports.items[export_index];
-        const service_cfg = export_cfg.namespace_service orelse return;
+        const service_cfg = export_cfg.namespace_venom orelse return;
         const ns = self.namespace_exports.getPtr(export_index) orelse return error.FileNotFound;
-        const runtime = self.namespace_service_runtime.getPtr(export_index) orelse return error.FileNotFound;
-        const stats = self.namespace_service_stats.getPtr(export_index) orelse return error.FileNotFound;
+        const runtime = self.namespace_venom_runtime.getPtr(export_index) orelse return error.FileNotFound;
+        const stats = self.namespace_venom_stats.getPtr(export_index) orelse return error.FileNotFound;
 
         const config_id = namespaceLookupChildNode(ns, ns.root_id, "config.json") orelse return error.FileNotFound;
         const metrics_id = namespaceLookupChildNode(ns, ns.root_id, "metrics.json") orelse return error.FileNotFound;
         const health_id = namespaceLookupChildNode(ns, ns.root_id, "health.json") orelse return error.FileNotFound;
 
         try self.namespaceSetFileContentQuiet(ns, config_id, runtime.config_json);
-        const metrics_json = try self.renderNamespaceServiceMetricsJson(stats);
+        const metrics_json = try self.renderNamespaceVenomMetricsJson(stats);
         defer self.allocator.free(metrics_json);
         try self.namespaceSetFileContentQuiet(ns, metrics_id, metrics_json);
-        const health_json = try self.renderNamespaceServiceHealthJson(&service_cfg, runtime, stats);
+        const health_json = try self.renderNamespaceVenomHealthJson(&service_cfg, runtime, stats);
         defer self.allocator.free(health_json);
         try self.namespaceSetFileContentQuiet(ns, health_id, health_json);
 
@@ -2512,7 +2512,7 @@ pub const NodeOps = struct {
 
     fn namespaceServiceSetControlOp(
         self: *NodeOps,
-        runtime: *NamespaceServiceRuntimeControl,
+        runtime: *NamespaceVenomRuntimeControl,
         op: []const u8,
         at_ms: i64,
     ) !void {
@@ -2522,14 +2522,14 @@ pub const NodeOps = struct {
         runtime.last_control_ms = at_ms;
     }
 
-    fn parseNamespaceServiceSupervisionPolicy(
+    fn parseNamespaceVenomSupervisionPolicy(
         self: *NodeOps,
         config_value: std.json.Value,
-    ) !NamespaceServiceSupervisionPolicy {
+    ) !NamespaceVenomSupervisionPolicy {
         _ = self;
         if (config_value != .object) return error.InvalidPayload;
 
-        var policy = NamespaceServiceSupervisionPolicy{};
+        var policy = NamespaceVenomSupervisionPolicy{};
         const supervision = config_value.object.get("supervision") orelse return policy;
         if (supervision != .object) return error.InvalidPayload;
 
@@ -2560,8 +2560,8 @@ pub const NodeOps = struct {
 
     fn namespaceServiceHealthState(
         self: *NodeOps,
-        runtime: *const NamespaceServiceRuntimeControl,
-        stats: *const NamespaceServiceRuntimeStats,
+        runtime: *const NamespaceVenomRuntimeControl,
+        stats: *const NamespaceVenomRuntimeStats,
     ) []const u8 {
         const now_ms = std.time.milliTimestamp();
         _ = self;
@@ -2571,9 +2571,9 @@ pub const NodeOps = struct {
         return "online";
     }
 
-    fn renderNamespaceServiceMetricsJson(
+    fn renderNamespaceVenomMetricsJson(
         self: *NodeOps,
-        stats: *const NamespaceServiceRuntimeStats,
+        stats: *const NamespaceVenomRuntimeStats,
     ) ![]u8 {
         return std.fmt.allocPrint(
             self.allocator,
@@ -2592,11 +2592,11 @@ pub const NodeOps = struct {
         );
     }
 
-    fn renderNamespaceServiceHealthJson(
+    fn renderNamespaceVenomHealthJson(
         self: *NodeOps,
-        service_cfg: *const NamespaceServiceConfig,
-        runtime: *const NamespaceServiceRuntimeControl,
-        stats: *const NamespaceServiceRuntimeStats,
+        service_cfg: *const NamespaceVenomConfig,
+        runtime: *const NamespaceVenomRuntimeControl,
+        stats: *const NamespaceVenomRuntimeStats,
     ) ![]u8 {
         const state = self.namespaceServiceHealthState(runtime, stats);
         const now_ms = std.time.milliTimestamp();
@@ -6626,7 +6626,7 @@ test "fs_node_ops: namespace service reset control restores idle status files" {
             .source_kind = .namespace,
             .source_id = "service:echo-main",
             .ro = false,
-            .namespace_service = .{
+            .namespace_venom = .{
                 .venom_id = "echo-main",
                 .executable_path = "echo-driver",
                 .args = &.{},
@@ -6741,7 +6741,7 @@ test "fs_node_ops: namespace service hard timeout kills process runtime" {
             .source_kind = .namespace,
             .source_id = "service:timeout",
             .ro = false,
-            .namespace_service = .{
+            .namespace_venom = .{
                 .venom_id = "timeout-test",
                 .runtime_kind = .native_proc,
                 .executable_path = runtime_exe,
@@ -6843,7 +6843,7 @@ test "fs_node_ops: namespace service runtime control files manage service state"
             .source_kind = .namespace,
             .source_id = "service:control",
             .ro = false,
-            .namespace_service = .{
+            .namespace_venom = .{
                 .venom_id = "control-test",
                 .runtime_kind = .native_proc,
                 .executable_path = runtime_exe,
@@ -7237,7 +7237,7 @@ test "fs_node_ops: runtime invoke parity across native_proc native_inproc wasm" 
 
     const payload = "{\"ping\":\"runtime\"}";
 
-    var native_proc_cfg = NamespaceServiceConfig{
+    var native_proc_cfg = NamespaceVenomConfig{
         .venom_id = try allocator.dupe(u8, "svc-native-proc"),
         .runtime_kind = .native_proc,
         .executable_path = try allocator.dupe(u8, fixtures.runner_exe_path),
@@ -7245,7 +7245,7 @@ test "fs_node_ops: runtime invoke parity across native_proc native_inproc wasm" 
     };
     defer native_proc_cfg.deinit(allocator);
 
-    var native_inproc_cfg = NamespaceServiceConfig{
+    var native_inproc_cfg = NamespaceVenomConfig{
         .venom_id = try allocator.dupe(u8, "svc-native-inproc"),
         .runtime_kind = .native_inproc,
         .library_path = try allocator.dupe(u8, fixtures.inproc_library_path),
@@ -7253,7 +7253,7 @@ test "fs_node_ops: runtime invoke parity across native_proc native_inproc wasm" 
     };
     defer native_inproc_cfg.deinit(allocator);
 
-    var wasm_cfg = NamespaceServiceConfig{
+    var wasm_cfg = NamespaceVenomConfig{
         .venom_id = try allocator.dupe(u8, "svc-wasm"),
         .runtime_kind = .wasm,
         .module_path = try allocator.dupe(u8, fixtures.wasm_module_path),
@@ -7262,11 +7262,11 @@ test "fs_node_ops: runtime invoke parity across native_proc native_inproc wasm" 
     defer wasm_cfg.deinit(allocator);
     try wasm_cfg.args.append(allocator, try allocator.dupe(u8, "--fixture"));
 
-    var proc_result = try node_ops.executeNamespaceServiceInvocation(&native_proc_cfg, payload);
+    var proc_result = try node_ops.executeNamespaceVenomInvocation(&native_proc_cfg, payload);
     defer proc_result.deinit(allocator);
-    var inproc_result = try node_ops.executeNamespaceServiceInvocation(&native_inproc_cfg, payload);
+    var inproc_result = try node_ops.executeNamespaceVenomInvocation(&native_inproc_cfg, payload);
     defer inproc_result.deinit(allocator);
-    var wasm_result = try node_ops.executeNamespaceServiceInvocation(&wasm_cfg, payload);
+    var wasm_result = try node_ops.executeNamespaceVenomInvocation(&wasm_cfg, payload);
     defer wasm_result.deinit(allocator);
 
     try std.testing.expect(proc_result.success and !proc_result.timed_out);
@@ -7298,7 +7298,7 @@ test "fs_node_ops: namespace supervision cooldown gates repeated invoke" {
             .source_kind = .namespace,
             .source_id = "service:cooldown",
             .ro = false,
-            .namespace_service = .{
+            .namespace_venom = .{
                 .venom_id = "cooldown-test",
                 .runtime_kind = .native_proc,
                 .executable_path = runtime_exe,
@@ -7321,17 +7321,17 @@ test "fs_node_ops: namespace supervision cooldown gates repeated invoke" {
         config_id,
         "{\"supervision\":{\"cooldown_ms\":60000,\"auto_disable_on_threshold\":false}}",
     );
-    try node_ops.maybeInvokeNamespaceServiceControl(venom_idx, ns, config_id);
+    try node_ops.maybeInvokeNamespaceVenomControl(venom_idx, ns, config_id);
     try node_ops.namespaceSetFileContent(ns, invoke_id, "{}");
-    try node_ops.maybeInvokeNamespaceServiceControl(venom_idx, ns, invoke_id);
-    try std.testing.expectError(error.WouldBlock, node_ops.maybeInvokeNamespaceServiceControl(venom_idx, ns, invoke_id));
+    try node_ops.maybeInvokeNamespaceVenomControl(venom_idx, ns, invoke_id);
+    try std.testing.expectError(error.WouldBlock, node_ops.maybeInvokeNamespaceVenomControl(venom_idx, ns, invoke_id));
 
     const status_node = ns.nodes.get(status_id) orelse return error.TestExpectedResponse;
     const health_node = ns.nodes.get(health_id) orelse return error.TestExpectedResponse;
     try std.testing.expect(std.mem.indexOf(u8, status_node.content, "\"state\":\"backoff\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, health_node.content, "\"cooldown_remaining_ms\":") != null);
 
-    const runtime = node_ops.namespace_service_runtime.get(venom_idx) orelse return error.TestExpectedResponse;
+    const runtime = node_ops.namespace_venom_runtime.get(venom_idx) orelse return error.TestExpectedResponse;
     try std.testing.expect(runtime.enabled);
 }
 
@@ -7350,7 +7350,7 @@ test "fs_node_ops: namespace supervision auto-disables after failure threshold" 
             .source_kind = .namespace,
             .source_id = "service:auto-disable",
             .ro = false,
-            .namespace_service = .{
+            .namespace_venom = .{
                 .venom_id = "auto-disable-test",
                 .runtime_kind = .native_proc,
                 .executable_path = runtime_exe,
@@ -7373,11 +7373,11 @@ test "fs_node_ops: namespace supervision auto-disables after failure threshold" 
         config_id,
         "{\"supervision\":{\"max_consecutive_failures\":1}}",
     );
-    try node_ops.maybeInvokeNamespaceServiceControl(venom_idx, ns, config_id);
+    try node_ops.maybeInvokeNamespaceVenomControl(venom_idx, ns, config_id);
     try node_ops.namespaceSetFileContent(ns, invoke_id, "{}");
-    try node_ops.maybeInvokeNamespaceServiceControl(venom_idx, ns, invoke_id);
+    try node_ops.maybeInvokeNamespaceVenomControl(venom_idx, ns, invoke_id);
 
-    const runtime = node_ops.namespace_service_runtime.get(venom_idx) orelse return error.TestExpectedResponse;
+    const runtime = node_ops.namespace_venom_runtime.get(venom_idx) orelse return error.TestExpectedResponse;
     try std.testing.expect(!runtime.enabled);
 
     const status_node = ns.nodes.get(status_id) orelse return error.TestExpectedResponse;
@@ -7403,7 +7403,7 @@ test "fs_node_ops: namespace runtime state snapshot roundtrip restores controls 
             .source_kind = .namespace,
             .source_id = "service:runtime-roundtrip",
             .ro = false,
-            .namespace_service = .{
+            .namespace_venom = .{
                 .venom_id = "runtime-roundtrip",
                 .runtime_kind = .native_proc,
                 .executable_path = runtime_exe,
@@ -7426,9 +7426,9 @@ test "fs_node_ops: namespace runtime state snapshot roundtrip restores controls 
         config_id,
         "{\"supervision\":{\"max_consecutive_failures\":2,\"cooldown_ms\":12345,\"auto_disable_on_threshold\":false}}",
     );
-    try src.maybeInvokeNamespaceServiceControl(venom_idx, ns, config_id);
+    try src.maybeInvokeNamespaceVenomControl(venom_idx, ns, config_id);
     try src.namespaceSetFileContent(ns, invoke_id, "{\"ping\":\"runtime\"}");
-    try src.maybeInvokeNamespaceServiceControl(venom_idx, ns, invoke_id);
+    try src.maybeInvokeNamespaceVenomControl(venom_idx, ns, invoke_id);
 
     const status_before = ns.nodes.get(status_id) orelse return error.TestExpectedResponse;
     const error_before = ns.nodes.get(error_id) orelse return error.TestExpectedResponse;
@@ -7449,7 +7449,7 @@ test "fs_node_ops: namespace runtime state snapshot roundtrip restores controls 
             .source_kind = .namespace,
             .source_id = "service:runtime-roundtrip",
             .ro = false,
-            .namespace_service = .{
+            .namespace_venom = .{
                 .venom_id = "runtime-roundtrip",
                 .runtime_kind = .native_proc,
                 .executable_path = runtime_exe,
@@ -7463,8 +7463,8 @@ test "fs_node_ops: namespace runtime state snapshot roundtrip restores controls 
     try dst.restoreNamespaceRuntimeStateJson(snapshot);
     try std.testing.expect(!dst.takeNamespaceRuntimeStateDirty());
 
-    const restored_runtime = dst.namespace_service_runtime.get(venom_idx) orelse return error.TestExpectedResponse;
-    const restored_stats = dst.namespace_service_stats.get(venom_idx) orelse return error.TestExpectedResponse;
+    const restored_runtime = dst.namespace_venom_runtime.get(venom_idx) orelse return error.TestExpectedResponse;
+    const restored_stats = dst.namespace_venom_stats.get(venom_idx) orelse return error.TestExpectedResponse;
     try std.testing.expect(restored_runtime.enabled);
     try std.testing.expectEqual(@as(u64, 2), restored_runtime.supervision.max_consecutive_failures);
     try std.testing.expectEqual(@as(u64, 12345), restored_runtime.supervision.cooldown_ms);
@@ -7492,7 +7492,7 @@ test "fs_node_ops: namespace runtime state snapshot roundtrip restores controls 
             .source_kind = .namespace,
             .source_id = "service:runtime-roundtrip",
             .ro = false,
-            .namespace_service = .{
+            .namespace_venom = .{
                 .venom_id = "runtime-roundtrip",
                 .runtime_kind = .native_proc,
                 .executable_path = runtime_exe,

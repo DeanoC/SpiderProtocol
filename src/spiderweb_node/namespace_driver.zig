@@ -16,12 +16,12 @@ pub const RuntimeType = enum {
     }
 };
 
-pub const ServiceState = enum {
+pub const VenomState = enum {
     online,
     degraded,
     offline,
 
-    pub fn asString(self: ServiceState) []const u8 {
+    pub fn asString(self: VenomState) []const u8 {
         return switch (self) {
             .online => "online",
             .degraded => "degraded",
@@ -33,7 +33,7 @@ pub const ServiceState = enum {
 pub const MountDescriptor = struct {
     mount_id: []u8,
     mount_path: []u8,
-    state: ServiceState = .online,
+    state: VenomState = .online,
 
     pub fn deinit(self: *MountDescriptor, allocator: std.mem.Allocator) void {
         allocator.free(self.mount_id);
@@ -54,7 +54,7 @@ pub const VenomDescriptor = struct {
     venom_id: []u8,
     kind: []u8,
     version: []u8,
-    state: ServiceState = .online,
+    state: VenomState = .online,
     runtime_type: RuntimeType = .builtin,
     capabilities_json: []u8,
     ops_json: []u8,
@@ -100,7 +100,7 @@ pub const VenomDescriptor = struct {
 };
 
 pub const Health = struct {
-    state: ServiceState,
+    state: VenomState,
     detail: []const u8,
 };
 
