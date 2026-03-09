@@ -109,18 +109,6 @@ pub fn lookupChildAbsolute(
 
     if (!isWithinRoot(root_path, joined)) return error.AccessDenied;
 
-    if (builtin.os.tag != .windows) {
-        const joined_z = try allocator.dupeZ(u8, joined);
-        defer allocator.free(joined_z);
-        const lst = try lstatFileNoPanicZ(joined_z.ptr);
-        if (lst.kind != .sym_link) {
-            return .{
-                .resolved_path = try allocator.dupe(u8, joined),
-                .stat = lst,
-            };
-        }
-    }
-
     const resolved = try std.fs.cwd().realpathAlloc(allocator, joined);
     errdefer allocator.free(resolved);
     if (!isWithinRoot(root_path, resolved)) return error.AccessDenied;
@@ -142,20 +130,6 @@ fn statFileNoPanicZ(path_z: [*:0]const u8) !std.fs.File.Stat {
     var st: c.struct_stat = std.mem.zeroes(c.struct_stat);
     while (true) {
         const rc = c.stat(path_z, &st);
-        switch (std.posix.errno(rc)) {
-            .SUCCESS => return fileStatFromC(st),
-            .INTR => continue,
-            .ACCES, .PERM => return error.AccessDenied,
-            .NOENT, .NOTDIR, .NOTCONN => return error.FileNotFound,
-            else => |errno_no| return posixErrnoToError(errno_no),
-        }
-    }
-}
-
-fn lstatFileNoPanicZ(path_z: [*:0]const u8) !std.fs.File.Stat {
-    var st: c.struct_stat = std.mem.zeroes(c.struct_stat);
-    while (true) {
-        const rc = c.lstat(path_z, &st);
         switch (std.posix.errno(rc)) {
             .SUCCESS => return fileStatFromC(st),
             .INTR => continue,
@@ -522,4 +496,30 @@ test "fs_local_source_adapter: execution helpers cover basic file lifecycle" {
     defer allocator.free(created_dir);
     try makeDirAbsolute(created_dir);
     try deleteDirAbsolute(created_dir);
+}
+
+test "fs_local_source_adapter: lookupChildAbsolute denies parent symlink escapes" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+
+    const allocator = std.testing.allocator;
+    var root_tmp = std.testing.tmpDir(.{});
+    defer root_tmp.cleanup();
+    var outside_tmp = std.testing.tmpDir(.{});
+    defer outside_tmp.cleanup();
+
+    const root = try root_tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+    const outside = try outside_tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(outside);
+
+    try outside_tmp.dir.writeFile(.{ .sub_path = "secret.txt", .data = "secret" });
+
+    const escaped_parent = try std.fs.path.join(allocator, &.{ root, "safe" });
+    defer allocator.free(escaped_parent);
+    try symlinkAbsolute(outside, escaped_parent);
+
+    try std.testing.expectError(
+        error.AccessDenied,
+        lookupChildAbsolute(allocator, root, root, "safe/secret.txt"),
+    );
 }
