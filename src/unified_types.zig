@@ -41,6 +41,7 @@ pub const ControlType = enum {
     venom_bind,
     venom_upsert,
     venom_get,
+    agent_ensure,
     agent_list,
     agent_get,
     node_list,
@@ -203,6 +204,7 @@ pub fn controlTypeFromString(value: []const u8) ControlType {
     if (std.mem.eql(u8, value, "control.venom_bind")) return .venom_bind;
     if (std.mem.eql(u8, value, "control.venom_upsert")) return .venom_upsert;
     if (std.mem.eql(u8, value, "control.venom_get")) return .venom_get;
+    if (std.mem.eql(u8, value, "control.agent_ensure")) return .agent_ensure;
     if (std.mem.eql(u8, value, "control.agent_list")) return .agent_list;
     if (std.mem.eql(u8, value, "control.agent_get")) return .agent_get;
     if (std.mem.eql(u8, value, "control.node_list")) return .node_list;
@@ -332,6 +334,7 @@ pub fn controlTypeName(value: ControlType) []const u8 {
         .venom_bind => "control.venom_bind",
         .venom_upsert => "control.venom_upsert",
         .venom_get => "control.venom_get",
+        .agent_ensure => "control.agent_ensure",
         .agent_list => "control.agent_list",
         .agent_get => "control.agent_get",
         .node_list => "control.node_list",
@@ -446,6 +449,7 @@ test "unified_types: v2 control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.venom_bind, controlTypeFromString(controlTypeName(.venom_bind)));
     try std.testing.expectEqual(ControlType.venom_upsert, controlTypeFromString(controlTypeName(.venom_upsert)));
     try std.testing.expectEqual(ControlType.venom_get, controlTypeFromString(controlTypeName(.venom_get)));
+    try std.testing.expectEqual(ControlType.agent_ensure, controlTypeFromString(controlTypeName(.agent_ensure)));
     try std.testing.expectEqual(ControlType.agent_list, controlTypeFromString(controlTypeName(.agent_list)));
     try std.testing.expectEqual(ControlType.agent_get, controlTypeFromString(controlTypeName(.agent_get)));
     try std.testing.expectEqual(ControlType.project_mount_set, controlTypeFromString(controlTypeName(.project_mount_set)));
