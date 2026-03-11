@@ -47,6 +47,18 @@ pub const ControlType = enum {
     node_list,
     node_get,
     node_delete,
+    workspace_create,
+    workspace_update,
+    workspace_delete,
+    workspace_list,
+    workspace_get,
+    workspace_mount_set,
+    workspace_mount_remove,
+    workspace_mount_list,
+    workspace_token_rotate,
+    workspace_token_revoke,
+    workspace_activate,
+    workspace_up,
     project_create,
     project_update,
     project_delete,
@@ -210,6 +222,18 @@ pub fn controlTypeFromString(value: []const u8) ControlType {
     if (std.mem.eql(u8, value, "control.node_list")) return .node_list;
     if (std.mem.eql(u8, value, "control.node_get")) return .node_get;
     if (std.mem.eql(u8, value, "control.node_delete")) return .node_delete;
+    if (std.mem.eql(u8, value, "control.workspace_create")) return .workspace_create;
+    if (std.mem.eql(u8, value, "control.workspace_update")) return .workspace_update;
+    if (std.mem.eql(u8, value, "control.workspace_delete")) return .workspace_delete;
+    if (std.mem.eql(u8, value, "control.workspace_list")) return .workspace_list;
+    if (std.mem.eql(u8, value, "control.workspace_get")) return .workspace_get;
+    if (std.mem.eql(u8, value, "control.workspace_mount_set")) return .workspace_mount_set;
+    if (std.mem.eql(u8, value, "control.workspace_mount_remove")) return .workspace_mount_remove;
+    if (std.mem.eql(u8, value, "control.workspace_mount_list")) return .workspace_mount_list;
+    if (std.mem.eql(u8, value, "control.workspace_token_rotate")) return .workspace_token_rotate;
+    if (std.mem.eql(u8, value, "control.workspace_token_revoke")) return .workspace_token_revoke;
+    if (std.mem.eql(u8, value, "control.workspace_activate")) return .workspace_activate;
+    if (std.mem.eql(u8, value, "control.workspace_up")) return .workspace_up;
     if (std.mem.eql(u8, value, "control.project_create")) return .project_create;
     if (std.mem.eql(u8, value, "control.project_update")) return .project_update;
     if (std.mem.eql(u8, value, "control.project_delete")) return .project_delete;
@@ -340,6 +364,18 @@ pub fn controlTypeName(value: ControlType) []const u8 {
         .node_list => "control.node_list",
         .node_get => "control.node_get",
         .node_delete => "control.node_delete",
+        .workspace_create => "control.workspace_create",
+        .workspace_update => "control.workspace_update",
+        .workspace_delete => "control.workspace_delete",
+        .workspace_list => "control.workspace_list",
+        .workspace_get => "control.workspace_get",
+        .workspace_mount_set => "control.workspace_mount_set",
+        .workspace_mount_remove => "control.workspace_mount_remove",
+        .workspace_mount_list => "control.workspace_mount_list",
+        .workspace_token_rotate => "control.workspace_token_rotate",
+        .workspace_token_revoke => "control.workspace_token_revoke",
+        .workspace_activate => "control.workspace_activate",
+        .workspace_up => "control.workspace_up",
         .project_create => "control.project_create",
         .project_update => "control.project_update",
         .project_delete => "control.project_delete",
@@ -452,6 +488,9 @@ test "unified_types: v2 control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.agent_ensure, controlTypeFromString(controlTypeName(.agent_ensure)));
     try std.testing.expectEqual(ControlType.agent_list, controlTypeFromString(controlTypeName(.agent_list)));
     try std.testing.expectEqual(ControlType.agent_get, controlTypeFromString(controlTypeName(.agent_get)));
+    try std.testing.expectEqual(ControlType.workspace_create, controlTypeFromString(controlTypeName(.workspace_create)));
+    try std.testing.expectEqual(ControlType.workspace_mount_set, controlTypeFromString(controlTypeName(.workspace_mount_set)));
+    try std.testing.expectEqual(ControlType.workspace_up, controlTypeFromString(controlTypeName(.workspace_up)));
     try std.testing.expectEqual(ControlType.project_mount_set, controlTypeFromString(controlTypeName(.project_mount_set)));
     try std.testing.expectEqual(ControlType.workspace_status, controlTypeFromString(controlTypeName(.workspace_status)));
     try std.testing.expectEqual(ControlType.reconcile_status, controlTypeFromString(controlTypeName(.reconcile_status)));
