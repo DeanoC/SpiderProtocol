@@ -1,0 +1,1 @@
+{"channel":"control","type":"control.version_ack","id":"version-1","ok":true,"payload":{"protocol":"unified-v2","acheron_runtime":"acheron-1","acheron_node":"unified-v2-fs","acheron_node_proto":2}}

@@ -1,0 +1,27 @@
+{
+  "name": "@spiderweb/protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Reference TypeScript SDK for Spiderweb unified-v2 and Acheron protocols.",
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "check": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  }
+}

@@ -1,12 +1,13 @@
 const std = @import("std");
 const zwasm = @import("zwasm");
+const spider_venom_wasm_constants = @import("spider_venom_wasm_constants.zig");
 
-pub const import_module_name = "spider_host_v1";
-pub const capabilities_export_name = "spider_host_capabilities";
-pub const now_ms_export_name = "spider_host_now_ms";
-pub const log_export_name = "spider_host_log";
-pub const random_fill_export_name = "spider_host_random_fill";
-pub const emit_event_json_export_name = "spider_host_emit_event_json";
+pub const import_module_name = spider_venom_wasm_constants.import_module_name;
+pub const capabilities_export_name = spider_venom_wasm_constants.capabilities_export_name;
+pub const now_ms_export_name = spider_venom_wasm_constants.now_ms_export_name;
+pub const log_export_name = spider_venom_wasm_constants.log_export_name;
+pub const random_fill_export_name = spider_venom_wasm_constants.random_fill_export_name;
+pub const emit_event_json_export_name = spider_venom_wasm_constants.emit_event_json_export_name;
 
 pub const LogLevel = enum(u32) {
     debug = 10,
@@ -42,10 +43,10 @@ pub const CapabilitySet = struct {
 
     pub fn toMask(self: CapabilitySet) u64 {
         var mask: u64 = 0;
-        if (self.log) mask |= 1 << 0;
-        if (self.clock) mask |= 1 << 1;
-        if (self.random) mask |= 1 << 2;
-        if (self.emit_event) mask |= 1 << 3;
+        if (self.log) mask |= 1 << spider_venom_wasm_constants.capability_bit_log;
+        if (self.clock) mask |= 1 << spider_venom_wasm_constants.capability_bit_clock;
+        if (self.random) mask |= 1 << spider_venom_wasm_constants.capability_bit_random;
+        if (self.emit_event) mask |= 1 << spider_venom_wasm_constants.capability_bit_emit_event;
         return mask;
     }
 };

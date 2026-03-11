@@ -1,0 +1,1 @@
+{"channel":"acheron","type":"acheron.r_fs_readdirp","tag":9,"ok":true,"payload":{"entries":[{"name":"README.md","kind":"file"},{"name":"docs","kind":"dir"}],"next":0,"eof":true}}
