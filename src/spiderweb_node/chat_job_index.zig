@@ -206,11 +206,9 @@ pub const ChatJobIndex = struct {
 
         const record = self.jobs.getPtr(job_id) orelse return JobIndexError.JobNotFound;
         const now_ms = std.time.milliTimestamp();
-        if (record.request_text) |value| {
-            self.allocator.free(value);
-            record.request_text = null;
-        }
-        record.request_text = try self.allocator.dupe(u8, request_text);
+        const next_request_text = try self.allocator.dupe(u8, request_text);
+        if (record.request_text) |value| self.allocator.free(value);
+        record.request_text = next_request_text;
         record.updated_at_ms = now_ms;
         record.expires_at_ms = now_ms + self.ttl_ms;
         self.persistSnapshotBestEffortLocked();
@@ -229,16 +227,19 @@ pub const ChatJobIndex = struct {
         const record = self.jobs.getPtr(job_id) orelse return JobIndexError.JobNotFound;
         const now_ms = std.time.milliTimestamp();
         if (result_text) |value| {
+            const next_result_text = try self.allocator.dupe(u8, value);
             if (record.result_text) |existing| self.allocator.free(existing);
-            record.result_text = try self.allocator.dupe(u8, value);
+            record.result_text = next_result_text;
         }
         if (error_text) |value| {
+            const next_error_text = try self.allocator.dupe(u8, value);
             if (record.error_text) |existing| self.allocator.free(existing);
-            record.error_text = try self.allocator.dupe(u8, value);
+            record.error_text = next_error_text;
         }
         if (log_text) |value| {
+            const next_log_text = try self.allocator.dupe(u8, value);
             if (record.log_text) |existing| self.allocator.free(existing);
-            record.log_text = try self.allocator.dupe(u8, value);
+            record.log_text = next_log_text;
         }
         record.updated_at_ms = now_ms;
         record.expires_at_ms = now_ms + self.ttl_ms;
