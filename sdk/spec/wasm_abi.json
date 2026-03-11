@@ -1,0 +1,24 @@
+{
+  "abi_version": 1,
+  "exports": {
+    "abi_version": "spider_venom_abi_version",
+    "alloc": "spider_venom_alloc",
+    "invoke_json": "spider_venom_invoke_json"
+  },
+  "imports": {
+    "module": "spider_host_v1",
+    "functions": [
+      {"name": "spider_host_capabilities", "returns": "u64"},
+      {"name": "spider_host_now_ms", "returns": "u64"},
+      {"name": "spider_host_log", "returns": "u32"},
+      {"name": "spider_host_random_fill", "returns": "u32"},
+      {"name": "spider_host_emit_event_json", "returns": "u32"}
+    ]
+  },
+  "capability_bits": [
+    {"bit": 0, "name": "log"},
+    {"bit": 1, "name": "clock"},
+    {"bit": 2, "name": "random"},
+    {"bit": 3, "name": "emit_event"}
+  ]
+}

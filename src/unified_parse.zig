@@ -228,3 +228,39 @@ test "unified_parse: rejects legacy control message names" {
         parseMessage(allocator, "{\"channel\":\"control\",\"type\":\"control.node_service_watch\",\"id\":\"legacy-watch\"}"),
     );
 }
+
+test "unified_parse: rejects unsupported protocol names" {
+    const allocator = std.testing.allocator;
+    try std.testing.expectError(
+        types.ParseError.UnsupportedType,
+        parseMessage(allocator, "{\"channel\":\"control\",\"type\":\"control.venom_watch\",\"id\":\"unsupported-watch\"}"),
+    );
+    try std.testing.expectError(
+        types.ParseError.UnsupportedType,
+        parseMessage(allocator, "{\"channel\":\"acheron\",\"type\":\"acheron.fs_error\",\"tag\":1}"),
+    );
+}
+
+test "unified_parse: rejects invalid control id type" {
+    const allocator = std.testing.allocator;
+    try std.testing.expectError(
+        types.ParseError.InvalidType,
+        parseMessage(allocator, "{\"channel\":\"control\",\"type\":\"control.connect\",\"id\":17}"),
+    );
+}
+
+test "unified_parse: rejects invalid acheron tag type" {
+    const allocator = std.testing.allocator;
+    try std.testing.expectError(
+        types.ParseError.InvalidType,
+        parseMessage(allocator, "{\"channel\":\"acheron\",\"type\":\"acheron.t_attach\",\"tag\":\"two\",\"fid\":1}"),
+    );
+}
+
+test "unified_parse: rejects invalid base64 payload" {
+    const allocator = std.testing.allocator;
+    try std.testing.expectError(
+        types.ParseError.InvalidBase64,
+        parseMessage(allocator, "{\"channel\":\"acheron\",\"type\":\"acheron.t_fs_write\",\"tag\":12,\"h\":1001,\"data_b64\":\"%%%\"}"),
+    );
+}

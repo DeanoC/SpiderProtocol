@@ -1,11 +1,12 @@
 const std = @import("std");
 const zwasm = @import("zwasm");
+const spider_venom_wasm_constants = @import("spider_venom_wasm_constants.zig");
 const spider_venom_wasm_host = @import("spider_venom_wasm_host.zig");
 
-pub const abi_version: u32 = 1;
-pub const abi_version_export_name = "spider_venom_abi_version";
-pub const alloc_export_name = "spider_venom_alloc";
-pub const invoke_json_export_name = "spider_venom_invoke_json";
+pub const abi_version = spider_venom_wasm_constants.abi_version;
+pub const abi_version_export_name = spider_venom_wasm_constants.abi_version_export_name;
+pub const alloc_export_name = spider_venom_wasm_constants.alloc_export_name;
+pub const invoke_json_export_name = spider_venom_wasm_constants.invoke_json_export_name;
 
 pub const Limits = struct {
     timeout_ms: ?u64 = null,

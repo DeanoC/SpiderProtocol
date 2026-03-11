@@ -1,0 +1,1 @@
+{"channel":"acheron","type":"acheron.r_fs_getattr","tag":8,"ok":true,"payload":{"node":42,"kind":"file","size":123,"mode":"rw"}}
