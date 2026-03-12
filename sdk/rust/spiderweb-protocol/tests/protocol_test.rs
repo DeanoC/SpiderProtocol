@@ -67,14 +67,27 @@ async fn control_client_matches_by_id() {
     let mut client = ControlClient::new(MockTextTransport::new([response]));
     let envelope = client.negotiate_version("req-1").await.unwrap();
     match envelope {
-        ControlResponseEnvelope::VersionAck(inner) => assert_eq!(inner.id.as_deref(), Some("req-1")),
+        ControlResponseEnvelope::VersionAck(inner) => {
+            assert_eq!(inner.id.as_deref(), Some("req-1"))
+        }
         other => panic!("unexpected response: {other:?}"),
     }
 }
 
 #[tokio::test(flavor = "current_thread")]
+async fn control_client_surfaces_errors_without_id() {
+    let error_envelope =
+        r#"{"channel":"control","type":"control.error","ok":false,"error":{"code":"denied","message":"nope"}}"#.to_string();
+    let mut client = ControlClient::new(MockTextTransport::new([error_envelope]));
+    let error = client.negotiate_version("req-1").await.unwrap_err();
+    assert_eq!(error.code, "denied");
+}
+
+#[tokio::test(flavor = "current_thread")]
 async fn acheron_client_pumps_events_before_response() {
-    let event = r#"{"channel":"acheron","type":"acheron.e_fs_inval","payload":{"node":42,"what":"data"}}"#.to_string();
+    let event =
+        r#"{"channel":"acheron","type":"acheron.e_fs_inval","payload":{"node":42,"what":"data"}}"#
+            .to_string();
     let response = r#"{"channel":"acheron","type":"acheron.r_fs_hello","tag":3,"ok":true,"payload":{"protocol":"unified-v2-fs","proto":2,"capabilities":{"exports":true}}}"#.to_string();
     let mut client = AcheronClient::new(MockTextTransport::new([event, response]));
     let mut saw_event = false;
@@ -122,4 +135,28 @@ async fn acheron_client_maps_fs_errors() {
         .await
         .unwrap_err();
     assert_eq!(error.code, "acheron_fs_error");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn acheron_client_surfaces_errors_without_tag() {
+    let error_envelope =
+        r#"{"channel":"acheron","type":"acheron.error","ok":false,"error":{"code":"busy","message":"later"}}"#.to_string();
+    let mut client = AcheronClient::new(MockTextTransport::new([error_envelope]));
+    let error = client
+        .request(AcheronRequestEnvelope::FsTHello(AcheronPayloadEnvelope {
+            channel: Channel::Acheron,
+            message_type: AcheronMessageType::FsTHello,
+            tag: Some(3),
+            ok: None,
+            payload: Some(FsHelloRequest {
+                protocol: NODE_FS_PROTOCOL.into(),
+                proto: NODE_FS_PROTO,
+                auth_token: None,
+                node_id: None,
+                node_secret: None,
+            }),
+        }))
+        .await
+        .unwrap_err();
+    assert_eq!(error.code, "busy");
 }

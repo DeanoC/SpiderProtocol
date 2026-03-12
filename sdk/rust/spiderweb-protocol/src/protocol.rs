@@ -64,34 +64,51 @@ pub fn encode_data_b64(data: impl AsRef<[u8]>) -> String {
 pub fn decode_data_b64(data_b64: &str) -> Result<Vec<u8>, SpiderProtocolError> {
     base64::engine::general_purpose::STANDARD
         .decode(data_b64)
-        .map_err(|error| SpiderProtocolError::new("invalid_base64", "base64 decode failed").with_details(Value::String(error.to_string())))
+        .map_err(|error| {
+            SpiderProtocolError::new("invalid_base64", "base64 decode failed")
+                .with_details(Value::String(error.to_string()))
+        })
 }
 
-pub fn stringify_control_request(envelope: &ControlRequestEnvelope) -> Result<String, SpiderProtocolError> {
+pub fn stringify_control_request(
+    envelope: &ControlRequestEnvelope,
+) -> Result<String, SpiderProtocolError> {
     stringify_value(envelope.to_value())
 }
 
-pub fn stringify_control_response(envelope: &ControlResponseEnvelope) -> Result<String, SpiderProtocolError> {
+pub fn stringify_control_response(
+    envelope: &ControlResponseEnvelope,
+) -> Result<String, SpiderProtocolError> {
     stringify_value(envelope.to_value())
 }
 
-pub fn stringify_control_error(envelope: &ControlErrorEnvelope) -> Result<String, SpiderProtocolError> {
+pub fn stringify_control_error(
+    envelope: &ControlErrorEnvelope,
+) -> Result<String, SpiderProtocolError> {
     stringify_value(serde_json::to_value(envelope))
 }
 
-pub fn stringify_acheron_request(envelope: &AcheronRequestEnvelope) -> Result<String, SpiderProtocolError> {
+pub fn stringify_acheron_request(
+    envelope: &AcheronRequestEnvelope,
+) -> Result<String, SpiderProtocolError> {
     stringify_value(envelope.to_value())
 }
 
-pub fn stringify_acheron_response(envelope: &AcheronResponseEnvelope) -> Result<String, SpiderProtocolError> {
+pub fn stringify_acheron_response(
+    envelope: &AcheronResponseEnvelope,
+) -> Result<String, SpiderProtocolError> {
     stringify_value(envelope.to_value())
 }
 
-pub fn stringify_acheron_event(envelope: &AcheronEventEnvelopeEnum) -> Result<String, SpiderProtocolError> {
+pub fn stringify_acheron_event(
+    envelope: &AcheronEventEnvelopeEnum,
+) -> Result<String, SpiderProtocolError> {
     stringify_value(envelope.to_value())
 }
 
-pub fn stringify_acheron_error(envelope: &AcheronErrorEnvelopeEnum) -> Result<String, SpiderProtocolError> {
+pub fn stringify_acheron_error(
+    envelope: &AcheronErrorEnvelopeEnum,
+) -> Result<String, SpiderProtocolError> {
     stringify_value(envelope.to_value())
 }
 
@@ -125,7 +142,10 @@ pub fn parse_acheron_request(raw: &str) -> Result<AcheronRequestEnvelope, Spider
 pub fn parse_acheron_response(raw: &str) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
     let value = parse_raw_object(raw)?;
     validate_acheron_value(&value)?;
-    let message_type = value.get("type").and_then(Value::as_str).unwrap_or_default();
+    let message_type = value
+        .get("type")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
     if message_type == "acheron.error" || message_type == "acheron.err_fs" {
         return Err(protocol_error_from_acheron_value(&value));
     }
@@ -157,7 +177,10 @@ impl<T: TextTransport> ControlClient<T> {
         self.transport
     }
 
-    pub async fn negotiate_version(&mut self, request_id: impl Into<String>) -> Result<ControlResponseEnvelope, SpiderProtocolError> {
+    pub async fn negotiate_version(
+        &mut self,
+        request_id: impl Into<String>,
+    ) -> Result<ControlResponseEnvelope, SpiderProtocolError> {
         let request_id = request_id.into();
         self.request(ControlRequestEnvelope::Version(ControlEnvelope {
             channel: Channel::Control,
@@ -171,7 +194,10 @@ impl<T: TextTransport> ControlClient<T> {
         .await
     }
 
-    pub async fn connect(&mut self, request_id: impl Into<String>) -> Result<ControlResponseEnvelope, SpiderProtocolError> {
+    pub async fn connect(
+        &mut self,
+        request_id: impl Into<String>,
+    ) -> Result<ControlResponseEnvelope, SpiderProtocolError> {
         self.request(ControlRequestEnvelope::Connect(ControlEnvelope {
             channel: Channel::Control,
             message_type: ControlMessageType::Connect,
@@ -182,22 +208,35 @@ impl<T: TextTransport> ControlClient<T> {
         .await
     }
 
-    pub async fn request(&mut self, request: ControlRequestEnvelope) -> Result<ControlResponseEnvelope, SpiderProtocolError> {
+    pub async fn request(
+        &mut self,
+        request: ControlRequestEnvelope,
+    ) -> Result<ControlResponseEnvelope, SpiderProtocolError> {
         let request_id = control_request_id(&request)?;
-        self.transport.send_text(stringify_control_request(&request)?).await?;
+        self.transport
+            .send_text(stringify_control_request(&request)?)
+            .await?;
         loop {
             let raw = self.transport.receive_text().await?;
             let value = parse_raw_object(&raw)?;
             if value.get("channel").and_then(Value::as_str) != Some("control") {
                 continue;
             }
-            if value.get("id").and_then(Value::as_str) != Some(request_id.as_str()) {
+            validate_control_value(&value)?;
+            let message_type = value
+                .get("type")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            let response_id = value.get("id").and_then(Value::as_str);
+            if message_type == "control.error" {
+                if response_id.is_none() || response_id == Some(request_id.as_str()) {
+                    return Err(protocol_error_from_control_value(&value));
+                }
                 continue;
             }
-            if value.get("type").and_then(Value::as_str) == Some("control.error") {
-                return Err(protocol_error_from_control_value(&value));
+            if response_id != Some(request_id.as_str()) {
+                continue;
             }
-            validate_control_value(&value)?;
             return ControlResponseEnvelope::from_value(value).map_err(json_error);
         }
     }
@@ -216,7 +255,11 @@ impl<T: TextTransport> AcheronClient<T> {
         self.transport
     }
 
-    pub async fn negotiate_version(&mut self, tag: u32, msize: u32) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn negotiate_version(
+        &mut self,
+        tag: u32,
+        msize: u32,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.request(AcheronRequestEnvelope::TVersion(AcheronVersionEnvelope {
             channel: Channel::Acheron,
             message_type: AcheronMessageType::TVersion,
@@ -228,7 +271,11 @@ impl<T: TextTransport> AcheronClient<T> {
         .await
     }
 
-    pub async fn attach(&mut self, tag: u32, fid: u32) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn attach(
+        &mut self,
+        tag: u32,
+        fid: u32,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.request(AcheronRequestEnvelope::TAttach(AcheronAttachEnvelope {
             channel: Channel::Acheron,
             message_type: AcheronMessageType::TAttach,
@@ -239,16 +286,25 @@ impl<T: TextTransport> AcheronClient<T> {
         .await
     }
 
-    pub async fn request(&mut self, request: AcheronRequestEnvelope) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn request(
+        &mut self,
+        request: AcheronRequestEnvelope,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.request_with_events(request, |_| Ok(())).await
     }
 
-    pub async fn request_with_events<F>(&mut self, request: AcheronRequestEnvelope, mut on_event: F) -> Result<AcheronResponseEnvelope, SpiderProtocolError>
+    pub async fn request_with_events<F>(
+        &mut self,
+        request: AcheronRequestEnvelope,
+        mut on_event: F,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError>
     where
         F: FnMut(AcheronEventEnvelopeEnum) -> Result<(), SpiderProtocolError>,
     {
         let request_tag = acheron_request_tag(&request)?;
-        self.transport.send_text(stringify_acheron_request(&request)?).await?;
+        self.transport
+            .send_text(stringify_acheron_request(&request)?)
+            .await?;
         loop {
             let raw = self.transport.receive_text().await?;
             let value = parse_raw_object(&raw)?;
@@ -256,16 +312,23 @@ impl<T: TextTransport> AcheronClient<T> {
                 continue;
             }
             validate_acheron_value(&value)?;
-            let message_type = value.get("type").and_then(Value::as_str).unwrap_or_default();
+            let message_type = value
+                .get("type")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
             if message_type == "acheron.e_fs_inval" || message_type == "acheron.e_fs_inval_dir" {
                 on_event(AcheronEventEnvelopeEnum::from_value(value).map_err(json_error)?)?;
                 continue;
             }
-            if value.get("tag").and_then(Value::as_u64) != Some(u64::from(request_tag)) {
+            let response_tag = value.get("tag").and_then(Value::as_u64);
+            if message_type == "acheron.error" || message_type == "acheron.err_fs" {
+                if response_tag.is_none() || response_tag == Some(u64::from(request_tag)) {
+                    return Err(protocol_error_from_acheron_value(&value));
+                }
                 continue;
             }
-            if message_type == "acheron.error" || message_type == "acheron.err_fs" {
-                return Err(protocol_error_from_acheron_value(&value));
+            if response_tag != Some(u64::from(request_tag)) {
+                continue;
             }
             return AcheronResponseEnvelope::from_value(value).map_err(json_error);
         }
@@ -287,7 +350,10 @@ impl<T: TextTransport> FsClient<T> {
         self.acheron.into_inner()
     }
 
-    pub async fn hello(&mut self, tag: u32) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn hello(
+        &mut self,
+        tag: u32,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.acheron
             .request(AcheronRequestEnvelope::FsTHello(AcheronPayloadEnvelope {
                 channel: Channel::Acheron,
@@ -305,7 +371,12 @@ impl<T: TextTransport> FsClient<T> {
             .await
     }
 
-    pub async fn lookup(&mut self, tag: u32, node: u64, name: impl Into<String>) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn lookup(
+        &mut self,
+        tag: u32,
+        node: u64,
+        name: impl Into<String>,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.acheron
             .request(AcheronRequestEnvelope::FsTLookup(AcheronNodeEnvelope {
                 channel: Channel::Acheron,
@@ -318,7 +389,11 @@ impl<T: TextTransport> FsClient<T> {
             .await
     }
 
-    pub async fn getattr(&mut self, tag: u32, node: u64) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn getattr(
+        &mut self,
+        tag: u32,
+        node: u64,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.acheron
             .request(AcheronRequestEnvelope::FsTGetattr(AcheronNodeEnvelope {
                 channel: Channel::Acheron,
@@ -331,7 +406,13 @@ impl<T: TextTransport> FsClient<T> {
             .await
     }
 
-    pub async fn readdirp(&mut self, tag: u32, node: u64, cookie: u64, count: u32) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn readdirp(
+        &mut self,
+        tag: u32,
+        node: u64,
+        cookie: u64,
+        count: u32,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.acheron
             .request(AcheronRequestEnvelope::FsTReaddirp(AcheronNodeEnvelope {
                 channel: Channel::Acheron,
@@ -348,7 +429,12 @@ impl<T: TextTransport> FsClient<T> {
             .await
     }
 
-    pub async fn open(&mut self, tag: u32, node: u64, mode: impl Into<String>) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn open(
+        &mut self,
+        tag: u32,
+        node: u64,
+        mode: impl Into<String>,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.acheron
             .request(AcheronRequestEnvelope::FsTOpen(AcheronNodeEnvelope {
                 channel: Channel::Acheron,
@@ -364,7 +450,13 @@ impl<T: TextTransport> FsClient<T> {
             .await
     }
 
-    pub async fn read(&mut self, tag: u32, handle: u64, offset: u64, count: u32) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn read(
+        &mut self,
+        tag: u32,
+        handle: u64,
+        offset: u64,
+        count: u32,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.acheron
             .request(AcheronRequestEnvelope::FsTRead(AcheronHandleEnvelope {
                 channel: Channel::Acheron,
@@ -372,15 +464,18 @@ impl<T: TextTransport> FsClient<T> {
                 tag: Some(tag),
                 ok: None,
                 handle,
-                payload: Some(FsReadRequest {
-                    offset,
-                    count,
-                }),
+                payload: Some(FsReadRequest { offset, count }),
             }))
             .await
     }
 
-    pub async fn write(&mut self, tag: u32, handle: u64, offset: u64, data: impl AsRef<[u8]>) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn write(
+        &mut self,
+        tag: u32,
+        handle: u64,
+        offset: u64,
+        data: impl AsRef<[u8]>,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.acheron
             .request(AcheronRequestEnvelope::FsTWrite(AcheronHandleEnvelope {
                 channel: Channel::Acheron,
@@ -396,7 +491,11 @@ impl<T: TextTransport> FsClient<T> {
             .await
     }
 
-    pub async fn close(&mut self, tag: u32, handle: u64) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
+    pub async fn close(
+        &mut self,
+        tag: u32,
+        handle: u64,
+    ) -> Result<AcheronResponseEnvelope, SpiderProtocolError> {
         self.acheron
             .request(AcheronRequestEnvelope::FsTClose(AcheronHandleEnvelope {
                 channel: Channel::Acheron,
@@ -413,7 +512,10 @@ impl<T: TextTransport> FsClient<T> {
 fn parse_raw_object(raw: &str) -> Result<Value, SpiderProtocolError> {
     let value: Value = serde_json::from_str(raw).map_err(json_error)?;
     if !value.is_object() {
-        return Err(SpiderProtocolError::new("invalid_envelope", "message must decode to an object"));
+        return Err(SpiderProtocolError::new(
+            "invalid_envelope",
+            "message must decode to an object",
+        ));
     }
     Ok(value)
 }
@@ -421,18 +523,32 @@ fn parse_raw_object(raw: &str) -> Result<Value, SpiderProtocolError> {
 fn validate_control_value(value: &Value) -> Result<(), SpiderProtocolError> {
     let channel = expect_string(value, "channel")?;
     if channel != "control" {
-        return Err(SpiderProtocolError::new("invalid_channel", "unsupported control channel").with_details(value.clone()));
+        return Err(
+            SpiderProtocolError::new("invalid_channel", "unsupported control channel")
+                .with_details(value.clone()),
+        );
     }
     let message_type = expect_string(value, "type")?;
     if !message_type.starts_with("control.") {
-        return Err(SpiderProtocolError::new("namespace_mismatch", "control channel requires a control.* type").with_details(value.clone()));
+        return Err(SpiderProtocolError::new(
+            "namespace_mismatch",
+            "control channel requires a control.* type",
+        )
+        .with_details(value.clone()));
     }
     if LEGACY_REJECTED_CONTROL_MESSAGE_TYPES.contains(&message_type) {
-        return Err(SpiderProtocolError::new("unsupported_legacy_type", "legacy control type is rejected").with_details(value.clone()));
+        return Err(SpiderProtocolError::new(
+            "unsupported_legacy_type",
+            "legacy control type is rejected",
+        )
+        .with_details(value.clone()));
     }
     if let Some(id) = value.get("id") {
         if !id.is_string() {
-            return Err(SpiderProtocolError::new("invalid_id", "control id must be a string").with_details(value.clone()));
+            return Err(
+                SpiderProtocolError::new("invalid_id", "control id must be a string")
+                    .with_details(value.clone()),
+            );
         }
     }
     Ok(())
@@ -441,28 +557,42 @@ fn validate_control_value(value: &Value) -> Result<(), SpiderProtocolError> {
 fn validate_acheron_value(value: &Value) -> Result<(), SpiderProtocolError> {
     let channel = expect_string(value, "channel")?;
     if channel != "acheron" {
-        return Err(SpiderProtocolError::new("invalid_channel", "unsupported acheron channel").with_details(value.clone()));
+        return Err(
+            SpiderProtocolError::new("invalid_channel", "unsupported acheron channel")
+                .with_details(value.clone()),
+        );
     }
     let message_type = expect_string(value, "type")?;
     if !message_type.starts_with("acheron.") {
-        return Err(SpiderProtocolError::new("namespace_mismatch", "acheron channel requires an acheron.* type").with_details(value.clone()));
+        return Err(SpiderProtocolError::new(
+            "namespace_mismatch",
+            "acheron channel requires an acheron.* type",
+        )
+        .with_details(value.clone()));
     }
     if LEGACY_REJECTED_ACHERON_MESSAGE_TYPES.contains(&message_type) {
-        return Err(SpiderProtocolError::new("unsupported_legacy_type", "legacy acheron type is rejected").with_details(value.clone()));
+        return Err(SpiderProtocolError::new(
+            "unsupported_legacy_type",
+            "legacy acheron type is rejected",
+        )
+        .with_details(value.clone()));
     }
     if let Some(tag) = value.get("tag") {
         if tag.as_u64().is_none() {
-            return Err(SpiderProtocolError::new("invalid_tag", "acheron tag must be an integer").with_details(value.clone()));
+            return Err(
+                SpiderProtocolError::new("invalid_tag", "acheron tag must be an integer")
+                    .with_details(value.clone()),
+            );
         }
     }
     Ok(())
 }
 
 fn expect_string<'a>(value: &'a Value, key: &str) -> Result<&'a str, SpiderProtocolError> {
-    value
-        .get(key)
-        .and_then(Value::as_str)
-        .ok_or_else(|| SpiderProtocolError::new("missing_field", format!("{key} must be a string")).with_details(value.clone()))
+    value.get(key).and_then(Value::as_str).ok_or_else(|| {
+        SpiderProtocolError::new("missing_field", format!("{key} must be a string"))
+            .with_details(value.clone())
+    })
 }
 
 fn stringify_value(value: serde_json::Result<Value>) -> Result<String, SpiderProtocolError> {
@@ -471,7 +601,8 @@ fn stringify_value(value: serde_json::Result<Value>) -> Result<String, SpiderPro
 }
 
 fn json_error(error: serde_json::Error) -> SpiderProtocolError {
-    SpiderProtocolError::new("invalid_json", "json serialization or parse failed").with_details(Value::String(error.to_string()))
+    SpiderProtocolError::new("invalid_json", "json serialization or parse failed")
+        .with_details(Value::String(error.to_string()))
 }
 
 fn control_request_id(request: &ControlRequestEnvelope) -> Result<String, SpiderProtocolError> {
@@ -509,7 +640,10 @@ fn protocol_error_from_control_value(value: &Value) -> SpiderProtocolError {
 
 fn protocol_error_from_acheron_value(value: &Value) -> SpiderProtocolError {
     let error = value.get("error").and_then(Value::as_object);
-    if let Some(errno) = error.and_then(|inner| inner.get("errno")).and_then(Value::as_u64) {
+    if let Some(errno) = error
+        .and_then(|inner| inner.get("errno"))
+        .and_then(Value::as_u64)
+    {
         return SpiderProtocolError::new(
             "acheron_fs_error",
             error
@@ -561,9 +695,9 @@ impl TextTransport for MockTextTransport {
     }
 
     async fn receive_text(&mut self) -> Result<String, SpiderProtocolError> {
-        self.incoming
-            .pop_front()
-            .ok_or_else(|| SpiderProtocolError::new("transport_eof", "mock transport is out of messages"))
+        self.incoming.pop_front().ok_or_else(|| {
+            SpiderProtocolError::new("transport_eof", "mock transport is out of messages")
+        })
     }
 
     async fn close(&mut self) -> Result<(), SpiderProtocolError> {
