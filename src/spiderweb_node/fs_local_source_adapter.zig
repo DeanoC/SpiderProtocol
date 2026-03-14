@@ -306,7 +306,10 @@ pub fn setXattrAbsolute(
 
     while (true) {
         const value_ptr = if (value.len == 0) null else @as(?*const anyopaque, @ptrCast(value.ptr));
-        const rc = c.setxattr(path_z.ptr, name_z.ptr, value_ptr, value.len, @intCast(flags));
+        const rc = if (builtin.os.tag == .macos)
+            c.setxattr(path_z.ptr, name_z.ptr, value_ptr, value.len, 0, @intCast(flags))
+        else
+            c.setxattr(path_z.ptr, name_z.ptr, value_ptr, value.len, @intCast(flags));
         switch (std.posix.errno(rc)) {
             .SUCCESS => return,
             .INTR => continue,
@@ -323,7 +326,10 @@ pub fn getXattrAbsolute(allocator: std.mem.Allocator, path: []const u8, name: []
     defer allocator.free(name_z);
 
     while (true) {
-        const size_rc = c.getxattr(path_z.ptr, name_z.ptr, null, 0);
+        const size_rc = if (builtin.os.tag == .macos)
+            c.getxattr(path_z.ptr, name_z.ptr, null, 0, 0, 0)
+        else
+            c.getxattr(path_z.ptr, name_z.ptr, null, 0);
         switch (std.posix.errno(size_rc)) {
             .SUCCESS => {
                 const needed: usize = @intCast(size_rc);
@@ -333,7 +339,10 @@ pub fn getXattrAbsolute(allocator: std.mem.Allocator, path: []const u8, name: []
                 errdefer allocator.free(out);
 
                 while (true) {
-                    const rc = c.getxattr(path_z.ptr, name_z.ptr, out.ptr, out.len);
+                    const rc = if (builtin.os.tag == .macos)
+                        c.getxattr(path_z.ptr, name_z.ptr, out.ptr, out.len, 0, 0)
+                    else
+                        c.getxattr(path_z.ptr, name_z.ptr, out.ptr, out.len);
                     switch (std.posix.errno(rc)) {
                         .SUCCESS => {
                             const got: usize = @intCast(rc);
@@ -360,7 +369,10 @@ pub fn listXattrAbsolute(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
     defer allocator.free(path_z);
 
     while (true) {
-        const size_rc = c.listxattr(path_z.ptr, null, 0);
+        const size_rc = if (builtin.os.tag == .macos)
+            c.listxattr(path_z.ptr, null, 0, 0)
+        else
+            c.listxattr(path_z.ptr, null, 0);
         switch (std.posix.errno(size_rc)) {
             .SUCCESS => {
                 const needed: usize = @intCast(size_rc);
@@ -370,7 +382,10 @@ pub fn listXattrAbsolute(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
                 errdefer allocator.free(out);
 
                 while (true) {
-                    const rc = c.listxattr(path_z.ptr, out.ptr, out.len);
+                    const rc = if (builtin.os.tag == .macos)
+                        c.listxattr(path_z.ptr, out.ptr, out.len, 0)
+                    else
+                        c.listxattr(path_z.ptr, out.ptr, out.len);
                     switch (std.posix.errno(rc)) {
                         .SUCCESS => {
                             const got: usize = @intCast(rc);
@@ -399,7 +414,10 @@ pub fn removeXattrAbsolute(allocator: std.mem.Allocator, path: []const u8, name:
     defer allocator.free(name_z);
 
     while (true) {
-        const rc = c.removexattr(path_z.ptr, name_z.ptr);
+        const rc = if (builtin.os.tag == .macos)
+            c.removexattr(path_z.ptr, name_z.ptr, 0)
+        else
+            c.removexattr(path_z.ptr, name_z.ptr);
         switch (std.posix.errno(rc)) {
             .SUCCESS => return,
             .INTR => continue,
