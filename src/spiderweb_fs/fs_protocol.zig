@@ -13,6 +13,7 @@ pub const Op = enum {
     LOOKUP,
     GETATTR,
     READDIRP,
+    READLINK,
     SYMLINK,
     SETATTR,
     SETXATTR,

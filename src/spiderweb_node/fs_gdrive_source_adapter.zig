@@ -50,6 +50,7 @@ fn supportsOperation(ctx: ?*anyopaque, op: fs_source_adapter.Operation) bool {
         .lookup,
         .getattr,
         .readdirp,
+        .readlink,
         .open,
         .read,
         .close,
@@ -63,12 +64,12 @@ fn supportsOperation(ctx: ?*anyopaque, op: fs_source_adapter.Operation) bool {
         .statfs,
         => true,
         .setattr,
-        .symlink,
         .setxattr,
         .getxattr,
         .listxattr,
         .removexattr,
         .lock,
+        .symlink,
         => false,
     };
 }

@@ -7,6 +7,7 @@ else
     @cImport({
         @cInclude("sys/file.h");
         @cInclude("sys/stat.h");
+        @cInclude("unistd.h");
         @cInclude("sys/xattr.h");
     });
 
@@ -104,16 +105,38 @@ pub const OpenResult = struct {
     stat: std.fs.File.Stat,
 };
 
+pub const AttrIdentity = struct {
+    uid: u32,
+    gid: u32,
+    flags: u32 = 0,
+};
+
 pub fn lookupChildAbsolute(
     allocator: std.mem.Allocator,
     root_path: []const u8,
     parent_path: []const u8,
     name: []const u8,
 ) !LookupResult {
-    const joined = try std.fs.path.join(allocator, &.{ parent_path, name });
+    const joined = try std.fs.path.resolve(allocator, &.{ parent_path, name });
     defer allocator.free(joined);
 
     if (!isWithinRoot(root_path, joined)) return error.AccessDenied;
+
+    const joined_stat = if (builtin.os.tag == .windows)
+        try std.fs.cwd().statFile(joined)
+    else
+        try lstatAbsolute(joined);
+
+    if (joined_stat.kind == .sym_link) {
+        const symlink_target = try resolveSymlinkTargetPath(allocator, joined);
+        defer allocator.free(symlink_target);
+        if (!isWithinRoot(root_path, symlink_target)) return error.AccessDenied;
+
+        return .{
+            .resolved_path = try allocator.dupe(u8, joined),
+            .stat = joined_stat,
+        };
+    }
 
     const resolved = try std.fs.cwd().realpathAlloc(allocator, joined);
     errdefer allocator.free(resolved);
@@ -121,11 +144,8 @@ pub fn lookupChildAbsolute(
 
     const stat = if (builtin.os.tag == .windows)
         try std.fs.cwd().statFile(resolved)
-    else blk: {
-        const resolved_z = try allocator.dupeZ(u8, resolved);
-        defer allocator.free(resolved_z);
-        break :blk try statFileNoPanicZ(resolved_z.ptr);
-    };
+    else
+        try lstatAbsolute(resolved);
     return .{
         .resolved_path = resolved,
         .stat = stat,
@@ -144,6 +164,38 @@ fn statFileNoPanicZ(path_z: [*:0]const u8) !std.fs.File.Stat {
             else => |errno_no| return posixErrnoToError(errno_no),
         }
     }
+}
+
+fn lstatFileNoPanicZ(path_z: [*:0]const u8) !std.fs.File.Stat {
+    var st: c.struct_stat = std.mem.zeroes(c.struct_stat);
+    while (true) {
+        const rc = c.lstat(path_z, &st);
+        switch (std.posix.errno(rc)) {
+            .SUCCESS => return fileStatFromC(st),
+            .INTR => continue,
+            .ACCES, .PERM => return error.AccessDenied,
+            .NOENT, .NOTDIR, .NOTCONN => return error.FileNotFound,
+            else => |errno_no| return posixErrnoToError(errno_no),
+        }
+    }
+}
+
+fn lstatAbsolute(path: []const u8) !std.fs.File.Stat {
+    if (builtin.os.tag == .windows) return std.fs.cwd().statFile(path);
+    const path_z = try std.heap.page_allocator.dupeZ(u8, path);
+    defer std.heap.page_allocator.free(path_z);
+    return lstatFileNoPanicZ(path_z.ptr);
+}
+
+fn resolveSymlinkTargetPath(allocator: std.mem.Allocator, link_path: []const u8) ![]u8 {
+    var buf: [std.fs.max_path_bytes]u8 = undefined;
+    const raw_target = try std.fs.readLinkAbsolute(link_path, &buf);
+    if (std.fs.path.isAbsolute(raw_target)) {
+        return std.fs.path.resolve(allocator, &.{raw_target});
+    }
+
+    const parent_dir = std.fs.path.dirname(link_path) orelse std.fs.path.sep_str;
+    return std.fs.path.resolve(allocator, &.{ parent_dir, raw_target });
 }
 
 fn fileStatFromC(st: c.struct_stat) std.fs.File.Stat {
@@ -209,11 +261,18 @@ fn clampI128ToI64(value: i128) i64 {
 }
 
 pub fn statAbsolute(path: []const u8) !std.fs.File.Stat {
-    return std.fs.cwd().statFile(path);
+    if (builtin.os.tag == .windows) return std.fs.cwd().statFile(path);
+    return lstatAbsolute(path);
 }
 
 pub fn openDirAbsolute(path: []const u8) !std.fs.Dir {
     return std.fs.openDirAbsolute(path, .{ .iterate = true });
+}
+
+pub fn readLinkAbsolute(allocator: std.mem.Allocator, path: []const u8) ![]u8 {
+    var buf: [std.fs.max_path_bytes]u8 = undefined;
+    const target = try std.fs.readLinkAbsolute(path, &buf);
+    return allocator.dupe(u8, target);
 }
 
 pub fn openAbsolute(path: []const u8, mode: std.fs.File.OpenMode) !OpenResult {
@@ -240,9 +299,22 @@ pub fn createExclusiveAbsolute(path: []const u8, mode: u32) !std.fs.File {
 }
 
 pub fn realpathAndStatAbsolute(allocator: std.mem.Allocator, path: []const u8) !LookupResult {
+    if (builtin.os.tag != .windows) {
+        const stat = try lstatAbsolute(path);
+        if (stat.kind == .sym_link) {
+            return .{
+                .resolved_path = try allocator.dupe(u8, path),
+                .stat = stat,
+            };
+        }
+    }
+
     const resolved = try std.fs.cwd().realpathAlloc(allocator, path);
     errdefer allocator.free(resolved);
-    const stat = try std.fs.cwd().statFile(resolved);
+    const stat = if (builtin.os.tag == .windows)
+        try std.fs.cwd().statFile(resolved)
+    else
+        try lstatAbsolute(resolved);
     return .{
         .resolved_path = resolved,
         .stat = stat,
@@ -256,7 +328,11 @@ pub fn truncateAbsolute(path: []const u8, size: u64) !void {
 }
 
 pub fn setAttrAbsolute(path: []const u8, request: fs_source_adapter.SetAttrRequest) !void {
-    if (request.mode == null and request.access_time_ns == null and request.modify_time_ns == null) return;
+    if (request.mode == null and request.uid == null and request.gid == null and request.flags == null and request.access_time_ns == null and request.modify_time_ns == null) return;
+
+    const needs_path_z = request.uid != null or request.gid != null or request.flags != null or request.access_time_ns != null or request.modify_time_ns != null;
+    const path_z = if (needs_path_z) try std.heap.page_allocator.dupeZ(u8, path) else null;
+    defer if (path_z) |buf| std.heap.page_allocator.free(buf);
 
     if (request.mode) |mode| {
         try std.posix.fchmodat(std.posix.AT.FDCWD, path, @intCast(mode & 0o7777), 0);
@@ -268,16 +344,66 @@ pub fn setAttrAbsolute(path: []const u8, request: fs_source_adapter.SetAttrReque
             timespecFromNs(request.access_time_ns orelse clampI128ToI64(current.atime)),
             timespecFromNs(request.modify_time_ns orelse clampI128ToI64(current.mtime)),
         };
-        const path_z = try std.heap.page_allocator.dupeZ(u8, path);
-        defer std.heap.page_allocator.free(path_z);
-
         while (true) {
-            const rc = c.utimensat(std.posix.AT.FDCWD, path_z.ptr, &times, 0);
+            const rc = c.utimensat(std.posix.AT.FDCWD, path_z.?.ptr, &times, 0);
             switch (std.posix.errno(rc)) {
                 .SUCCESS => break,
                 .INTR => continue,
                 else => |errno_no| return posixErrnoToError(errno_no),
             }
+        }
+    }
+
+    if (request.flags) |flags| {
+        if (builtin.os.tag != .macos) {
+            if (flags != 0) return error.OperationNotSupported;
+        } else {
+            const supported_bsd_flags: u32 = c.UF_IMMUTABLE | c.UF_HIDDEN;
+            if ((flags & ~supported_bsd_flags) != 0) return error.InvalidArgument;
+
+            while (true) {
+                const rc = c.chflags(path_z.?.ptr, flags);
+                switch (std.posix.errno(rc)) {
+                    .SUCCESS => break,
+                    .INTR => continue,
+                    else => |errno_no| return posixErrnoToError(errno_no),
+                }
+            }
+        }
+    }
+
+    if (request.uid != null or request.gid != null) {
+        const uid: c.uid_t = if (request.uid) |value| @intCast(value) else std.math.maxInt(c.uid_t);
+        const gid: c.gid_t = if (request.gid) |value| @intCast(value) else std.math.maxInt(c.gid_t);
+
+        while (true) {
+            const rc = c.chown(path_z.?.ptr, uid, gid);
+            switch (std.posix.errno(rc)) {
+                .SUCCESS => break,
+                .INTR => continue,
+                else => |errno_no| return posixErrnoToError(errno_no),
+            }
+        }
+    }
+}
+
+pub fn statIdentityAbsolute(allocator: std.mem.Allocator, path: []const u8) !AttrIdentity {
+    const path_z = try allocator.dupeZ(u8, path);
+    defer allocator.free(path_z);
+
+    var st: c.struct_stat = std.mem.zeroes(c.struct_stat);
+    while (true) {
+        const rc = c.lstat(path_z.ptr, &st);
+        switch (std.posix.errno(rc)) {
+            .SUCCESS => return .{
+                .uid = @intCast(st.st_uid),
+                .gid = @intCast(st.st_gid),
+                .flags = if (@hasField(c.struct_stat, "st_flags")) @intCast(st.st_flags) else 0,
+            },
+            .INTR => continue,
+            .ACCES, .PERM => return error.AccessDenied,
+            .NOENT, .NOTDIR, .NOTCONN => return error.FileNotFound,
+            else => |errno_no| return posixErrnoToError(errno_no),
         }
     }
 }
@@ -625,6 +751,22 @@ test "fs_local_source_adapter: setattr updates mode and timestamps" {
     try std.testing.expectEqual(@as(u32, 0o600), stat.mode & 0o7777);
     try std.testing.expectEqual(@as(i64, 1_700_000_000_000_000_000), clampI128ToI64(stat.atime));
     try std.testing.expectEqual(@as(i64, 1_700_000_000_123_000_000), clampI128ToI64(stat.mtime));
+
+    const identity_before = try statIdentityAbsolute(allocator, file_path);
+    try setAttrAbsolute(file_path, .{
+        .uid = identity_before.uid,
+        .gid = identity_before.gid,
+        .flags = if (builtin.os.tag == .macos) c.UF_HIDDEN else null,
+    });
+
+    const identity_after = try statIdentityAbsolute(allocator, file_path);
+    try std.testing.expectEqual(identity_before.uid, identity_after.uid);
+    try std.testing.expectEqual(identity_before.gid, identity_after.gid);
+    if (builtin.os.tag == .macos) {
+        try std.testing.expectEqual(@as(u32, c.UF_HIDDEN), identity_after.flags & @as(u32, c.UF_HIDDEN));
+    } else {
+        try std.testing.expectEqual(@as(u32, 0), identity_after.flags);
+    }
 }
 
 test "fs_local_source_adapter: lookupChildAbsolute denies parent symlink escapes" {
@@ -651,4 +793,76 @@ test "fs_local_source_adapter: lookupChildAbsolute denies parent symlink escapes
         error.AccessDenied,
         lookupChildAbsolute(allocator, root, root, "safe/secret.txt"),
     );
+}
+
+test "fs_local_source_adapter: lookupChildAbsolute preserves symlink identity" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+
+    const root = try temp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+    try temp.dir.writeFile(.{ .sub_path = "target.txt", .data = "hello link" });
+
+    const link_path = try std.fs.path.join(allocator, &.{ root, "target-link.txt" });
+    defer allocator.free(link_path);
+    try symlinkAbsolute("target.txt", link_path);
+
+    const looked = try lookupChildAbsolute(allocator, root, root, "target-link.txt");
+    defer allocator.free(looked.resolved_path);
+    try std.testing.expectEqual(std.fs.File.Kind.sym_link, looked.stat.kind);
+    try std.testing.expectEqualStrings(link_path, looked.resolved_path);
+
+    const stat = try statAbsolute(link_path);
+    try std.testing.expectEqual(std.fs.File.Kind.sym_link, stat.kind);
+
+    const identity = try statIdentityAbsolute(allocator, link_path);
+    try std.testing.expect(identity.uid > 0 or identity.gid > 0 or identity.flags == 0 or identity.flags > 0);
+}
+
+test "fs_local_source_adapter: lookupChildAbsolute denies symlink target escapes" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+
+    const allocator = std.testing.allocator;
+    var root_tmp = std.testing.tmpDir(.{});
+    defer root_tmp.cleanup();
+    var outside_tmp = std.testing.tmpDir(.{});
+    defer outside_tmp.cleanup();
+
+    const root = try root_tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+    const outside = try outside_tmp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(outside);
+
+    const escaped_link = try std.fs.path.join(allocator, &.{ root, "escaped-link.txt" });
+    defer allocator.free(escaped_link);
+    const outside_target = try std.fs.path.join(allocator, &.{ outside, "secret.txt" });
+    defer allocator.free(outside_target);
+    try symlinkAbsolute(outside_target, escaped_link);
+
+    try std.testing.expectError(
+        error.AccessDenied,
+        lookupChildAbsolute(allocator, root, root, "escaped-link.txt"),
+    );
+}
+
+test "fs_local_source_adapter: readLinkAbsolute returns stored symlink target" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+
+    const root = try temp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+
+    const link_path = try std.fs.path.join(allocator, &.{ root, "target-link.txt" });
+    defer allocator.free(link_path);
+    try symlinkAbsolute("target.txt", link_path);
+
+    const target = try readLinkAbsolute(allocator, link_path);
+    defer allocator.free(target);
+    try std.testing.expectEqualStrings("target.txt", target);
 }

@@ -68,7 +68,7 @@ fn featureCaps(ctx: ?*anyopaque) fs_source_adapter.SourceCaps {
 fn supportsOperation(ctx: ?*anyopaque, op: fs_source_adapter.Operation) bool {
     _ = ctx;
     return switch (op) {
-        .symlink, .setattr, .setxattr, .getxattr, .listxattr, .removexattr => false,
+        .readlink, .symlink, .setattr, .setxattr, .getxattr, .listxattr, .removexattr => false,
         else => true,
     };
 }

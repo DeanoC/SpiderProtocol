@@ -1,5 +1,11 @@
 const std = @import("std");
 const builtin = @import("builtin");
+const c = if (builtin.os.tag == .windows)
+    struct {}
+else
+    @cImport({
+        @cInclude("sys/stat.h");
+    });
 const fs_protocol = @import("spiderweb_fs").fs_protocol;
 const fs_source_adapter = @import("fs_source_adapter.zig");
 const fs_source_adapter_factory = @import("fs_source_adapter_factory.zig");
@@ -596,6 +602,7 @@ pub const NodeOps = struct {
             .LOOKUP => self.opLookup(req),
             .GETATTR => self.opGetattr(req),
             .READDIRP => self.opReaddirPlus(req),
+            .READLINK => self.opReadlink(req),
             .SYMLINK => self.opSymlink(req),
             .SETATTR => self.opSetattr(req),
             .SETXATTR => self.opSetxattr(req),
@@ -796,6 +803,7 @@ pub const NodeOps = struct {
             .lookup,
             .getattr,
             .readdirp,
+            .readlink,
             .open,
             .read,
             .close,
@@ -4086,7 +4094,8 @@ pub const NodeOps = struct {
         const node_id = makeNodeId(parent.export_index, stat.inode);
         self.setNodePath(node_id, looked.resolved_path) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
 
-        const attr_json = self.buildAttrJson(node_id, stat) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
+        const identity = sourceAttrIdentityAbsolute(self.allocator, export_cfg.source_kind, looked.resolved_path, self.uid, self.gid);
+        const attr_json = self.buildAttrJson(node_id, stat, identity) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
         defer self.allocator.free(attr_json);
 
         const response = std.fmt.allocPrint(self.allocator, "{{\"attr\":{s}}}", .{attr_json}) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
@@ -4105,10 +4114,31 @@ pub const NodeOps = struct {
         }
         const stat = sourceStatAbsolute(export_cfg.source_kind, ctx.path) catch |err| return mapError(err);
 
-        const attr_json = self.buildAttrJson(node_id, stat) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
+        const identity = sourceAttrIdentityAbsolute(self.allocator, export_cfg.source_kind, ctx.path, self.uid, self.gid);
+        const attr_json = self.buildAttrJson(node_id, stat, identity) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
         defer self.allocator.free(attr_json);
 
         const response = std.fmt.allocPrint(self.allocator, "{{\"attr\":{s}}}", .{attr_json}) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
+        return DispatchResult.success(response);
+    }
+
+    fn opReadlink(self: *NodeOps, req: fs_protocol.ParsedRequest) DispatchResult {
+        const node_id = req.node orelse return DispatchResult.failure(fs_protocol.Errno.EINVAL, "READLINK requires node");
+        const ctx = self.resolveNode(node_id) catch |err| return mapError(err);
+        const export_cfg = self.exports.items[ctx.export_index];
+        if (export_cfg.source_kind == .namespace) {
+            return DispatchResult.failure(fs_protocol.Errno.ENOSYS, "source adapter operation not yet implemented");
+        }
+        if (export_cfg.source_kind == .gdrive) {
+            return DispatchResult.failure(fs_protocol.Errno.ENOSYS, "source adapter operation not yet implemented");
+        }
+
+        const target = sourceReadLinkAbsolute(export_cfg.source_kind, self.allocator, ctx.path) catch |err| return mapError(err);
+        defer self.allocator.free(target);
+        const escaped_target = fs_protocol.jsonEscape(self.allocator, target) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
+        defer self.allocator.free(escaped_target);
+
+        const response = std.fmt.allocPrint(self.allocator, "{{\"target\":\"{s}\"}}", .{escaped_target}) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
         return DispatchResult.success(response);
     }
 
@@ -4151,7 +4181,8 @@ pub const NodeOps = struct {
         sourceSetAttrAbsolute(export_cfg.source_kind, ctx.path, setattr) catch |err| return mapError(err);
         const stat = sourceStatAbsolute(export_cfg.source_kind, ctx.path) catch |err| return mapError(err);
 
-        const attr_json = self.buildAttrJson(node_id, stat) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
+        const identity = sourceAttrIdentityAbsolute(self.allocator, export_cfg.source_kind, ctx.path, self.uid, self.gid);
+        const attr_json = self.buildAttrJson(node_id, stat, identity) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
         defer self.allocator.free(attr_json);
 
         self.queueInvalidation(.{
@@ -4328,7 +4359,8 @@ pub const NodeOps = struct {
 
             const child_id = makeNodeId(ctx.export_index, looked.stat.inode);
             self.setNodePath(child_id, looked.resolved_path) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
-            appendDirEntry(self.allocator, &payload, entry.name, child_id, looked.stat, &first, self.uid, self.gid) catch {
+            const identity = sourceAttrIdentityAbsolute(self.allocator, export_cfg.source_kind, looked.resolved_path, self.uid, self.gid);
+            appendDirEntry(self.allocator, &payload, entry.name, child_id, looked.stat, identity, &first) catch {
                 return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
             };
             emitted += 1;
@@ -4488,7 +4520,8 @@ pub const NodeOps = struct {
             .generation = generationFromStat(stat),
         }) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
 
-        const attr_json = self.buildAttrJson(node_id, stat) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
+        const identity = sourceAttrIdentityAbsolute(self.allocator, export_cfg.source_kind, resolved_with_stat.resolved_path, self.uid, self.gid);
+        const attr_json = self.buildAttrJson(node_id, stat, identity) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
         defer self.allocator.free(attr_json);
 
         const response = std.fmt.allocPrint(self.allocator, "{{\"attr\":{s},\"h\":{d}}}", .{ attr_json, handle_id }) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
@@ -4758,17 +4791,18 @@ pub const NodeOps = struct {
         }
     }
 
-    fn buildAttrJson(self: *NodeOps, node_id: u64, stat: std.fs.File.Stat) ![]u8 {
+    fn buildAttrJson(self: *NodeOps, node_id: u64, stat: std.fs.File.Stat, identity: AttrIdentity) ![]u8 {
         return std.fmt.allocPrint(
             self.allocator,
-            "{{\"id\":{d},\"k\":{d},\"m\":{d},\"n\":{d},\"u\":{d},\"g\":{d},\"sz\":{d},\"at\":{d},\"mt\":{d},\"ct\":{d},\"gen\":{d}}}",
+            "{{\"id\":{d},\"k\":{d},\"m\":{d},\"n\":{d},\"u\":{d},\"g\":{d},\"fl\":{d},\"sz\":{d},\"at\":{d},\"mt\":{d},\"ct\":{d},\"gen\":{d}}}",
             .{
                 node_id,
                 kindCode(stat.kind),
                 @as(u32, @intCast(@min(stat.mode, std.math.maxInt(u32)))),
                 if (stat.kind == .directory) @as(u32, 2) else @as(u32, 1),
-                self.uid,
-                self.gid,
+                identity.uid,
+                identity.gid,
+                identity.flags,
                 stat.size,
                 clampI128ToI64(stat.atime),
                 clampI128ToI64(stat.mtime),
@@ -4792,7 +4826,6 @@ pub const NodeOps = struct {
         first: *bool,
         has_more: *bool,
     ) !void {
-        _ = ctx;
         if (count.* < cookie) {
             count.* += 1;
             return;
@@ -4802,7 +4835,11 @@ pub const NodeOps = struct {
             return;
         }
 
-        try appendDirEntry(self.allocator, payload, name, node_id, stat, first, self.uid, self.gid);
+        const export_cfg = self.exports.items[ctx.export_index];
+        const child_path = if (std.mem.eql(u8, name, ".")) ctx.path else try std.fs.path.join(self.allocator, &.{ ctx.path, name });
+        defer if (!std.mem.eql(u8, name, ".")) self.allocator.free(child_path);
+        const identity = sourceAttrIdentityAbsolute(self.allocator, export_cfg.source_kind, child_path, self.uid, self.gid);
+        try appendDirEntry(self.allocator, payload, name, node_id, stat, identity, first);
         emitted.* += 1;
         count.* += 1;
     }
@@ -4834,7 +4871,8 @@ pub const NodeOps = struct {
         const parent_stat = sourceStatAbsolute(export_cfg.source_kind, parent_path) catch |err| return err;
         const parent_id = makeNodeId(ctx.export_index, parent_stat.inode);
         try self.setNodePath(parent_id, parent_path);
-        try appendDirEntry(self.allocator, payload, "..", parent_id, parent_stat, first, self.uid, self.gid);
+        const identity = sourceAttrIdentityAbsolute(self.allocator, export_cfg.source_kind, parent_path, self.uid, self.gid);
+        try appendDirEntry(self.allocator, payload, "..", parent_id, parent_stat, identity, first);
         emitted.* += 1;
         count.* += 1;
     }
@@ -5856,9 +5894,8 @@ fn appendDirEntry(
     name: []const u8,
     node_id: u64,
     stat: std.fs.File.Stat,
+    identity: AttrIdentity,
     first: *bool,
-    uid: u32,
-    gid: u32,
 ) !void {
     if (!first.*) try payload.append(allocator, ',');
     first.* = false;
@@ -5869,14 +5906,15 @@ fn appendDirEntry(
     try payload.writer(allocator).print("{{\"name\":\"{s}\",\"attr\":", .{escaped_name});
     const attr_json = try std.fmt.allocPrint(
         allocator,
-        "{{\"id\":{d},\"k\":{d},\"m\":{d},\"n\":{d},\"u\":{d},\"g\":{d},\"sz\":{d},\"at\":{d},\"mt\":{d},\"ct\":{d},\"gen\":{d}}}",
+        "{{\"id\":{d},\"k\":{d},\"m\":{d},\"n\":{d},\"u\":{d},\"g\":{d},\"fl\":{d},\"sz\":{d},\"at\":{d},\"mt\":{d},\"ct\":{d},\"gen\":{d}}}",
         .{
             node_id,
             kindCode(stat.kind),
             @as(u32, @intCast(@min(stat.mode, std.math.maxInt(u32)))),
             if (stat.kind == .directory) @as(u32, 2) else @as(u32, 1),
-            uid,
-            gid,
+            identity.uid,
+            identity.gid,
+            identity.flags,
             stat.size,
             clampI128ToI64(stat.atime),
             clampI128ToI64(stat.mtime),
@@ -6008,6 +6046,7 @@ fn sourceOperationForProtocolOp(op: fs_protocol.Op) ?fs_source_adapter.Operation
         .LOOKUP => .lookup,
         .GETATTR => .getattr,
         .READDIRP => .readdirp,
+        .READLINK => .readlink,
         .OPEN => .open,
         .READ => .read,
         .CLOSE => .close,
@@ -6036,11 +6075,29 @@ fn parseSetAttrRequest(args: std.json.ObjectMap) !fs_source_adapter.SetAttrReque
         if (raw != .integer or raw.integer < 0 or raw.integer > std.math.maxInt(u32)) return error.InvalidType;
         break :blk @as(?u32, @intCast(raw.integer));
     };
+    const uid = blk: {
+        const raw = args.get("uid") orelse break :blk null;
+        if (raw != .integer or raw.integer < 0 or raw.integer > std.math.maxInt(u32)) return error.InvalidType;
+        break :blk @as(?u32, @intCast(raw.integer));
+    };
+    const gid = blk: {
+        const raw = args.get("gid") orelse break :blk null;
+        if (raw != .integer or raw.integer < 0 or raw.integer > std.math.maxInt(u32)) return error.InvalidType;
+        break :blk @as(?u32, @intCast(raw.integer));
+    };
+    const flags = blk: {
+        const raw = args.get("flags") orelse break :blk null;
+        if (raw != .integer or raw.integer < 0 or raw.integer > std.math.maxInt(u32)) return error.InvalidType;
+        break :blk @as(?u32, @intCast(raw.integer));
+    };
     const access_time_ns = try fs_protocol.getOptionalI64(args, "at_ns");
     const modify_time_ns = try fs_protocol.getOptionalI64(args, "mt_ns");
-    if (mode == null and access_time_ns == null and modify_time_ns == null) return error.MissingField;
+    if (mode == null and uid == null and gid == null and flags == null and access_time_ns == null and modify_time_ns == null) return error.MissingField;
     return .{
         .mode = mode,
+        .uid = uid,
+        .gid = gid,
+        .flags = flags,
         .access_time_ns = access_time_ns,
         .modify_time_ns = modify_time_ns,
     };
@@ -6082,6 +6139,17 @@ fn sourceOpenDirAbsolute(source_kind: fs_source_adapter.SourceKind, path: []cons
     return switch (source_kind) {
         .windows => fs_windows_source_adapter.openDirAbsolute(path),
         else => fs_local_source_adapter.openDirAbsolute(path),
+    };
+}
+
+fn sourceReadLinkAbsolute(
+    source_kind: fs_source_adapter.SourceKind,
+    allocator: std.mem.Allocator,
+    path: []const u8,
+) ![]u8 {
+    return switch (source_kind) {
+        .windows => error.OperationNotSupported,
+        else => fs_local_source_adapter.readLinkAbsolute(allocator, path),
     };
 }
 
@@ -6157,6 +6225,40 @@ fn sourceSetAttrAbsolute(
     return switch (source_kind) {
         .windows => error.OperationNotSupported,
         else => fs_local_source_adapter.setAttrAbsolute(path, request),
+    };
+}
+
+const AttrIdentity = struct {
+    uid: u32,
+    gid: u32,
+    flags: u32 = 0,
+};
+
+fn sourceAttrIdentityAbsolute(
+    allocator: std.mem.Allocator,
+    source_kind: fs_source_adapter.SourceKind,
+    path: []const u8,
+    fallback_uid: u32,
+    fallback_gid: u32,
+) AttrIdentity {
+    return switch (source_kind) {
+        .linux, .posix => blk: {
+            const identity = fs_local_source_adapter.statIdentityAbsolute(allocator, path) catch break :blk .{
+                .uid = fallback_uid,
+                .gid = fallback_gid,
+                .flags = 0,
+            };
+            break :blk .{
+                .uid = identity.uid,
+                .gid = identity.gid,
+                .flags = identity.flags,
+            };
+        },
+        else => .{
+            .uid = fallback_uid,
+            .gid = fallback_gid,
+            .flags = 0,
+        },
     };
 }
 
@@ -7890,11 +7992,19 @@ test "fs_node_ops: local export setattr updates mode and timestamps" {
 
     const access_time_ns: i64 = 1_700_000_000_000_000_000;
     const modify_time_ns: i64 = 1_700_000_000_123_000_000;
-    const setattr_req_json = try std.fmt.allocPrint(
-        allocator,
-        "{{\"t\":\"req\",\"id\":3,\"op\":\"SETATTR\",\"node\":{d},\"a\":{{\"mode\":{d},\"at_ns\":{d},\"mt_ns\":{d}}}}}",
-        .{ node_id, @as(u32, 0o600), access_time_ns, modify_time_ns },
-    );
+    const identity_before = try fs_local_source_adapter.statIdentityAbsolute(allocator, file_path);
+    const setattr_req_json = if (builtin.os.tag == .macos)
+        try std.fmt.allocPrint(
+            allocator,
+            "{{\"t\":\"req\",\"id\":3,\"op\":\"SETATTR\",\"node\":{d},\"a\":{{\"mode\":{d},\"uid\":{d},\"gid\":{d},\"flags\":{d},\"at_ns\":{d},\"mt_ns\":{d}}}}}",
+            .{ node_id, @as(u32, 0o600), identity_before.uid, identity_before.gid, @as(u32, c.UF_HIDDEN), access_time_ns, modify_time_ns },
+        )
+    else
+        try std.fmt.allocPrint(
+            allocator,
+            "{{\"t\":\"req\",\"id\":3,\"op\":\"SETATTR\",\"node\":{d},\"a\":{{\"mode\":{d},\"uid\":{d},\"gid\":{d},\"at_ns\":{d},\"mt_ns\":{d}}}}}",
+            .{ node_id, @as(u32, 0o600), identity_before.uid, identity_before.gid, access_time_ns, modify_time_ns },
+        );
     defer allocator.free(setattr_req_json);
     var setattr_req = try fs_protocol.parseRequest(allocator, setattr_req_json);
     defer setattr_req.deinit();
@@ -7907,6 +8017,71 @@ test "fs_node_ops: local export setattr updates mode and timestamps" {
     try std.testing.expectEqual(@as(u32, 0o600), stat.mode & 0o7777);
     try std.testing.expectEqual(access_time_ns, clampI128ToI64(stat.atime));
     try std.testing.expectEqual(modify_time_ns, clampI128ToI64(stat.mtime));
+    const identity_after = try fs_local_source_adapter.statIdentityAbsolute(allocator, file_path);
+    try std.testing.expectEqual(identity_before.uid, identity_after.uid);
+    try std.testing.expectEqual(identity_before.gid, identity_after.gid);
+    if (builtin.os.tag == .macos) {
+        try std.testing.expectEqual(@as(u32, c.UF_HIDDEN), identity_after.flags & @as(u32, c.UF_HIDDEN));
+    }
+}
+
+test "fs_node_ops: local export readlink returns symlink target" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+
+    try temp.dir.writeFile(.{ .sub_path = "target.txt", .data = "hello" });
+    try temp.dir.symLink("target.txt", "target-link.txt", .{});
+
+    const root = try temp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+
+    var node_ops = try NodeOps.init(allocator, &[_]ExportSpec{
+        .{ .name = "work", .path = root, .ro = false },
+    });
+    defer node_ops.deinit();
+
+    var exports_req = try fs_protocol.parseRequest(allocator, "{\"t\":\"req\",\"id\":1,\"op\":\"EXPORTS\"}");
+    defer exports_req.deinit();
+    var exports_result = node_ops.dispatch(exports_req);
+    defer exports_result.deinit(allocator);
+
+    var exports_parsed = try std.json.parseFromSlice(std.json.Value, allocator, exports_result.result_json.?, .{});
+    defer exports_parsed.deinit();
+    const root_id = exports_parsed.value.object.get("exports").?.array.items[0].object.get("root").?.integer;
+
+    const lookup_req_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":2,\"op\":\"LOOKUP\",\"node\":{d},\"a\":{{\"name\":\"target-link.txt\"}}}}",
+        .{root_id},
+    );
+    defer allocator.free(lookup_req_json);
+
+    var lookup_req = try fs_protocol.parseRequest(allocator, lookup_req_json);
+    defer lookup_req.deinit();
+    var lookup_result = node_ops.dispatch(lookup_req);
+    defer lookup_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.SUCCESS, lookup_result.err_no);
+
+    var lookup_parsed = try std.json.parseFromSlice(std.json.Value, allocator, lookup_result.result_json.?, .{});
+    defer lookup_parsed.deinit();
+    const node_id = lookup_parsed.value.object.get("attr").?.object.get("id").?.integer;
+
+    const readlink_req_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":3,\"op\":\"READLINK\",\"node\":{d}}}",
+        .{node_id},
+    );
+    defer allocator.free(readlink_req_json);
+
+    var readlink_req = try fs_protocol.parseRequest(allocator, readlink_req_json);
+    defer readlink_req.deinit();
+    var readlink_result = node_ops.dispatch(readlink_req);
+    defer readlink_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.SUCCESS, readlink_result.err_no);
+    try std.testing.expect(std.mem.indexOf(u8, readlink_result.result_json.?, "\"target\":\"target.txt\"") != null);
 }
 
 test "fs_node_ops: readdir includes regular files" {

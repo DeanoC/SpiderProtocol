@@ -26,6 +26,7 @@ pub const Operation = enum {
     lookup,
     getattr,
     readdirp,
+    readlink,
     open,
     read,
     close,
@@ -48,6 +49,9 @@ pub const Operation = enum {
 
 pub const SetAttrRequest = struct {
     mode: ?u32 = null,
+    uid: ?u32 = null,
+    gid: ?u32 = null,
+    flags: ?u32 = null,
     access_time_ns: ?i64 = null,
     modify_time_ns: ?i64 = null,
 };

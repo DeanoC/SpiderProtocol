@@ -112,6 +112,8 @@ pub const FsrpcType = enum {
     fs_r_getattr,
     fs_t_readdirp,
     fs_r_readdirp,
+    fs_t_readlink,
+    fs_r_readlink,
     fs_t_symlink,
     fs_r_symlink,
     fs_t_setattr,
@@ -294,6 +296,8 @@ pub fn fsrpcTypeFromString(value: []const u8) FsrpcType {
     if (std.mem.eql(u8, value, "acheron.r_fs_getattr")) return .fs_r_getattr;
     if (std.mem.eql(u8, value, "acheron.t_fs_readdirp")) return .fs_t_readdirp;
     if (std.mem.eql(u8, value, "acheron.r_fs_readdirp")) return .fs_r_readdirp;
+    if (std.mem.eql(u8, value, "acheron.t_fs_readlink")) return .fs_t_readlink;
+    if (std.mem.eql(u8, value, "acheron.r_fs_readlink")) return .fs_r_readlink;
     if (std.mem.eql(u8, value, "acheron.t_fs_symlink")) return .fs_t_symlink;
     if (std.mem.eql(u8, value, "acheron.r_fs_symlink")) return .fs_r_symlink;
     if (std.mem.eql(u8, value, "acheron.t_fs_setattr")) return .fs_t_setattr;
@@ -445,6 +449,8 @@ pub fn fsrpcTypeName(value: FsrpcType) []const u8 {
         .fs_r_getattr => "acheron.r_fs_getattr",
         .fs_t_readdirp => "acheron.t_fs_readdirp",
         .fs_r_readdirp => "acheron.r_fs_readdirp",
+        .fs_t_readlink => "acheron.t_fs_readlink",
+        .fs_r_readlink => "acheron.r_fs_readlink",
         .fs_t_symlink => "acheron.t_fs_symlink",
         .fs_r_symlink => "acheron.r_fs_symlink",
         .fs_t_setattr => "acheron.t_fs_setattr",
