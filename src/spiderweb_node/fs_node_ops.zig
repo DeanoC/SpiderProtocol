@@ -597,6 +597,7 @@ pub const NodeOps = struct {
             .GETATTR => self.opGetattr(req),
             .READDIRP => self.opReaddirPlus(req),
             .SYMLINK => self.opSymlink(req),
+            .SETATTR => self.opSetattr(req),
             .SETXATTR => self.opSetxattr(req),
             .GETXATTR => self.opGetxattr(req),
             .LISTXATTR => self.opListxattr(req),
@@ -801,6 +802,7 @@ pub const NodeOps = struct {
             .create,
             .write,
             .truncate,
+            .setattr,
             .unlink,
             .mkdir,
             .rmdir,
@@ -4136,6 +4138,33 @@ pub const NodeOps = struct {
         return DispatchResult.success(response);
     }
 
+    fn opSetattr(self: *NodeOps, req: fs_protocol.ParsedRequest) DispatchResult {
+        const node_id = req.node orelse return DispatchResult.failure(fs_protocol.Errno.EINVAL, "SETATTR requires node");
+        const setattr = parseSetAttrRequest(req.args) catch return DispatchResult.failure(fs_protocol.Errno.EINVAL, "invalid setattr payload");
+
+        const ctx = self.resolveNode(node_id) catch |err| return mapError(err);
+        const export_cfg = self.exports.items[ctx.export_index];
+        if (export_cfg.source_kind == .namespace) return DispatchResult.failure(fs_protocol.Errno.ENOSYS, "source adapter operation not yet implemented");
+        if (export_cfg.ro) return DispatchResult.failure(fs_protocol.Errno.EROFS, "export is read-only");
+        if (export_cfg.source_kind == .gdrive) return DispatchResult.failure(fs_protocol.Errno.ENOSYS, "source adapter operation not yet implemented");
+
+        sourceSetAttrAbsolute(export_cfg.source_kind, ctx.path, setattr) catch |err| return mapError(err);
+        const stat = sourceStatAbsolute(export_cfg.source_kind, ctx.path) catch |err| return mapError(err);
+
+        const attr_json = self.buildAttrJson(node_id, stat) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
+        defer self.allocator.free(attr_json);
+
+        self.queueInvalidation(.{
+            .INVAL = .{
+                .node = node_id,
+                .what = .attr,
+                .gen = generationFromStat(stat),
+            },
+        });
+        const response = std.fmt.allocPrint(self.allocator, "{{\"attr\":{s}}}", .{attr_json}) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
+        return DispatchResult.success(response);
+    }
+
     fn opSetxattr(self: *NodeOps, req: fs_protocol.ParsedRequest) DispatchResult {
         const node_id = req.node orelse return DispatchResult.failure(fs_protocol.Errno.EINVAL, "SETXATTR requires node");
         const name = fs_protocol.getRequiredString(req.args, "name") orelse return DispatchResult.failure(fs_protocol.Errno.EINVAL, "SETXATTR requires a.name");
@@ -5985,6 +6014,7 @@ fn sourceOperationForProtocolOp(op: fs_protocol.Op) ?fs_source_adapter.Operation
         .CREATE => .create,
         .WRITE => .write,
         .TRUNCATE => .truncate,
+        .SETATTR => .setattr,
         .UNLINK => .unlink,
         .MKDIR => .mkdir,
         .RMDIR => .rmdir,
@@ -5997,6 +6027,22 @@ fn sourceOperationForProtocolOp(op: fs_protocol.Op) ?fs_source_adapter.Operation
         .REMOVEXATTR => .removexattr,
         .LOCK => .lock,
         .HELLO, .EXPORTS, .INVAL, .INVAL_DIR => null,
+    };
+}
+
+fn parseSetAttrRequest(args: std.json.ObjectMap) !fs_source_adapter.SetAttrRequest {
+    const mode = blk: {
+        const raw = args.get("mode") orelse break :blk null;
+        if (raw != .integer or raw.integer < 0 or raw.integer > std.math.maxInt(u32)) return error.InvalidType;
+        break :blk @as(?u32, @intCast(raw.integer));
+    };
+    const access_time_ns = try fs_protocol.getOptionalI64(args, "at_ns");
+    const modify_time_ns = try fs_protocol.getOptionalI64(args, "mt_ns");
+    if (mode == null and access_time_ns == null and modify_time_ns == null) return error.MissingField;
+    return .{
+        .mode = mode,
+        .access_time_ns = access_time_ns,
+        .modify_time_ns = modify_time_ns,
     };
 }
 
@@ -6100,6 +6146,17 @@ fn sourceTruncateAbsolute(source_kind: fs_source_adapter.SourceKind, path: []con
     return switch (source_kind) {
         .windows => fs_windows_source_adapter.truncateAbsolute(path, size),
         else => fs_local_source_adapter.truncateAbsolute(path, size),
+    };
+}
+
+fn sourceSetAttrAbsolute(
+    source_kind: fs_source_adapter.SourceKind,
+    path: []const u8,
+    request: fs_source_adapter.SetAttrRequest,
+) !void {
+    return switch (source_kind) {
+        .windows => error.OperationNotSupported,
+        else => fs_local_source_adapter.setAttrAbsolute(path, request),
     };
 }
 
@@ -7785,6 +7842,71 @@ test "fs_node_ops: read-only export rejects mkdir" {
     defer mkdir_req.deinit();
     const mkdir_result = node_ops.dispatch(mkdir_req);
     try std.testing.expectEqual(fs_protocol.Errno.EROFS, mkdir_result.err_no);
+}
+
+test "fs_node_ops: local export setattr updates mode and timestamps" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+
+    try temp.dir.writeFile(.{ .sub_path = "hello.txt", .data = "hello" });
+
+    const root = try temp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+    const file_path = try std.fs.path.join(allocator, &.{ root, "hello.txt" });
+    defer allocator.free(file_path);
+
+    var node_ops = try NodeOps.init(allocator, &[_]ExportSpec{
+        .{ .name = "work", .path = root, .ro = false },
+    });
+    defer node_ops.deinit();
+
+    var exports_req = try fs_protocol.parseRequest(allocator, "{\"t\":\"req\",\"id\":1,\"op\":\"EXPORTS\"}");
+    defer exports_req.deinit();
+    var exports_result = node_ops.dispatch(exports_req);
+    defer exports_result.deinit(allocator);
+
+    var exports_parsed = try std.json.parseFromSlice(std.json.Value, allocator, exports_result.result_json.?, .{});
+    defer exports_parsed.deinit();
+    const root_id = exports_parsed.value.object.get("exports").?.array.items[0].object.get("root").?.integer;
+
+    const lookup_req_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":2,\"op\":\"LOOKUP\",\"node\":{d},\"a\":{{\"name\":\"hello.txt\"}}}}",
+        .{root_id},
+    );
+    defer allocator.free(lookup_req_json);
+    var lookup_req = try fs_protocol.parseRequest(allocator, lookup_req_json);
+    defer lookup_req.deinit();
+    var lookup_result = node_ops.dispatch(lookup_req);
+    defer lookup_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.SUCCESS, lookup_result.err_no);
+
+    var lookup_parsed = try std.json.parseFromSlice(std.json.Value, allocator, lookup_result.result_json.?, .{});
+    defer lookup_parsed.deinit();
+    const node_id = lookup_parsed.value.object.get("attr").?.object.get("id").?.integer;
+
+    const access_time_ns: i64 = 1_700_000_000_000_000_000;
+    const modify_time_ns: i64 = 1_700_000_000_123_000_000;
+    const setattr_req_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":3,\"op\":\"SETATTR\",\"node\":{d},\"a\":{{\"mode\":{d},\"at_ns\":{d},\"mt_ns\":{d}}}}}",
+        .{ node_id, @as(u32, 0o600), access_time_ns, modify_time_ns },
+    );
+    defer allocator.free(setattr_req_json);
+    var setattr_req = try fs_protocol.parseRequest(allocator, setattr_req_json);
+    defer setattr_req.deinit();
+    var setattr_result = node_ops.dispatch(setattr_req);
+    defer setattr_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.SUCCESS, setattr_result.err_no);
+    try std.testing.expect(std.mem.indexOf(u8, setattr_result.result_json.?, "\"attr\"") != null);
+
+    const stat = try fs_local_source_adapter.statAbsolute(file_path);
+    try std.testing.expectEqual(@as(u32, 0o600), stat.mode & 0o7777);
+    try std.testing.expectEqual(access_time_ns, clampI128ToI64(stat.atime));
+    try std.testing.expectEqual(modify_time_ns, clampI128ToI64(stat.mtime));
 }
 
 test "fs_node_ops: readdir includes regular files" {

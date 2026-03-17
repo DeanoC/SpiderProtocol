@@ -14,6 +14,7 @@ pub const Op = enum {
     GETATTR,
     READDIRP,
     SYMLINK,
+    SETATTR,
     SETXATTR,
     GETXATTR,
     LISTXATTR,
@@ -162,6 +163,14 @@ pub fn getOptionalU32(args: std.json.ObjectMap, name: []const u8, default: u32) 
 pub fn getOptionalU64(args: std.json.ObjectMap, name: []const u8, default: u64) !u64 {
     const value = args.get(name) orelse return default;
     if (value != .integer or value.integer < 0) return RequestError.InvalidType;
+    return @intCast(value.integer);
+}
+
+pub fn getOptionalI64(args: std.json.ObjectMap, name: []const u8) !?i64 {
+    const value = args.get(name) orelse return null;
+    if (value != .integer or value.integer < std.math.minInt(i64) or value.integer > std.math.maxInt(i64)) {
+        return RequestError.InvalidType;
+    }
     return @intCast(value.integer);
 }
 

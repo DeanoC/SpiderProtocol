@@ -35,6 +35,8 @@ If FS auth is enforced, the hello payload may also include `auth_token`. Node-to
 | `acheron.r_fs_readdirp` | node_fs | response |
 | `acheron.t_fs_symlink` | node_fs | request |
 | `acheron.r_fs_symlink` | node_fs | response |
+| `acheron.t_fs_setattr` | node_fs | request |
+| `acheron.r_fs_setattr` | node_fs | response |
 | `acheron.t_fs_setxattr` | node_fs | request |
 | `acheron.r_fs_setxattr` | node_fs | response |
 | `acheron.t_fs_getxattr` | node_fs | request |

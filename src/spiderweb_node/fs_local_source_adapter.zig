@@ -75,7 +75,7 @@ pub fn supportsOperationForKind(source_kind: fs_source_adapter.SourceKind, op: f
     return switch (source_kind) {
         .linux, .posix => true,
         .windows => switch (op) {
-            .symlink, .setxattr, .getxattr, .listxattr, .removexattr => false,
+            .symlink, .setattr, .setxattr, .getxattr, .listxattr, .removexattr => false,
             else => true,
         },
         .gdrive, .namespace => false,
@@ -193,6 +193,21 @@ fn timespecToNs(ts: anytype) i128 {
     return @as(i128, ts.tv_sec) * std.time.ns_per_s + @as(i128, ts.tv_nsec);
 }
 
+fn timespecFromNs(ns: i64) c.struct_timespec {
+    const sec = @divFloor(ns, std.time.ns_per_s);
+    const nsec = @mod(ns, std.time.ns_per_s);
+    return .{
+        .tv_sec = @intCast(sec),
+        .tv_nsec = @intCast(nsec),
+    };
+}
+
+fn clampI128ToI64(value: i128) i64 {
+    if (value < std.math.minInt(i64)) return std.math.minInt(i64);
+    if (value > std.math.maxInt(i64)) return std.math.maxInt(i64);
+    return @intCast(value);
+}
+
 pub fn statAbsolute(path: []const u8) !std.fs.File.Stat {
     return std.fs.cwd().statFile(path);
 }
@@ -238,6 +253,33 @@ pub fn truncateAbsolute(path: []const u8, size: u64) !void {
     var file = try std.fs.openFileAbsolute(path, .{ .mode = .read_write });
     defer file.close();
     try file.setEndPos(size);
+}
+
+pub fn setAttrAbsolute(path: []const u8, request: fs_source_adapter.SetAttrRequest) !void {
+    if (request.mode == null and request.access_time_ns == null and request.modify_time_ns == null) return;
+
+    if (request.mode) |mode| {
+        try std.posix.fchmodat(std.posix.AT.FDCWD, path, @intCast(mode & 0o7777), 0);
+    }
+
+    if (request.access_time_ns != null or request.modify_time_ns != null) {
+        const current = try statAbsolute(path);
+        var times = [_]c.struct_timespec{
+            timespecFromNs(request.access_time_ns orelse clampI128ToI64(current.atime)),
+            timespecFromNs(request.modify_time_ns orelse clampI128ToI64(current.mtime)),
+        };
+        const path_z = try std.heap.page_allocator.dupeZ(u8, path);
+        defer std.heap.page_allocator.free(path_z);
+
+        while (true) {
+            const rc = c.utimensat(std.posix.AT.FDCWD, path_z.ptr, &times, 0);
+            switch (std.posix.errno(rc)) {
+                .SUCCESS => break,
+                .INTR => continue,
+                else => |errno_no| return posixErrnoToError(errno_no),
+            }
+        }
+    }
 }
 
 pub fn deleteFileAbsolute(path: []const u8) !void {
@@ -494,8 +536,10 @@ test "fs_local_source_adapter: prepareExport resolves temp dir" {
 
 test "fs_local_source_adapter: supportsOperationForKind reflects windows capability gaps" {
     try std.testing.expect(supportsOperationForKind(.linux, .setxattr));
+    try std.testing.expect(supportsOperationForKind(.posix, .setattr));
     try std.testing.expect(supportsOperationForKind(.posix, .lock));
     try std.testing.expect(!supportsOperationForKind(.windows, .symlink));
+    try std.testing.expect(!supportsOperationForKind(.windows, .setattr));
     try std.testing.expect(!supportsOperationForKind(.windows, .getxattr));
     try std.testing.expect(supportsOperationForKind(.windows, .rename));
 }
@@ -555,6 +599,32 @@ test "fs_local_source_adapter: execution helpers cover basic file lifecycle" {
     defer allocator.free(created_dir);
     try makeDirAbsolute(created_dir);
     try deleteDirAbsolute(created_dir);
+}
+
+test "fs_local_source_adapter: setattr updates mode and timestamps" {
+    if (builtin.os.tag == .windows) return error.SkipZigTest;
+
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+    const root = try temp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+
+    const file_path = try std.fs.path.join(allocator, &.{ root, "attrs.txt" });
+    defer allocator.free(file_path);
+    var file = try createExclusiveAbsolute(file_path, 0o100644);
+    file.close();
+
+    try setAttrAbsolute(file_path, .{
+        .mode = 0o600,
+        .access_time_ns = 1_700_000_000_000_000_000,
+        .modify_time_ns = 1_700_000_000_123_000_000,
+    });
+
+    const stat = try statAbsolute(file_path);
+    try std.testing.expectEqual(@as(u32, 0o600), stat.mode & 0o7777);
+    try std.testing.expectEqual(@as(i64, 1_700_000_000_000_000_000), clampI128ToI64(stat.atime));
+    try std.testing.expectEqual(@as(i64, 1_700_000_000_123_000_000), clampI128ToI64(stat.mtime));
 }
 
 test "fs_local_source_adapter: lookupChildAbsolute denies parent symlink escapes" {

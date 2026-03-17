@@ -62,6 +62,7 @@ fn supportsOperation(ctx: ?*anyopaque, op: fs_source_adapter.Operation) bool {
         .rename,
         .statfs,
         => true,
+        .setattr,
         .symlink,
         .setxattr,
         .getxattr,

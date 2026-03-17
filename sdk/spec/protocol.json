@@ -140,6 +140,8 @@
       {"name": "acheron.r_fs_readdirp", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "FsReaddirpResponse"},
       {"name": "acheron.t_fs_symlink", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
       {"name": "acheron.r_fs_symlink", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
+      {"name": "acheron.t_fs_setattr", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
+      {"name": "acheron.r_fs_setattr", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
       {"name": "acheron.t_fs_setxattr", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
       {"name": "acheron.r_fs_setxattr", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
       {"name": "acheron.t_fs_getxattr", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},

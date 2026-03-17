@@ -32,6 +32,7 @@ pub const Operation = enum {
     create,
     write,
     truncate,
+    setattr,
     unlink,
     mkdir,
     rmdir,
@@ -43,6 +44,12 @@ pub const Operation = enum {
     listxattr,
     removexattr,
     lock,
+};
+
+pub const SetAttrRequest = struct {
+    mode: ?u32 = null,
+    access_time_ns: ?i64 = null,
+    modify_time_ns: ?i64 = null,
 };
 
 pub const PreparedExport = struct {
