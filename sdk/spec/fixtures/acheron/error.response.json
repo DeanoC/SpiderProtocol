@@ -1,0 +1,1 @@
+{"channel":"acheron","type":"acheron.error","tag":4,"ok":false,"error":{"code":"forbidden","message":"attach requires an active session"}}

@@ -2,6 +2,9 @@
 
 Status: active
 
+Related generated reference:
+- `spider-venom-wasm-abi-v1.md`
+
 This document defines the first executable runtime contract for node-exported
 namespace Venoms.
 

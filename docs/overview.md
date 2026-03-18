@@ -1,6 +1,9 @@
 # SpiderProtocol Overview
 
-SpiderProtocol is the shared protocol library for Spiderweb servers, clients, and node runtimes. It defines control and filesystem parsing/building, plus the node runtime modules used by Spiderweb and SpiderNode.
+SpiderProtocol is the canonical shared protocol library for Spiderweb servers,
+clients, SDK generators, and node runtimes. It defines the public control and
+Acheron wire surfaces, emits generated protocol artifacts, and exposes node
+runtime modules used by Spiderweb and SpiderNode.
 
 Official Zig module name:
 - `spider-protocol`
@@ -8,7 +11,9 @@ Official Zig module name:
 ## What It Provides
 
 - Unified-v2 control parsing and envelope builders
-- Acheron FS protocol schemas and helpers
+- Acheron runtime and node-FS message catalogs
+- Generated protocol specs, fixtures, and SDKs under `sdk/`
+- First-class TypeScript, Python, Go, Rust, and Swift SDK artifacts
 - WebSocket transport helpers
 - Node runtime components (fs node server + ops)
 - Service catalog and namespace runtime scaffolding
@@ -16,7 +21,7 @@ Official Zig module name:
 ## Modules
 
 - `spiderweb_fs`
-  - FS-RPC protocol schema (`fs_protocol`)
+  - Internal FS helper schema (`fs_protocol`)
   - WebSocket frame helpers (`websocket_transport`)
   - FS client transport (`fs_client`)
 
@@ -30,3 +35,10 @@ Official Zig module name:
 
 Executable namespace drivers follow the ABI documented in:
 - `protocols/namespace-driver-abi-v1.md`
+
+## Canonical Protocol References
+
+- `protocols/unified-v2-control.md`
+- `protocols/acheron-runtime-v1.md`
+- `protocols/node-fs-unified-v2.md`
+- `protocols/spider-venom-wasm-abi-v1.md`

@@ -504,7 +504,12 @@ test "unified_types: v2 control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.agent_list, controlTypeFromString(controlTypeName(.agent_list)));
     try std.testing.expectEqual(ControlType.agent_get, controlTypeFromString(controlTypeName(.agent_get)));
     try std.testing.expectEqual(ControlType.workspace_create, controlTypeFromString(controlTypeName(.workspace_create)));
+    try std.testing.expectEqual(ControlType.workspace_template_list, controlTypeFromString(controlTypeName(.workspace_template_list)));
+    try std.testing.expectEqual(ControlType.workspace_template_get, controlTypeFromString(controlTypeName(.workspace_template_get)));
     try std.testing.expectEqual(ControlType.workspace_mount_set, controlTypeFromString(controlTypeName(.workspace_mount_set)));
+    try std.testing.expectEqual(ControlType.workspace_bind_set, controlTypeFromString(controlTypeName(.workspace_bind_set)));
+    try std.testing.expectEqual(ControlType.workspace_bind_remove, controlTypeFromString(controlTypeName(.workspace_bind_remove)));
+    try std.testing.expectEqual(ControlType.workspace_bind_list, controlTypeFromString(controlTypeName(.workspace_bind_list)));
     try std.testing.expectEqual(ControlType.workspace_up, controlTypeFromString(controlTypeName(.workspace_up)));
     try std.testing.expectEqual(ControlType.project_mount_set, controlTypeFromString(controlTypeName(.project_mount_set)));
     try std.testing.expectEqual(ControlType.workspace_status, controlTypeFromString(controlTypeName(.workspace_status)));
