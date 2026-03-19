@@ -82,6 +82,12 @@ pub fn stringify_control_response(
     stringify_value(envelope.to_value())
 }
 
+pub fn stringify_control_event(
+    envelope: &ControlEventEnvelopeEnum,
+) -> Result<String, SpiderProtocolError> {
+    stringify_value(envelope.to_value())
+}
+
 pub fn stringify_control_error(
     envelope: &ControlErrorEnvelope,
 ) -> Result<String, SpiderProtocolError> {
@@ -125,6 +131,12 @@ pub fn parse_control_response(raw: &str) -> Result<ControlResponseEnvelope, Spid
         return Err(protocol_error_from_control_value(&value));
     }
     ControlResponseEnvelope::from_value(value).map_err(json_error)
+}
+
+pub fn parse_control_event(raw: &str) -> Result<ControlEventEnvelopeEnum, SpiderProtocolError> {
+    let value = parse_raw_object(raw)?;
+    validate_control_value(&value)?;
+    ControlEventEnvelopeEnum::from_value(value).map_err(json_error)
 }
 
 pub fn parse_control_error(raw: &str) -> Result<ControlErrorEnvelope, SpiderProtocolError> {

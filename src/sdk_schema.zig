@@ -266,6 +266,67 @@ const session_history_request_fields = [_]FieldSpec{
     optionalField("limit", "u64"),
 };
 
+const mount_attach_request_fields = [_]FieldSpec{
+    optionalField("path", "string"),
+    optionalField("depth", "u32"),
+};
+
+const mount_graph_source_fields = [_]FieldSpec{
+    field("id", "string"),
+    field("mount_path", "string"),
+    field("fs_url", "string"),
+    optionalNullableField("export_name", "string"),
+};
+
+const mount_graph_node_fields = [_]FieldSpec{
+    field("id", "u64"),
+    optionalNullableField("parent_id", "u64"),
+    field("name", "string"),
+    field("path", "string"),
+    field("kind", "string"),
+    field("mode", "u32"),
+    field("writable", "boolean"),
+    field("size", "u64"),
+    optionalNullableField("canonical_node_id", "u64"),
+    optionalNullableField("content_mode", "string"),
+    optionalNullableField("inline_content_b64", "string"),
+    optionalNullableField("source_id", "string"),
+};
+
+const mount_attach_response_fields = [_]FieldSpec{
+    field("mount_session_id", "string"),
+    field("graph_generation", "u64"),
+    field("root_node_id", "u64"),
+    arrayField("nodes", "MountGraphNode"),
+    arrayField("sources", "MountGraphSource"),
+};
+
+const mount_file_read_request_fields = [_]FieldSpec{
+    field("path", "string"),
+    optionalField("offset", "u64"),
+    optionalField("length", "u32"),
+};
+
+const mount_file_read_response_fields = [_]FieldSpec{
+    field("path", "string"),
+    field("offset", "u64"),
+    field("n", "u32"),
+    field("eof", "boolean"),
+    field("data_b64", "string"),
+};
+
+const mount_file_write_request_fields = [_]FieldSpec{
+    field("path", "string"),
+    field("data_b64", "string"),
+    optionalField("offset", "u64"),
+};
+
+const mount_file_write_response_fields = [_]FieldSpec{
+    field("path", "string"),
+    field("offset", "u64"),
+    field("n", "u32"),
+};
+
 const workspace_create_request_fields = [_]FieldSpec{
     field("name", "string"),
     field("vision", "string"),
@@ -779,6 +840,14 @@ pub const all_schemas = [_]SchemaSpec{
     .{ .name = "SessionAttachRequest", .kind = .object, .fields = &session_attach_request_fields },
     .{ .name = "SessionStatusRequest", .kind = .object, .fields = &session_status_request_fields },
     .{ .name = "SessionHistoryRequest", .kind = .object, .fields = &session_history_request_fields },
+    .{ .name = "MountAttachRequest", .kind = .object, .fields = &mount_attach_request_fields },
+    .{ .name = "MountGraphSource", .kind = .object, .fields = &mount_graph_source_fields },
+    .{ .name = "MountGraphNode", .kind = .object, .fields = &mount_graph_node_fields },
+    .{ .name = "MountAttachResponse", .kind = .object, .fields = &mount_attach_response_fields },
+    .{ .name = "MountFileReadRequest", .kind = .object, .fields = &mount_file_read_request_fields },
+    .{ .name = "MountFileReadResponse", .kind = .object, .fields = &mount_file_read_response_fields },
+    .{ .name = "MountFileWriteRequest", .kind = .object, .fields = &mount_file_write_request_fields },
+    .{ .name = "MountFileWriteResponse", .kind = .object, .fields = &mount_file_write_response_fields },
     .{ .name = "WorkspaceCreateRequest", .kind = .object, .fields = &workspace_create_request_fields },
     .{ .name = "ProjectCreateRequest", .kind = .object, .fields = &project_create_request_fields },
     .{ .name = "WorkspaceUpdateRequest", .kind = .object, .fields = &workspace_update_request_fields },
@@ -888,6 +957,17 @@ pub fn controlMessageSchema(control_type: unified.ControlType) MessageSchemaSpec
         .connect_ack => controlSchema(.connect_ack, "handshake", .response, "ControlConnectAckPayload", null, null),
         .session_attach => controlSchema(.session_attach, "session", .request, "SessionAttachRequest", "SessionStatusResponse", null),
         .session_status => controlSchema(.session_status, "session", .request, "SessionStatusRequest", "SessionStatusResponse", null),
+        .mount_attach_v2 => controlSchema(.mount_attach_v2, "mount", .request, "MountAttachRequest", "MountAttachResponse", null),
+        .mount_graph_delta_v2 => .{
+            .channel = .control,
+            .wire_name = unified.controlTypeName(.mount_graph_delta_v2),
+            .category = "mount",
+            .direction = .event,
+            .correlation_field = null,
+            .payload_schema = "AnyJson",
+        },
+        .mount_file_read_v2 => controlSchema(.mount_file_read_v2, "mount", .request, "MountFileReadRequest", "MountFileReadResponse", null),
+        .mount_file_write_v2 => controlSchema(.mount_file_write_v2, "mount", .request, "MountFileWriteRequest", "MountFileWriteResponse", null),
         .session_resume => controlSchema(.session_resume, "session", .request, "SessionKeyRequest", "SessionStatusResponse", null),
         .session_list => controlSchema(.session_list, "session", .request, null, "SessionListResponse", null),
         .session_close => controlSchema(.session_close, "session", .request, "SessionKeyRequest", "SessionCloseResponse", null),
@@ -1041,4 +1121,24 @@ pub fn acheronMessageSchema(fsrpc_type: unified.FsrpcType) MessageSchemaSpec {
         },
         .unknown => unreachable,
     };
+}
+
+test "controlMessageSchema covers mount v2 messages" {
+    const attach = controlMessageSchema(.mount_attach_v2);
+    try std.testing.expectEqualStrings("mount", attach.category);
+    try std.testing.expectEqual(MessageDirection.request, attach.direction);
+    try std.testing.expectEqualStrings("MountAttachRequest", attach.payload_schema.?);
+    try std.testing.expectEqualStrings("MountAttachResponse", attach.result_schema.?);
+
+    const delta = controlMessageSchema(.mount_graph_delta_v2);
+    try std.testing.expectEqual(MessageDirection.event, delta.direction);
+    try std.testing.expect(delta.correlation_field == null);
+
+    const read = controlMessageSchema(.mount_file_read_v2);
+    try std.testing.expectEqualStrings("MountFileReadRequest", read.payload_schema.?);
+    try std.testing.expectEqualStrings("MountFileReadResponse", read.result_schema.?);
+
+    const write = controlMessageSchema(.mount_file_write_v2);
+    try std.testing.expectEqualStrings("MountFileWriteRequest", write.payload_schema.?);
+    try std.testing.expectEqualStrings("MountFileWriteResponse", write.result_schema.?);
 }

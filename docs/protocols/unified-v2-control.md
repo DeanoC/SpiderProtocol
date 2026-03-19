@@ -35,6 +35,10 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 | `control.connect_ack` | handshake | response |
 | `control.session_attach` | session | request |
 | `control.session_status` | session | request |
+| `control.mount_attach_v2` | mount | request |
+| `control.mount_graph_delta_v2` | mount | event |
+| `control.mount_file_read_v2` | mount | request |
+| `control.mount_file_write_v2` | mount | request |
 | `control.session_resume` | session | request |
 | `control.session_list` | session | request |
 | `control.session_close` | session | request |
