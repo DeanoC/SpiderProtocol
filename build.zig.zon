@@ -5,8 +5,8 @@
     .minimum_zig_version = "0.13.0",
     .dependencies = .{
         .zwasm = .{
-            .url = "https://github.com/DeanoC/zwasm/archive/62fe06f44a26e091ffd8c17a32c727f6320b83c0.tar.gz",
-            .hash = "zwasm-1.5.0-IBbzF2OIIwASv9vXqr-jE7LDtT9HllJDYBESTG9RVjgR",
+            .url = "https://github.com/DeanoC/zwasm/archive/3700f43f7d122fdef04d4caf934549d24d756ce2.tar.gz",
+            .hash = "zwasm-1.5.0-IBbzF3sIJADccNIsIHOoY0t7-Wp1etQz7TgdJUBmXp9X",
         },
     },
     .paths = .{

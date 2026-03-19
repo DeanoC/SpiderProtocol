@@ -1,6 +1,12 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const zwasm = @import("zwasm");
+const c = if (builtin.os.tag == .windows) @cImport({
+    @cInclude("fcntl.h");
+    @cInclude("io.h");
+}) else struct {};
+
+const fd_t = if (builtin.os.tag == .windows) c_int else std.posix.fd_t;
 
 var stdio_capture_mutex: std.Thread.Mutex = .{};
 
@@ -40,9 +46,9 @@ pub fn invokeModule(
     config: Config,
     stdin_bytes: []const u8,
     max_output_bytes: usize,
-) !InvokeResult {
+) anyerror!InvokeResult {
     try validateConfig(config);
-    if (builtin.os.tag == .windows or builtin.os.tag == .wasi) return error.UnsupportedPlatform;
+    if (builtin.os.tag == .wasi) return error.UnsupportedPlatform;
 
     const wasm_bytes = try readModuleBytes(allocator, config.module_path);
     defer allocator.free(wasm_bytes);
@@ -139,18 +145,18 @@ fn isSafeEntrypoint(value: []const u8) bool {
 
 const PipeReader = struct {
     allocator: std.mem.Allocator,
-    fd: std.posix.fd_t,
+    fd: fd_t,
     max_output_bytes: usize,
     output: std.ArrayList(u8) = .empty,
     read_err: ?anyerror = null,
     too_long: bool = false,
 
     fn run(self: *PipeReader) void {
-        defer std.posix.close(self.fd);
+        defer fdClose(self.fd);
 
         var buffer: [4096]u8 = undefined;
         while (true) {
-            const bytes_read = std.posix.read(self.fd, &buffer) catch |err| {
+            const bytes_read = fdRead(self.fd, &buffer) catch |err| {
                 self.read_err = err;
                 return;
             };
@@ -177,15 +183,15 @@ const PipeReader = struct {
 };
 
 const PipeWriter = struct {
-    fd: std.posix.fd_t,
+    fd: fd_t,
     input: []const u8,
     write_err: ?anyerror = null,
 
     fn run(self: *PipeWriter) void {
-        defer std.posix.close(self.fd);
+        defer fdClose(self.fd);
         var offset: usize = 0;
         while (offset < self.input.len) {
-            const wrote = std.posix.write(self.fd, self.input[offset..]) catch |err| {
+            const wrote = fdWrite(self.fd, self.input[offset..]) catch |err| {
                 self.write_err = err;
                 return;
             };
@@ -201,12 +207,12 @@ const PipeWriter = struct {
 const StdioCapture = struct {
     allocator: std.mem.Allocator,
     max_output_bytes: usize,
-    stdin_reader: std.posix.fd_t,
-    stdout_writer: std.posix.fd_t,
-    stderr_writer: std.posix.fd_t,
-    saved_stdin: std.posix.fd_t,
-    saved_stdout: std.posix.fd_t,
-    saved_stderr: std.posix.fd_t,
+    stdin_reader: fd_t,
+    stdout_writer: fd_t,
+    stderr_writer: fd_t,
+    saved_stdin: fd_t,
+    saved_stdout: fd_t,
+    saved_stderr: fd_t,
     stdin_writer: PipeWriter,
     stdout_reader: PipeReader,
     stderr_reader: PipeReader,
@@ -220,20 +226,20 @@ const StdioCapture = struct {
         stdin_bytes: []const u8,
         max_output_bytes: usize,
     ) !StdioCapture {
-        const stdin_pipe = try std.posix.pipe();
+        const stdin_pipe = try fdPipe();
         errdefer {
-            std.posix.close(stdin_pipe[0]);
-            std.posix.close(stdin_pipe[1]);
+            fdClose(stdin_pipe[0]);
+            fdClose(stdin_pipe[1]);
         }
-        const stdout_pipe = try std.posix.pipe();
+        const stdout_pipe = try fdPipe();
         errdefer {
-            std.posix.close(stdout_pipe[0]);
-            std.posix.close(stdout_pipe[1]);
+            fdClose(stdout_pipe[0]);
+            fdClose(stdout_pipe[1]);
         }
-        const stderr_pipe = try std.posix.pipe();
+        const stderr_pipe = try fdPipe();
         errdefer {
-            std.posix.close(stderr_pipe[0]);
-            std.posix.close(stderr_pipe[1]);
+            fdClose(stderr_pipe[0]);
+            fdClose(stderr_pipe[1]);
         }
 
         return .{
@@ -242,9 +248,9 @@ const StdioCapture = struct {
             .stdin_reader = stdin_pipe[0],
             .stdout_writer = stdout_pipe[1],
             .stderr_writer = stderr_pipe[1],
-            .saved_stdin = try std.posix.dup(0),
-            .saved_stdout = try std.posix.dup(1),
-            .saved_stderr = try std.posix.dup(2),
+            .saved_stdin = try fdDup(0),
+            .saved_stdout = try fdDup(1),
+            .saved_stderr = try fdDup(2),
             .stdin_writer = .{
                 .fd = stdin_pipe[1],
                 .input = stdin_bytes,
@@ -286,24 +292,24 @@ const StdioCapture = struct {
             self.stderr_thread = null;
         }
 
-        try std.posix.dup2(self.stdin_reader, 0);
-        try std.posix.dup2(self.stdout_writer, 1);
-        try std.posix.dup2(self.stderr_writer, 2);
-        std.posix.close(self.stdin_reader);
-        std.posix.close(self.stdout_writer);
-        std.posix.close(self.stderr_writer);
+        try fdDup2(self.stdin_reader, 0);
+        try fdDup2(self.stdout_writer, 1);
+        try fdDup2(self.stderr_writer, 2);
+        fdClose(self.stdin_reader);
+        fdClose(self.stdout_writer);
+        fdClose(self.stderr_writer);
         self.active = true;
     }
 
     fn end(self: *StdioCapture) void {
         if (!self.active) return;
 
-        std.posix.dup2(self.saved_stdin, 0) catch {};
-        std.posix.dup2(self.saved_stdout, 1) catch {};
-        std.posix.dup2(self.saved_stderr, 2) catch {};
-        std.posix.close(self.saved_stdin);
-        std.posix.close(self.saved_stdout);
-        std.posix.close(self.saved_stderr);
+        fdDup2(self.saved_stdin, 0) catch {};
+        fdDup2(self.saved_stdout, 1) catch {};
+        fdDup2(self.saved_stderr, 2) catch {};
+        fdClose(self.saved_stdin);
+        fdClose(self.saved_stdout);
+        fdClose(self.saved_stderr);
         self.saved_stdin = -1;
         self.saved_stdout = -1;
         self.saved_stderr = -1;
@@ -362,6 +368,59 @@ fn pipeReaderMain(reader: *PipeReader) void {
 
 fn pipeWriterMain(writer: *PipeWriter) void {
     writer.run();
+}
+
+fn fdPipe() ![2]fd_t {
+    if (builtin.os.tag == .windows) {
+        var fds: [2]c_int = undefined;
+        if (c._pipe(&fds, 4096, c._O_BINARY) != 0) return error.CreatePipeFailed;
+        return fds;
+    }
+    return try std.posix.pipe();
+}
+
+fn fdDup(fd: fd_t) !fd_t {
+    if (builtin.os.tag == .windows) {
+        const duped = c._dup(fd);
+        if (duped < 0) return error.DupFailed;
+        return duped;
+    }
+    return try std.posix.dup(fd);
+}
+
+fn fdDup2(from: fd_t, to: fd_t) !void {
+    if (builtin.os.tag == .windows) {
+        if (c._dup2(from, to) != 0) return error.Dup2Failed;
+        return;
+    }
+    try std.posix.dup2(from, to);
+}
+
+fn fdRead(fd: fd_t, buffer: []u8) !usize {
+    if (builtin.os.tag == .windows) {
+        const rc = c._read(fd, buffer.ptr, @intCast(buffer.len));
+        if (rc < 0) return error.ReadFailed;
+        return @intCast(rc);
+    }
+    return try std.posix.read(fd, buffer);
+}
+
+fn fdWrite(fd: fd_t, buffer: []const u8) !usize {
+    if (builtin.os.tag == .windows) {
+        const rc = c._write(fd, buffer.ptr, @intCast(buffer.len));
+        if (rc < 0) return error.WriteFailed;
+        return @intCast(rc);
+    }
+    return try std.posix.write(fd, buffer);
+}
+
+fn fdClose(fd: fd_t) void {
+    if (fd < 0) return;
+    if (builtin.os.tag == .windows) {
+        _ = c._close(fd);
+        return;
+    }
+    std.posix.close(fd);
 }
 
 test "zwasm_runtime: validates fields" {
