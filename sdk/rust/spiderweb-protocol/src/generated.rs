@@ -30,6 +30,14 @@ pub enum ControlMessageType {
     SessionAttach,
     #[serde(rename = "control.session_status")]
     SessionStatus,
+    #[serde(rename = "control.mount_attach_v2")]
+    MountAttachV2,
+    #[serde(rename = "control.mount_graph_delta_v2")]
+    MountGraphDeltaV2,
+    #[serde(rename = "control.mount_file_read_v2")]
+    MountFileReadV2,
+    #[serde(rename = "control.mount_file_write_v2")]
+    MountFileWriteV2,
     #[serde(rename = "control.session_resume")]
     SessionResume,
     #[serde(rename = "control.session_list")]
@@ -674,6 +682,86 @@ pub struct SessionHistoryRequest {
     pub agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<u64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct MountAttachRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub depth: Option<u32>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct MountGraphSource {
+    pub id: String,
+    pub mount_path: String,
+    pub fs_url: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub export_name: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct MountGraphNode {
+    pub id: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_id: Option<u64>,
+    pub name: String,
+    pub path: String,
+    pub kind: String,
+    pub mode: u32,
+    pub writable: bool,
+    pub size: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub canonical_node_id: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inline_content_b64: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_id: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct MountAttachResponse {
+    pub mount_session_id: String,
+    pub graph_generation: u64,
+    pub root_node_id: u64,
+    pub nodes: Vec<MountGraphNode>,
+    pub sources: Vec<MountGraphSource>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct MountFileReadRequest {
+    pub path: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offset: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub length: Option<u32>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct MountFileReadResponse {
+    pub path: String,
+    pub offset: u64,
+    pub n: u32,
+    pub eof: bool,
+    pub data_b64: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct MountFileWriteRequest {
+    pub path: String,
+    pub data_b64: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offset: Option<u64>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct MountFileWriteResponse {
+    pub path: String,
+    pub offset: u64,
+    pub n: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -1418,6 +1506,9 @@ pub enum ControlRequestEnvelope {
     Connect(ControlEnvelope<EmptyObject>),
     SessionAttach(ControlEnvelope<SessionAttachRequest>),
     SessionStatus(ControlEnvelope<SessionStatusRequest>),
+    MountAttachV2(ControlEnvelope<MountAttachRequest>),
+    MountFileReadV2(ControlEnvelope<MountFileReadRequest>),
+    MountFileWriteV2(ControlEnvelope<MountFileWriteRequest>),
     SessionResume(ControlEnvelope<SessionKeyRequest>),
     SessionList(ControlEnvelope<EmptyObject>),
     SessionClose(ControlEnvelope<SessionKeyRequest>),
@@ -1484,6 +1575,9 @@ pub enum ControlResponseEnvelope {
     ConnectAck(ControlEnvelope<ControlConnectAckPayload>),
     SessionAttach(ControlEnvelope<SessionStatusResponse>),
     SessionStatus(ControlEnvelope<SessionStatusResponse>),
+    MountAttachV2(ControlEnvelope<MountAttachResponse>),
+    MountFileReadV2(ControlEnvelope<MountFileReadResponse>),
+    MountFileWriteV2(ControlEnvelope<MountFileWriteResponse>),
     SessionResume(ControlEnvelope<SessionStatusResponse>),
     SessionList(ControlEnvelope<SessionListResponse>),
     SessionClose(ControlEnvelope<SessionCloseResponse>),
@@ -1552,6 +1646,9 @@ impl ControlRequestEnvelope {
             Self::Connect(inner) => serde_json::to_value(inner),
             Self::SessionAttach(inner) => serde_json::to_value(inner),
             Self::SessionStatus(inner) => serde_json::to_value(inner),
+            Self::MountAttachV2(inner) => serde_json::to_value(inner),
+            Self::MountFileReadV2(inner) => serde_json::to_value(inner),
+            Self::MountFileWriteV2(inner) => serde_json::to_value(inner),
             Self::SessionResume(inner) => serde_json::to_value(inner),
             Self::SessionList(inner) => serde_json::to_value(inner),
             Self::SessionClose(inner) => serde_json::to_value(inner),
@@ -1620,6 +1717,9 @@ impl ControlRequestEnvelope {
             "control.connect" => Ok(Self::Connect(serde_json::from_value(value)?)),
             "control.session_attach" => Ok(Self::SessionAttach(serde_json::from_value(value)?)),
             "control.session_status" => Ok(Self::SessionStatus(serde_json::from_value(value)?)),
+            "control.mount_attach_v2" => Ok(Self::MountAttachV2(serde_json::from_value(value)?)),
+            "control.mount_file_read_v2" => Ok(Self::MountFileReadV2(serde_json::from_value(value)?)),
+            "control.mount_file_write_v2" => Ok(Self::MountFileWriteV2(serde_json::from_value(value)?)),
             "control.session_resume" => Ok(Self::SessionResume(serde_json::from_value(value)?)),
             "control.session_list" => Ok(Self::SessionList(serde_json::from_value(value)?)),
             "control.session_close" => Ok(Self::SessionClose(serde_json::from_value(value)?)),
@@ -1688,6 +1788,9 @@ impl ControlRequestEnvelope {
             Self::Connect(_) => ControlMessageType::Connect,
             Self::SessionAttach(_) => ControlMessageType::SessionAttach,
             Self::SessionStatus(_) => ControlMessageType::SessionStatus,
+            Self::MountAttachV2(_) => ControlMessageType::MountAttachV2,
+            Self::MountFileReadV2(_) => ControlMessageType::MountFileReadV2,
+            Self::MountFileWriteV2(_) => ControlMessageType::MountFileWriteV2,
             Self::SessionResume(_) => ControlMessageType::SessionResume,
             Self::SessionList(_) => ControlMessageType::SessionList,
             Self::SessionClose(_) => ControlMessageType::SessionClose,
@@ -1757,6 +1860,9 @@ impl ControlResponseEnvelope {
             Self::ConnectAck(inner) => serde_json::to_value(inner),
             Self::SessionAttach(inner) => serde_json::to_value(inner),
             Self::SessionStatus(inner) => serde_json::to_value(inner),
+            Self::MountAttachV2(inner) => serde_json::to_value(inner),
+            Self::MountFileReadV2(inner) => serde_json::to_value(inner),
+            Self::MountFileWriteV2(inner) => serde_json::to_value(inner),
             Self::SessionResume(inner) => serde_json::to_value(inner),
             Self::SessionList(inner) => serde_json::to_value(inner),
             Self::SessionClose(inner) => serde_json::to_value(inner),
@@ -1826,6 +1932,9 @@ impl ControlResponseEnvelope {
             "control.connect_ack" => Ok(Self::ConnectAck(serde_json::from_value(value)?)),
             "control.session_attach" => Ok(Self::SessionAttach(serde_json::from_value(value)?)),
             "control.session_status" => Ok(Self::SessionStatus(serde_json::from_value(value)?)),
+            "control.mount_attach_v2" => Ok(Self::MountAttachV2(serde_json::from_value(value)?)),
+            "control.mount_file_read_v2" => Ok(Self::MountFileReadV2(serde_json::from_value(value)?)),
+            "control.mount_file_write_v2" => Ok(Self::MountFileWriteV2(serde_json::from_value(value)?)),
             "control.session_resume" => Ok(Self::SessionResume(serde_json::from_value(value)?)),
             "control.session_list" => Ok(Self::SessionList(serde_json::from_value(value)?)),
             "control.session_close" => Ok(Self::SessionClose(serde_json::from_value(value)?)),
@@ -1895,6 +2004,9 @@ impl ControlResponseEnvelope {
             Self::ConnectAck(_) => ControlMessageType::ConnectAck,
             Self::SessionAttach(_) => ControlMessageType::SessionAttach,
             Self::SessionStatus(_) => ControlMessageType::SessionStatus,
+            Self::MountAttachV2(_) => ControlMessageType::MountAttachV2,
+            Self::MountFileReadV2(_) => ControlMessageType::MountFileReadV2,
+            Self::MountFileWriteV2(_) => ControlMessageType::MountFileWriteV2,
             Self::SessionResume(_) => ControlMessageType::SessionResume,
             Self::SessionList(_) => ControlMessageType::SessionList,
             Self::SessionClose(_) => ControlMessageType::SessionClose,

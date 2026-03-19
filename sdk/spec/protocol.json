@@ -34,6 +34,10 @@
       {"name": "control.connect_ack", "category": "handshake", "direction": "response", "correlation_field": "id", "root_fields": [], "payload_schema": "ControlConnectAckPayload"},
       {"name": "control.session_attach", "category": "session", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "SessionAttachRequest", "result_schema": "SessionStatusResponse"},
       {"name": "control.session_status", "category": "session", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "SessionStatusRequest", "result_schema": "SessionStatusResponse"},
+      {"name": "control.mount_attach_v2", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "MountAttachRequest", "result_schema": "MountAttachResponse"},
+      {"name": "control.mount_graph_delta_v2", "category": "mount", "direction": "event", "root_fields": [], "payload_schema": "AnyJson"},
+      {"name": "control.mount_file_read_v2", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "MountFileReadRequest", "result_schema": "MountFileReadResponse"},
+      {"name": "control.mount_file_write_v2", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "MountFileWriteRequest", "result_schema": "MountFileWriteResponse"},
       {"name": "control.session_resume", "category": "session", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "SessionKeyRequest", "result_schema": "SessionStatusResponse"},
       {"name": "control.session_list", "category": "session", "direction": "request", "correlation_field": "id", "root_fields": [], "result_schema": "SessionListResponse"},
       {"name": "control.session_close", "category": "session", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "SessionKeyRequest", "result_schema": "SessionCloseResponse"},
@@ -341,6 +345,59 @@
     "SessionHistoryRequest": {"kind": "object", "fields": [
         {"name": "agent_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "limit", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+      ]},
+    "MountAttachRequest": {"kind": "object", "fields": [
+        {"name": "path", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "depth", "type": "u32", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+      ]},
+    "MountGraphSource": {"kind": "object", "fields": [
+        {"name": "id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "fs_url", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "export_name", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []}
+      ]},
+    "MountGraphNode": {"kind": "object", "fields": [
+        {"name": "id", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "parent_id", "type": "u64", "optional": true, "nullable": true, "is_array": false, "aliases": []},
+        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "kind", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "mode", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "writable", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "size", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "canonical_node_id", "type": "u64", "optional": true, "nullable": true, "is_array": false, "aliases": []},
+        {"name": "content_mode", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
+        {"name": "inline_content_b64", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
+        {"name": "source_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []}
+      ]},
+    "MountAttachResponse": {"kind": "object", "fields": [
+        {"name": "mount_session_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "graph_generation", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "root_node_id", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "nodes", "type": "MountGraphNode", "optional": false, "nullable": false, "is_array": true, "aliases": []},
+        {"name": "sources", "type": "MountGraphSource", "optional": false, "nullable": false, "is_array": true, "aliases": []}
+      ]},
+    "MountFileReadRequest": {"kind": "object", "fields": [
+        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "offset", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "length", "type": "u32", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+      ]},
+    "MountFileReadResponse": {"kind": "object", "fields": [
+        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "offset", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "n", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "eof", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "data_b64", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+      ]},
+    "MountFileWriteRequest": {"kind": "object", "fields": [
+        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "data_b64", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "offset", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+      ]},
+    "MountFileWriteResponse": {"kind": "object", "fields": [
+        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "offset", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "n", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []}
       ]},
     "WorkspaceCreateRequest": {"kind": "object", "fields": [
         {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},

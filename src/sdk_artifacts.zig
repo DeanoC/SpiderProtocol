@@ -5,7 +5,7 @@ const spider_venom_wasm_constants = @import("spiderweb_node/spider_venom_wasm_co
 const sdk_schema = @import("sdk_schema.zig");
 
 comptime {
-    @setEvalBranchQuota(20_000);
+    @setEvalBranchQuota(100_000);
 }
 
 pub const control_protocol_name = "unified-v2";
@@ -304,6 +304,9 @@ fn renderWasmAbiJson(allocator: std.mem.Allocator) ![]u8 {
 }
 
 fn renderControlReferenceDoc(allocator: std.mem.Allocator) ![]u8 {
+    comptime {
+        @setEvalBranchQuota(100_000);
+    }
     var out = std.ArrayListUnmanaged(u8){};
     errdefer out.deinit(allocator);
     const writer = out.writer(allocator);
@@ -1475,6 +1478,9 @@ fn writeAcheronMessageSpec(writer: anytype) !void {
 }
 
 fn writeControlDocRows(writer: anytype) !void {
+    comptime {
+        @setEvalBranchQuota(100_000);
+    }
     inline for (@typeInfo(unified.ControlType).@"enum".fields) |field| {
         const value: unified.ControlType = @enumFromInt(field.value);
         if (value == .unknown) continue;
@@ -1482,9 +1488,9 @@ fn writeControlDocRows(writer: anytype) !void {
         try writer.writeAll("| `");
         try writer.writeAll(name);
         try writer.writeAll("` | ");
-        try writer.writeAll(controlCategory(name));
+        try writer.writeAll(controlCategory(value));
         try writer.writeAll(" | ");
-        try writer.writeAll(controlDirection(name));
+        try writer.writeAll(controlDirection(value));
         try writer.writeAll(" |\n");
     }
 }
@@ -1720,25 +1726,30 @@ fn writeWorkspaceFile(allocator: std.mem.Allocator, rel_path: []const []const u8
     });
 }
 
-fn controlCategory(name: []const u8) []const u8 {
-    const bare = name["control.".len..];
-    if (std.mem.eql(u8, bare, "version") or std.mem.eql(u8, bare, "version_ack") or std.mem.eql(u8, bare, "connect") or std.mem.eql(u8, bare, "connect_ack")) return "handshake";
-    if (std.mem.startsWith(u8, bare, "session_")) return "session";
-    if (std.mem.startsWith(u8, bare, "agent_")) return "agent";
-    if (std.mem.startsWith(u8, bare, "node_")) return "node";
-    if (std.mem.startsWith(u8, bare, "venom_")) return "venom";
-    if (std.mem.startsWith(u8, bare, "workspace_") or std.mem.eql(u8, bare, "reconcile_status")) return "workspace";
-    if (std.mem.startsWith(u8, bare, "project_")) return "project";
-    if (std.mem.startsWith(u8, bare, "auth_")) return "auth";
-    if (std.mem.eql(u8, bare, "audit_tail")) return "audit";
-    if (std.mem.eql(u8, bare, "error")) return "error";
-    return "operations";
+fn controlCategory(control_type: unified.ControlType) []const u8 {
+    return switch (control_type) {
+        .version, .version_ack, .connect, .connect_ack => "handshake",
+        .session_attach, .session_status, .session_resume, .session_list, .session_close, .session_restore, .session_history => "session",
+        .mount_attach_v2, .mount_graph_delta_v2, .mount_file_read_v2, .mount_file_write_v2 => "mount",
+        .agent_ensure, .agent_list, .agent_get => "agent",
+        .node_invite_create, .node_join_request, .node_join_pending_list, .node_join_approve, .node_join_deny, .node_join, .node_ensure, .node_lease_refresh, .node_list, .node_get, .node_delete => "node",
+        .venom_bind, .venom_upsert, .venom_get => "venom",
+        .workspace_create, .workspace_update, .workspace_delete, .workspace_list, .workspace_get, .workspace_template_list, .workspace_template_get, .workspace_mount_set, .workspace_mount_remove, .workspace_mount_list, .workspace_bind_set, .workspace_bind_remove, .workspace_bind_list, .workspace_token_rotate, .workspace_token_revoke, .workspace_activate, .workspace_up, .workspace_status, .reconcile_status => "workspace",
+        .project_create, .project_update, .project_delete, .project_list, .project_get, .project_mount_set, .project_mount_remove, .project_mount_list, .project_token_rotate, .project_token_revoke, .project_activate, .project_up => "project",
+        .auth_status, .auth_rotate => "auth",
+        .audit_tail => "audit",
+        .err => "error",
+        .ping, .pong, .metrics, .unknown => "operations",
+    };
 }
 
-fn controlDirection(name: []const u8) []const u8 {
-    if (std.mem.eql(u8, name, "control.error")) return "error";
-    if (std.mem.eql(u8, name, "control.pong") or std.mem.endsWith(u8, name, "_ack")) return "response";
-    return "request";
+fn controlDirection(control_type: unified.ControlType) []const u8 {
+    return switch (control_type) {
+        .err => "error",
+        .version_ack, .connect_ack, .pong => "response",
+        .mount_graph_delta_v2 => "event",
+        else => "request",
+    };
 }
 
 fn acheronCategory(name: []const u8) []const u8 {
