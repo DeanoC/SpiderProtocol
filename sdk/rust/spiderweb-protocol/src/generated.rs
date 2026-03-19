@@ -1639,6 +1639,11 @@ pub enum ControlResponseEnvelope {
     AuditTail(ControlEnvelope<AnyJson>),
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum ControlEventEnvelopeEnum {
+    MountGraphDeltaV2(ControlEnvelope<AnyJson>),
+}
+
 impl ControlRequestEnvelope {
     pub fn to_value(&self) -> serde_json::Result<serde_json::Value> {
         match self {
@@ -2066,6 +2071,28 @@ impl ControlResponseEnvelope {
             Self::ReconcileStatus(_) => ControlMessageType::ReconcileStatus,
             Self::ProjectUp(_) => ControlMessageType::ProjectUp,
             Self::AuditTail(_) => ControlMessageType::AuditTail,
+        }
+    }
+}
+
+impl ControlEventEnvelopeEnum {
+    pub fn to_value(&self) -> serde_json::Result<serde_json::Value> {
+        match self {
+            Self::MountGraphDeltaV2(inner) => serde_json::to_value(inner),
+        }
+    }
+
+    pub fn from_value(value: serde_json::Value) -> serde_json::Result<Self> {
+        let message_type = value.get("type").and_then(|v| v.as_str()).ok_or_else(|| serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "missing type")))?;
+        match message_type {
+            "control.mount_graph_delta_v2" => Ok(Self::MountGraphDeltaV2(serde_json::from_value(value)?)),
+            _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "unsupported type"))),
+        }
+    }
+
+    pub fn message_type(&self) -> ControlMessageType {
+        match self {
+            Self::MountGraphDeltaV2(_) => ControlMessageType::MountGraphDeltaV2,
         }
     }
 }

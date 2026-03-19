@@ -957,17 +957,20 @@ pub const NodeOps = struct {
         }
 
         const export_root = self.exports.items[export_index].root_path;
+        const case_sensitive = self.exports.items[export_index].case_sensitive;
         for (paths) |raw_path| {
             const normalized = normalizeAbsolutePathOwned(self.allocator, raw_path) catch continue;
 
-            if (!isWithinRoot(export_root, normalized) or std.mem.eql(u8, export_root, normalized)) {
+            if (!isWithinRootCaseAware(export_root, normalized, case_sensitive) or
+                pathsEqualCaseAware(export_root, normalized, case_sensitive))
+            {
                 self.allocator.free(normalized);
                 continue;
             }
 
             var duplicate = false;
             for (next.items) |existing| {
-                if (std.mem.eql(u8, existing, normalized)) {
+                if (pathsEqualCaseAware(existing, normalized, case_sensitive)) {
                     duplicate = true;
                     break;
                 }
@@ -5834,7 +5837,7 @@ fn isHiddenLocalExportChild(source_kind: fs_source_adapter.SourceKind, name: []c
 fn isExcludedLocalExportPath(export_cfg: *const ExportConfig, path: []const u8) bool {
     if (export_cfg.source_kind == .namespace or export_cfg.source_kind == .gdrive) return false;
     for (export_cfg.excluded_subtrees.items) |excluded| {
-        if (isWithinRoot(excluded, path)) return true;
+        if (isWithinRootCaseAware(excluded, path, export_cfg.case_sensitive)) return true;
     }
     return false;
 }
@@ -5856,6 +5859,10 @@ fn namespaceJoinPath(allocator: std.mem.Allocator, parent_path: []const u8, name
 }
 
 fn isWithinRoot(root: []const u8, target: []const u8) bool {
+    return isWithinRootCaseAware(root, target, true);
+}
+
+fn isWithinRootCaseAware(root: []const u8, target: []const u8, case_sensitive: bool) bool {
     var normalized_root = root;
     while (normalized_root.len > 1 and normalized_root[normalized_root.len - 1] == std.fs.path.sep) {
         normalized_root = normalized_root[0 .. normalized_root.len - 1];
@@ -5865,8 +5872,8 @@ fn isWithinRoot(root: []const u8, target: []const u8) bool {
         return target.len > 0 and target[0] == std.fs.path.sep;
     }
 
-    if (std.mem.eql(u8, normalized_root, target)) return true;
-    if (!std.mem.startsWith(u8, target, normalized_root)) return false;
+    if (pathsEqualCaseAware(normalized_root, target, case_sensitive)) return true;
+    if (!startsWithCaseAware(target, normalized_root, case_sensitive)) return false;
     if (target.len <= normalized_root.len) return false;
     return target[normalized_root.len] == std.fs.path.sep;
 }
@@ -5877,6 +5884,30 @@ test "fs_node_ops: isWithinRoot handles root and exact-prefix boundaries" {
     try std.testing.expect(isWithinRoot("/safe", "/safe"));
     try std.testing.expect(isWithinRoot("/safe", "/safe/work"));
     try std.testing.expect(!isWithinRoot("/safe", "/safeguard"));
+}
+
+test "fs_node_ops: case-insensitive root checks preserve boundaries" {
+    try std.testing.expect(isWithinRootCaseAware("/safe/Mounted", "/SAFE/mounted/project", false));
+    try std.testing.expect(isWithinRootCaseAware("/safe/Mounted", "/safe/mounted", false));
+    try std.testing.expect(!isWithinRootCaseAware("/safe/Mounted", "/safe/mountedness", false));
+}
+
+fn pathsEqualCaseAware(a: []const u8, b: []const u8, case_sensitive: bool) bool {
+    if (case_sensitive) return std.mem.eql(u8, a, b);
+    return asciiEqlIgnoreCase(a, b);
+}
+
+fn startsWithCaseAware(target: []const u8, prefix: []const u8, case_sensitive: bool) bool {
+    if (target.len < prefix.len) return false;
+    return pathsEqualCaseAware(target[0..prefix.len], prefix, case_sensitive);
+}
+
+fn asciiEqlIgnoreCase(a: []const u8, b: []const u8) bool {
+    if (a.len != b.len) return false;
+    for (a, b) |lhs, rhs| {
+        if (std.ascii.toLower(lhs) != std.ascii.toLower(rhs)) return false;
+    }
+    return true;
 }
 
 fn kindCode(kind: std.fs.File.Kind) u8 {
@@ -8034,6 +8065,55 @@ test "fs_node_ops: excluded local subtrees stay hidden and inaccessible" {
     const lookup_hidden_json = try std.fmt.allocPrint(
         allocator,
         "{{\"t\":\"req\",\"id\":3,\"op\":\"LOOKUP\",\"node\":{d},\"a\":{{\"name\":\"mounted\"}}}}",
+        .{root_id},
+    );
+    defer allocator.free(lookup_hidden_json);
+    var lookup_hidden_req = try fs_protocol.parseRequest(allocator, lookup_hidden_json);
+    defer lookup_hidden_req.deinit();
+    var lookup_hidden_result = node_ops.dispatch(lookup_hidden_req);
+    defer lookup_hidden_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.ENOENT, lookup_hidden_result.err_no);
+}
+
+test "fs_node_ops: excluded local subtrees honor case-insensitive exports" {
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+
+    try temp.dir.makePath("Mounted/Project");
+    try temp.dir.makePath("Keep");
+    try temp.dir.writeFile(.{ .sub_path = "Mounted/Project/ghost.txt", .data = "ghost" });
+    try temp.dir.writeFile(.{ .sub_path = "Keep/hello.txt", .data = "hello" });
+
+    const root = try temp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+    const excluded = try std.fs.path.join(allocator, &.{ root, "mounted" });
+    defer allocator.free(excluded);
+
+    var node_ops = try NodeOps.init(allocator, &[_]ExportSpec{
+        .{ .name = "work", .path = root, .ro = false, .case_sensitive = false },
+    });
+    defer node_ops.deinit();
+    try node_ops.setExportExcludedSubtreesByName("work", &.{excluded});
+
+    const root_id = node_ops.exports.items[0].root_node_id;
+    const readdir_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":1,\"op\":\"READDIRP\",\"node\":{d},\"a\":{{\"cookie\":0,\"max\":128}}}}",
+        .{root_id},
+    );
+    defer allocator.free(readdir_json);
+    var readdir_req = try fs_protocol.parseRequest(allocator, readdir_json);
+    defer readdir_req.deinit();
+    var readdir_result = node_ops.dispatch(readdir_req);
+    defer readdir_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.SUCCESS, readdir_result.err_no);
+    try std.testing.expect(std.mem.indexOf(u8, readdir_result.result_json.?, "\"Keep\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, readdir_result.result_json.?, "\"Mounted\"") == null);
+
+    const lookup_hidden_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":2,\"op\":\"LOOKUP\",\"node\":{d},\"a\":{{\"name\":\"Mounted\"}}}}",
         .{root_id},
     );
     defer allocator.free(lookup_hidden_json);

@@ -61,6 +61,37 @@ fn parse_rejects_invalid_tag() {
     assert_eq!(error.code, "invalid_tag");
 }
 
+#[test]
+fn control_event_round_trip_supports_mount_graph_delta_v2() {
+    let raw = r#"{"channel":"control","type":"control.mount_graph_delta_v2","payload":{"mount_session_id":"mount-1","generation":2,"delta":{"ops":[]}}}"#;
+    let envelope = parse_control_event(raw).unwrap();
+    match envelope {
+        ControlEventEnvelopeEnum::MountGraphDeltaV2(inner) => {
+            assert_eq!(
+                inner.payload.unwrap(),
+                serde_json::json!({
+                    "mount_session_id": "mount-1",
+                    "generation": 2,
+                    "delta": { "ops": [] }
+                })
+            );
+        }
+    }
+
+    let serialized = stringify_control_event(&ControlEventEnvelopeEnum::MountGraphDeltaV2(ControlEnvelope {
+        channel: Channel::Control,
+        message_type: ControlMessageType::MountGraphDeltaV2,
+        id: None,
+        ok: None,
+        payload: Some(serde_json::json!({
+            "mount_session_id": "mount-1",
+            "generation": 3
+        })),
+    }))
+    .unwrap();
+    assert!(serialized.contains("\"type\":\"control.mount_graph_delta_v2\""));
+}
+
 #[tokio::test(flavor = "current_thread")]
 async fn control_client_matches_by_id() {
     let response = r#"{"channel":"control","type":"control.version_ack","id":"req-1","ok":true,"payload":{"protocol":"unified-v2","acheron_runtime":"acheron-1","acheron_node":"unified-v2-fs","acheron_node_proto":2}}"#.to_string();

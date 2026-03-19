@@ -1159,8 +1159,24 @@ fn writeRustControlEnums(writer: anytype) !void {
     }
     try writer.writeAll("}\n\n");
 
-    try writeRustEnumValueImpl(writer, "ControlRequestEnvelope", .control, true);
-    try writeRustEnumValueImpl(writer, "ControlResponseEnvelope", .control, false);
+    try writer.writeAll("#[derive(Debug, Clone, PartialEq)]\n");
+    try writer.writeAll("pub enum ControlEventEnvelopeEnum {\n");
+    inline for (@typeInfo(unified.ControlType).@"enum".fields) |field| {
+        const value: unified.ControlType = @enumFromInt(field.value);
+        if (value == .unknown or value == .err) continue;
+        const spec = comptime sdk_schema.controlMessageSchema(value);
+        if (spec.direction != .event) continue;
+        try writer.writeAll("    ");
+        try writeRustVariantName(writer, field.name);
+        try writer.writeAll("(ControlEnvelope<");
+        try writer.writeAll(spec.payload_schema orelse "EmptyObject");
+        try writer.writeAll(">),\n");
+    }
+    try writer.writeAll("}\n\n");
+
+    try writeRustEnumValueImpl(writer, "ControlRequestEnvelope", .control);
+    try writeRustEnumValueImpl(writer, "ControlResponseEnvelope", .control);
+    try writeRustEnumValueImpl(writer, "ControlEventEnvelopeEnum", .control);
 }
 
 fn writeRustAcheronEnums(writer: anytype) !void {
@@ -1206,9 +1222,9 @@ fn writeRustAcheronEnums(writer: anytype) !void {
     try writer.writeAll("    FsErr(AcheronErrorEnvelope<AcheronFsError>),\n");
     try writer.writeAll("}\n\n");
 
-    try writeRustEnumValueImpl(writer, "AcheronRequestEnvelope", .acheron, true);
-    try writeRustEnumValueImpl(writer, "AcheronResponseEnvelope", .acheron, false);
-    try writeRustEnumValueImpl(writer, "AcheronEventEnvelopeEnum", .acheron, false);
+    try writeRustEnumValueImpl(writer, "AcheronRequestEnvelope", .acheron);
+    try writeRustEnumValueImpl(writer, "AcheronResponseEnvelope", .acheron);
+    try writeRustEnumValueImpl(writer, "AcheronEventEnvelopeEnum", .acheron);
     try writeRustAcheronErrorEnumValueImpl(writer);
 }
 
@@ -1247,7 +1263,7 @@ fn hasRootField(fields: []const sdk_schema.FieldSpec, name: []const u8) bool {
     return false;
 }
 
-fn writeRustEnumValueImpl(writer: anytype, comptime enum_name: []const u8, comptime kind: RustMessageKind, comptime request_only: bool) !void {
+fn writeRustEnumValueImpl(writer: anytype, comptime enum_name: []const u8, comptime kind: RustMessageKind) !void {
     comptime {
         @setEvalBranchQuota(100_000);
     }
@@ -1266,11 +1282,8 @@ fn writeRustEnumValueImpl(writer: anytype, comptime enum_name: []const u8, compt
                 const value: unified.ControlType = @enumFromInt(field.value);
                 if (value == .unknown or value == .err) continue;
                 const spec = comptime sdk_schema.controlMessageSchema(value);
-                if (request_only) {
-                    if (spec.direction != .request) continue;
-                } else {
-                    if (!(spec.direction == .response or spec.result_schema != null)) continue;
-                }
+                const include = comptime rustControlEnumIncludes(enum_name, spec);
+                if (!include) continue;
                 try writer.writeAll("            Self::");
                 try writeRustVariantName(writer, field.name);
                 try writer.writeAll("(inner) => serde_json::to_value(inner),\n");
@@ -1281,13 +1294,8 @@ fn writeRustEnumValueImpl(writer: anytype, comptime enum_name: []const u8, compt
                 const value: unified.FsrpcType = @enumFromInt(field.value);
                 if (value == .unknown) continue;
                 const spec = comptime sdk_schema.acheronMessageSchema(value);
-                if (request_only) {
-                    if (spec.direction != .request) continue;
-                } else if (comptime std.mem.eql(u8, enum_name, "AcheronEventEnvelopeEnum")) {
-                    if (spec.direction != .event) continue;
-                } else {
-                    if (spec.direction != .response) continue;
-                }
+                const include = comptime rustAcheronEnumIncludes(enum_name, spec);
+                if (!include) continue;
                 try writer.writeAll("            Self::");
                 try writeRustVariantName(writer, field.name);
                 try writer.writeAll("(inner) => serde_json::to_value(inner),\n");
@@ -1305,11 +1313,8 @@ fn writeRustEnumValueImpl(writer: anytype, comptime enum_name: []const u8, compt
                 const value: unified.ControlType = @enumFromInt(field.value);
                 if (value == .unknown or value == .err) continue;
                 const spec = comptime sdk_schema.controlMessageSchema(value);
-                if (request_only) {
-                    if (spec.direction != .request) continue;
-                } else {
-                    if (!(spec.direction == .response or spec.result_schema != null)) continue;
-                }
+                const include = comptime rustControlEnumIncludes(enum_name, spec);
+                if (!include) continue;
                 try writer.writeAll("            ");
                 try writeRustString(writer, unified.controlTypeName(value));
                 try writer.writeAll(" => Ok(Self::");
@@ -1322,13 +1327,8 @@ fn writeRustEnumValueImpl(writer: anytype, comptime enum_name: []const u8, compt
                 const value: unified.FsrpcType = @enumFromInt(field.value);
                 if (value == .unknown) continue;
                 const spec = comptime sdk_schema.acheronMessageSchema(value);
-                if (request_only) {
-                    if (spec.direction != .request) continue;
-                } else if (comptime std.mem.eql(u8, enum_name, "AcheronEventEnvelopeEnum")) {
-                    if (spec.direction != .event) continue;
-                } else {
-                    if (spec.direction != .response) continue;
-                }
+                const include = comptime rustAcheronEnumIncludes(enum_name, spec);
+                if (!include) continue;
                 try writer.writeAll("            ");
                 try writeRustString(writer, unified.acheronTypeName(value));
                 try writer.writeAll(" => Ok(Self::");
@@ -1350,11 +1350,8 @@ fn writeRustEnumValueImpl(writer: anytype, comptime enum_name: []const u8, compt
                 const value: unified.ControlType = @enumFromInt(field.value);
                 if (value == .unknown or value == .err) continue;
                 const spec = comptime sdk_schema.controlMessageSchema(value);
-                if (request_only) {
-                    if (spec.direction != .request) continue;
-                } else {
-                    if (!(spec.direction == .response or spec.result_schema != null)) continue;
-                }
+                const include = comptime rustControlEnumIncludes(enum_name, spec);
+                if (!include) continue;
                 try writer.writeAll("            Self::");
                 try writeRustVariantName(writer, field.name);
                 try writer.writeAll("(_) => ");
@@ -1369,13 +1366,8 @@ fn writeRustEnumValueImpl(writer: anytype, comptime enum_name: []const u8, compt
                 const value: unified.FsrpcType = @enumFromInt(field.value);
                 if (value == .unknown) continue;
                 const spec = comptime sdk_schema.acheronMessageSchema(value);
-                if (request_only) {
-                    if (spec.direction != .request) continue;
-                } else if (comptime std.mem.eql(u8, enum_name, "AcheronEventEnvelopeEnum")) {
-                    if (spec.direction != .event) continue;
-                } else {
-                    if (spec.direction != .response) continue;
-                }
+                const include = comptime rustAcheronEnumIncludes(enum_name, spec);
+                if (!include) continue;
                 try writer.writeAll("            Self::");
                 try writeRustVariantName(writer, field.name);
                 try writer.writeAll("(_) => ");
@@ -1387,6 +1379,26 @@ fn writeRustEnumValueImpl(writer: anytype, comptime enum_name: []const u8, compt
         },
     }
     try writer.writeAll("        }\n    }\n}\n\n");
+}
+
+fn rustControlEnumIncludes(comptime enum_name: []const u8, spec: sdk_schema.MessageSchemaSpec) bool {
+    if (comptime std.mem.eql(u8, enum_name, "ControlRequestEnvelope")) {
+        return spec.direction == .request;
+    }
+    if (comptime std.mem.eql(u8, enum_name, "ControlEventEnvelopeEnum")) {
+        return spec.direction == .event;
+    }
+    return spec.direction == .response or spec.result_schema != null;
+}
+
+fn rustAcheronEnumIncludes(comptime enum_name: []const u8, spec: sdk_schema.MessageSchemaSpec) bool {
+    if (comptime std.mem.eql(u8, enum_name, "AcheronRequestEnvelope")) {
+        return spec.direction == .request;
+    }
+    if (comptime std.mem.eql(u8, enum_name, "AcheronEventEnvelopeEnum")) {
+        return spec.direction == .event;
+    }
+    return spec.direction == .response;
 }
 
 fn writeRustAcheronErrorEnumValueImpl(writer: anytype) !void {
