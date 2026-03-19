@@ -48,6 +48,7 @@ const ExportConfig = struct {
     adapter: fs_source_adapter.SourceAdapter,
     name: []u8,
     root_path: []u8,
+    excluded_subtrees: std.ArrayListUnmanaged([]u8) = .{},
     ro: bool,
     desc: []u8,
     root_node_id: u64,
@@ -516,6 +517,8 @@ pub const NodeOps = struct {
             export_cfg.adapter.deinit(self.allocator);
             self.allocator.free(export_cfg.name);
             self.allocator.free(export_cfg.root_path);
+            for (export_cfg.excluded_subtrees.items) |path| self.allocator.free(path);
+            export_cfg.excluded_subtrees.deinit(self.allocator);
             self.allocator.free(export_cfg.desc);
             self.allocator.free(export_cfg.source_id);
             if (export_cfg.gdrive_credential_handle) |handle| self.allocator.free(handle);
@@ -638,6 +641,18 @@ pub const NodeOps = struct {
             built += 1;
         }
         return roots;
+    }
+
+    pub fn setExportExcludedSubtreesByName(
+        self: *NodeOps,
+        export_name: []const u8,
+        paths: []const []const u8,
+    ) !void {
+        self.mutex.lock();
+        defer self.mutex.unlock();
+
+        const export_index = self.exportByName(export_name) orelse return error.FileNotFound;
+        try self.replaceExportExcludedSubtrees(export_index, paths);
     }
 
     pub fn exportNamespaceRuntimeStateJson(self: *const NodeOps, allocator: std.mem.Allocator) ![]u8 {
@@ -907,6 +922,7 @@ pub const NodeOps = struct {
             .adapter = source_adapter,
             .name = name,
             .root_path = prepared.root_real_path,
+            .excluded_subtrees = .{},
             .ro = export_ro,
             .desc = desc,
             .root_node_id = root_node_id,
@@ -925,6 +941,49 @@ pub const NodeOps = struct {
         } else if (source_kind == .namespace) {
             self.ensureNamespaceScaffold(export_index) catch return error.InvalidExportPath;
         }
+    }
+
+    fn replaceExportExcludedSubtrees(
+        self: *NodeOps,
+        export_index: usize,
+        paths: []const []const u8,
+    ) !void {
+        if (export_index >= self.exports.items.len) return error.FileNotFound;
+
+        var next = std.ArrayListUnmanaged([]u8){};
+        errdefer {
+            for (next.items) |path| self.allocator.free(path);
+            next.deinit(self.allocator);
+        }
+
+        const export_root = self.exports.items[export_index].root_path;
+        for (paths) |raw_path| {
+            const normalized = normalizeAbsolutePathOwned(self.allocator, raw_path) catch continue;
+
+            if (!isWithinRoot(export_root, normalized) or std.mem.eql(u8, export_root, normalized)) {
+                self.allocator.free(normalized);
+                continue;
+            }
+
+            var duplicate = false;
+            for (next.items) |existing| {
+                if (std.mem.eql(u8, existing, normalized)) {
+                    duplicate = true;
+                    break;
+                }
+            }
+            if (duplicate) {
+                self.allocator.free(normalized);
+                continue;
+            }
+
+            try next.append(self.allocator, normalized);
+        }
+
+        var export_cfg = &self.exports.items[export_index];
+        for (export_cfg.excluded_subtrees.items) |path| self.allocator.free(path);
+        export_cfg.excluded_subtrees.deinit(self.allocator);
+        export_cfg.excluded_subtrees = next;
     }
 
     fn ensureGdriveScaffoldNodes(self: *NodeOps, export_index: usize) !void {
@@ -4072,6 +4131,13 @@ pub const NodeOps = struct {
         if (isHiddenLocalExportChild(export_cfg.source_kind, name)) {
             return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
         }
+        const child_path = std.fs.path.join(self.allocator, &.{ parent.path, name }) catch {
+            return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
+        };
+        defer self.allocator.free(child_path);
+        if (isExcludedLocalExportPath(&export_cfg, child_path)) {
+            return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
+        }
         const looked = sourceLookupChildAbsolute(
             export_cfg.source_kind,
             self.allocator,
@@ -4100,6 +4166,9 @@ pub const NodeOps = struct {
         }
         if (export_cfg.source_kind == .gdrive) {
             return self.opGdriveGetattr(ctx);
+        }
+        if (isExcludedLocalExportPath(&export_cfg, ctx.path)) {
+            return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
         }
         const stat = sourceStatAbsolute(export_cfg.source_kind, ctx.path) catch |err| return mapError(err);
 
@@ -4247,6 +4316,9 @@ pub const NodeOps = struct {
         if (export_cfg.source_kind == .gdrive) {
             return self.opGdriveReaddirPlus(ctx, cookie, max_entries);
         }
+        if (isExcludedLocalExportPath(&export_cfg, ctx.path)) {
+            return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
+        }
         const dir_stat = sourceStatAbsolute(export_cfg.source_kind, ctx.path) catch |err| return mapError(err);
         if (dir_stat.kind != .directory) return DispatchResult.failure(fs_protocol.Errno.ENOTDIR, "node is not a directory");
 
@@ -4276,6 +4348,11 @@ pub const NodeOps = struct {
         while (it.next() catch |err| return mapError(err)) |entry| {
             if (!isValidChildName(entry.name)) continue;
             if (isHiddenLocalExportChild(export_cfg.source_kind, entry.name)) continue;
+            const child_path = std.fs.path.join(self.allocator, &.{ ctx.path, entry.name }) catch {
+                return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
+            };
+            defer self.allocator.free(child_path);
+            if (isExcludedLocalExportPath(&export_cfg, child_path)) continue;
             if (count < cookie) {
                 count += 1;
                 continue;
@@ -4319,6 +4396,9 @@ pub const NodeOps = struct {
         }
         if (export_cfg.source_kind == .gdrive) {
             return self.opGdriveOpen(ctx, node_id, flags);
+        }
+        if (isExcludedLocalExportPath(&export_cfg, ctx.path)) {
+            return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
         }
 
         const access = accessModeFromFlags(flags);
@@ -5233,6 +5313,7 @@ pub const NodeOps = struct {
 
             const child_path = std.fs.path.join(self.allocator, &.{ path, entry.name }) catch return error.OutOfMemory;
             defer self.allocator.free(child_path);
+            if (isExcludedLocalExportPath(&self.exports.items[export_index], child_path)) continue;
 
             const child_stat = std.fs.cwd().statFile(child_path) catch |err| {
                 if (err == error.FileNotFound or err == error.NotDir or err == error.AccessDenied) continue;
@@ -5748,6 +5829,23 @@ fn isHiddenLocalExportChild(source_kind: fs_source_adapter.SourceKind, name: []c
         .namespace, .gdrive => false,
         else => std.mem.eql(u8, name, ".spiderweb-sandbox"),
     };
+}
+
+fn isExcludedLocalExportPath(export_cfg: *const ExportConfig, path: []const u8) bool {
+    if (export_cfg.source_kind == .namespace or export_cfg.source_kind == .gdrive) return false;
+    for (export_cfg.excluded_subtrees.items) |excluded| {
+        if (isWithinRoot(excluded, path)) return true;
+    }
+    return false;
+}
+
+fn normalizeAbsolutePathOwned(allocator: std.mem.Allocator, raw_path: []const u8) ![]u8 {
+    var trimmed = std.mem.trim(u8, raw_path, " \t\r\n");
+    if (trimmed.len == 0 or !std.fs.path.isAbsolute(trimmed)) return error.InvalidPath;
+    while (trimmed.len > 1 and trimmed[trimmed.len - 1] == std.fs.path.sep) {
+        trimmed = trimmed[0 .. trimmed.len - 1];
+    }
+    return allocator.dupe(u8, trimmed);
 }
 
 fn namespaceJoinPath(allocator: std.mem.Allocator, parent_path: []const u8, name: []const u8) ![]u8 {
@@ -7887,6 +7985,63 @@ test "fs_node_ops: local export hides sandbox runtime folder" {
     defer lookup_req.deinit();
     const lookup_result = node_ops.dispatch(lookup_req);
     try std.testing.expectEqual(fs_protocol.Errno.ENOENT, lookup_result.err_no);
+}
+
+test "fs_node_ops: excluded local subtrees stay hidden and inaccessible" {
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+
+    try temp.dir.makePath("keep");
+    try temp.dir.makePath("mounted/project");
+    try temp.dir.writeFile(.{ .sub_path = "keep/hello.txt", .data = "hello" });
+    try temp.dir.writeFile(.{ .sub_path = "mounted/project/ghost.txt", .data = "ghost" });
+
+    const root = try temp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+    const excluded = try std.fs.path.join(allocator, &.{ root, "mounted" });
+    defer allocator.free(excluded);
+
+    var node_ops = try NodeOps.init(allocator, &[_]ExportSpec{
+        .{ .name = "work", .path = root, .ro = false },
+    });
+    defer node_ops.deinit();
+    try node_ops.setExportExcludedSubtreesByName("work", &.{excluded});
+
+    var exports_req = try fs_protocol.parseRequest(allocator, "{\"t\":\"req\",\"id\":1,\"op\":\"EXPORTS\"}");
+    defer exports_req.deinit();
+    var exports_result = node_ops.dispatch(exports_req);
+    defer exports_result.deinit(allocator);
+
+    var exports_parsed = try std.json.parseFromSlice(std.json.Value, allocator, exports_result.result_json.?, .{});
+    defer exports_parsed.deinit();
+    const root_id = exports_parsed.value.object.get("exports").?.array.items[0].object.get("root").?.integer;
+
+    const readdir_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":2,\"op\":\"READDIRP\",\"node\":{d},\"a\":{{\"cookie\":0,\"max\":128}}}}",
+        .{root_id},
+    );
+    defer allocator.free(readdir_json);
+    var readdir_req = try fs_protocol.parseRequest(allocator, readdir_json);
+    defer readdir_req.deinit();
+    var readdir_result = node_ops.dispatch(readdir_req);
+    defer readdir_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.SUCCESS, readdir_result.err_no);
+    try std.testing.expect(std.mem.indexOf(u8, readdir_result.result_json.?, "\"keep\"") != null);
+    try std.testing.expect(std.mem.indexOf(u8, readdir_result.result_json.?, "\"mounted\"") == null);
+
+    const lookup_hidden_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":3,\"op\":\"LOOKUP\",\"node\":{d},\"a\":{{\"name\":\"mounted\"}}}}",
+        .{root_id},
+    );
+    defer allocator.free(lookup_hidden_json);
+    var lookup_hidden_req = try fs_protocol.parseRequest(allocator, lookup_hidden_json);
+    defer lookup_hidden_req.deinit();
+    var lookup_hidden_result = node_ops.dispatch(lookup_hidden_req);
+    defer lookup_hidden_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.ENOENT, lookup_hidden_result.err_no);
 }
 
 test "fs_node_ops: local readdir paging skips hidden entries without duplicates" {

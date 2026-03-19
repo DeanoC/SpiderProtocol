@@ -20,6 +20,10 @@ pub const ControlType = enum {
     connect_ack,
     session_attach,
     session_status,
+    mount_attach_v2,
+    mount_graph_delta_v2,
+    mount_file_read_v2,
+    mount_file_write_v2,
     session_resume,
     session_list,
     session_close,
@@ -200,6 +204,10 @@ pub fn controlTypeFromString(value: []const u8) ControlType {
     if (std.mem.eql(u8, value, "control.connect_ack")) return .connect_ack;
     if (std.mem.eql(u8, value, "control.session_attach")) return .session_attach;
     if (std.mem.eql(u8, value, "control.session_status")) return .session_status;
+    if (std.mem.eql(u8, value, "control.mount_attach_v2")) return .mount_attach_v2;
+    if (std.mem.eql(u8, value, "control.mount_graph_delta_v2")) return .mount_graph_delta_v2;
+    if (std.mem.eql(u8, value, "control.mount_file_read_v2")) return .mount_file_read_v2;
+    if (std.mem.eql(u8, value, "control.mount_file_write_v2")) return .mount_file_write_v2;
     if (std.mem.eql(u8, value, "control.session_resume")) return .session_resume;
     if (std.mem.eql(u8, value, "control.session_list")) return .session_list;
     if (std.mem.eql(u8, value, "control.session_close")) return .session_close;
@@ -347,6 +355,10 @@ pub fn controlTypeName(value: ControlType) []const u8 {
         .connect_ack => "control.connect_ack",
         .session_attach => "control.session_attach",
         .session_status => "control.session_status",
+        .mount_attach_v2 => "control.mount_attach_v2",
+        .mount_graph_delta_v2 => "control.mount_graph_delta_v2",
+        .mount_file_read_v2 => "control.mount_file_read_v2",
+        .mount_file_write_v2 => "control.mount_file_write_v2",
         .session_resume => "control.session_resume",
         .session_list => "control.session_list",
         .session_close => "control.session_close",
@@ -492,6 +504,10 @@ test "unified_types: v2 control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.connect, controlTypeFromString(controlTypeName(.connect)));
     try std.testing.expectEqual(ControlType.session_attach, controlTypeFromString(controlTypeName(.session_attach)));
     try std.testing.expectEqual(ControlType.session_status, controlTypeFromString(controlTypeName(.session_status)));
+    try std.testing.expectEqual(ControlType.mount_attach_v2, controlTypeFromString(controlTypeName(.mount_attach_v2)));
+    try std.testing.expectEqual(ControlType.mount_graph_delta_v2, controlTypeFromString(controlTypeName(.mount_graph_delta_v2)));
+    try std.testing.expectEqual(ControlType.mount_file_read_v2, controlTypeFromString(controlTypeName(.mount_file_read_v2)));
+    try std.testing.expectEqual(ControlType.mount_file_write_v2, controlTypeFromString(controlTypeName(.mount_file_write_v2)));
     try std.testing.expectEqual(ControlType.session_restore, controlTypeFromString(controlTypeName(.session_restore)));
     try std.testing.expectEqual(ControlType.session_history, controlTypeFromString(controlTypeName(.session_history)));
     try std.testing.expectEqual(ControlType.node_join_request, controlTypeFromString(controlTypeName(.node_join_request)));
