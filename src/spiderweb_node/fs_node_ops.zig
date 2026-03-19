@@ -959,7 +959,10 @@ pub const NodeOps = struct {
         const export_root = self.exports.items[export_index].root_path;
         const case_sensitive = self.exports.items[export_index].case_sensitive;
         for (paths) |raw_path| {
-            const normalized = normalizeAbsolutePathOwned(self.allocator, raw_path) catch continue;
+            const normalized = normalizeAbsolutePathOwned(self.allocator, raw_path) catch |err| switch (err) {
+                error.InvalidPath => continue,
+                else => return err,
+            };
 
             if (!isWithinRootCaseAware(export_root, normalized, case_sensitive) or
                 pathsEqualCaseAware(export_root, normalized, case_sensitive))
@@ -4196,6 +4199,7 @@ pub const NodeOps = struct {
         const link_path = std.fs.path.join(self.allocator, &.{ parent.path, name }) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
         defer self.allocator.free(link_path);
         if (!isWithinRoot(export_cfg.root_path, link_path)) return DispatchResult.failure(fs_protocol.Errno.EACCES, "path outside export root");
+        if (isExcludedLocalExportPath(&export_cfg, link_path)) return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
 
         fs_local_source_adapter.symlinkAbsolute(target, link_path) catch |err| return mapError(err);
         self.queueInvalidation(.{
@@ -4520,6 +4524,7 @@ pub const NodeOps = struct {
         const path = std.fs.path.join(self.allocator, &.{ parent.path, name }) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
         defer self.allocator.free(path);
         if (!isWithinRoot(export_cfg.root_path, path)) return DispatchResult.failure(fs_protocol.Errno.EACCES, "path outside export root");
+        if (isExcludedLocalExportPath(&export_cfg, path)) return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
 
         var file = sourceCreateExclusiveAbsolute(export_cfg.source_kind, path, mode) catch |err| return mapError(err);
         errdefer file.close();
@@ -4660,6 +4665,7 @@ pub const NodeOps = struct {
         const path = std.fs.path.join(self.allocator, &.{ parent.path, name }) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
         defer self.allocator.free(path);
         if (!isWithinRoot(export_cfg.root_path, path)) return DispatchResult.failure(fs_protocol.Errno.EACCES, "path outside export root");
+        if (isExcludedLocalExportPath(&export_cfg, path)) return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
 
         sourceDeleteFileAbsolute(export_cfg.source_kind, path) catch |err| return mapError(err);
         self.queueInvalidation(.{
@@ -4686,6 +4692,7 @@ pub const NodeOps = struct {
         const path = std.fs.path.join(self.allocator, &.{ parent.path, name }) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
         defer self.allocator.free(path);
         if (!isWithinRoot(export_cfg.root_path, path)) return DispatchResult.failure(fs_protocol.Errno.EACCES, "path outside export root");
+        if (isExcludedLocalExportPath(&export_cfg, path)) return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
 
         sourceMakeDirAbsolute(export_cfg.source_kind, path) catch |err| return mapError(err);
         self.queueInvalidation(.{
@@ -4712,6 +4719,7 @@ pub const NodeOps = struct {
         const path = std.fs.path.join(self.allocator, &.{ parent.path, name }) catch return DispatchResult.failure(fs_protocol.Errno.EIO, "out of memory");
         defer self.allocator.free(path);
         if (!isWithinRoot(export_cfg.root_path, path)) return DispatchResult.failure(fs_protocol.Errno.EACCES, "path outside export root");
+        if (isExcludedLocalExportPath(&export_cfg, path)) return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
 
         sourceDeleteDirAbsolute(export_cfg.source_kind, path) catch |err| return mapError(err);
         self.queueInvalidation(.{
@@ -4747,6 +4755,9 @@ pub const NodeOps = struct {
 
         if (!isWithinRoot(export_cfg.root_path, old_path) or !isWithinRoot(export_cfg.root_path, new_path)) {
             return DispatchResult.failure(fs_protocol.Errno.EACCES, "path outside export root");
+        }
+        if (isExcludedLocalExportPath(&export_cfg, old_path) or isExcludedLocalExportPath(&export_cfg, new_path)) {
+            return DispatchResult.failure(fs_protocol.Errno.ENOENT, "file not found");
         }
 
         const old_resolved_with_stat = sourceRealpathAndStatAbsolute(export_cfg.source_kind, self.allocator, old_path) catch |err| return mapError(err);
@@ -8018,6 +8029,34 @@ test "fs_node_ops: local export hides sandbox runtime folder" {
     try std.testing.expectEqual(fs_protocol.Errno.ENOENT, lookup_result.err_no);
 }
 
+fn expectSetExcludedSubtreesByNameHandlesOOM(allocator: std.mem.Allocator) !void {
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+
+    try temp.dir.makePath("mounted/project");
+
+    const root = try temp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+    const excluded = try std.fs.path.join(allocator, &.{ root, "mounted" });
+    defer allocator.free(excluded);
+
+    var node_ops = try NodeOps.init(allocator, &[_]ExportSpec{
+        .{ .name = "work", .path = root, .ro = false },
+    });
+    defer node_ops.deinit();
+
+    try node_ops.setExportExcludedSubtreesByName("work", &.{excluded});
+    try std.testing.expectEqual(@as(usize, 1), node_ops.exports.items[0].excluded_subtrees.items.len);
+}
+
+test "fs_node_ops: setExportExcludedSubtreesByName propagates oom" {
+    try std.testing.checkAllAllocationFailures(
+        std.testing.allocator,
+        expectSetExcludedSubtreesByNameHandlesOOM,
+        .{},
+    );
+}
+
 test "fs_node_ops: excluded local subtrees stay hidden and inaccessible" {
     const allocator = std.testing.allocator;
     var temp = std.testing.tmpDir(.{});
@@ -8122,6 +8161,113 @@ test "fs_node_ops: excluded local subtrees honor case-insensitive exports" {
     var lookup_hidden_result = node_ops.dispatch(lookup_hidden_req);
     defer lookup_hidden_result.deinit(allocator);
     try std.testing.expectEqual(fs_protocol.Errno.ENOENT, lookup_hidden_result.err_no);
+}
+
+test "fs_node_ops: excluded local subtrees block name-based mutations" {
+    const allocator = std.testing.allocator;
+    var temp = std.testing.tmpDir(.{});
+    defer temp.cleanup();
+
+    try temp.dir.makePath("mounted/project");
+    try temp.dir.writeFile(.{ .sub_path = "visible.txt", .data = "hello" });
+    try temp.dir.writeFile(.{ .sub_path = "mounted/hidden.txt", .data = "secret" });
+
+    const root = try temp.dir.realpathAlloc(allocator, ".");
+    defer allocator.free(root);
+    const excluded = try std.fs.path.join(allocator, &.{ root, "mounted" });
+    defer allocator.free(excluded);
+
+    var node_ops = try NodeOps.init(allocator, &[_]ExportSpec{
+        .{ .name = "work", .path = root, .ro = false },
+    });
+    defer node_ops.deinit();
+    try node_ops.setExportExcludedSubtreesByName("work", &.{excluded});
+
+    const root_id = node_ops.exports.items[0].root_node_id;
+
+    const create_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":1,\"op\":\"CREATE\",\"node\":{d},\"a\":{{\"name\":\"mounted\",\"mode\":33188,\"flags\":2}}}}",
+        .{root_id},
+    );
+    defer allocator.free(create_json);
+    var create_req = try fs_protocol.parseRequest(allocator, create_json);
+    defer create_req.deinit();
+    var create_result = node_ops.dispatch(create_req);
+    defer create_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.ENOENT, create_result.err_no);
+
+    const unlink_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":2,\"op\":\"UNLINK\",\"node\":{d},\"a\":{{\"name\":\"mounted\"}}}}",
+        .{root_id},
+    );
+    defer allocator.free(unlink_json);
+    var unlink_req = try fs_protocol.parseRequest(allocator, unlink_json);
+    defer unlink_req.deinit();
+    var unlink_result = node_ops.dispatch(unlink_req);
+    defer unlink_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.ENOENT, unlink_result.err_no);
+
+    const mkdir_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":3,\"op\":\"MKDIR\",\"node\":{d},\"a\":{{\"name\":\"mounted\"}}}}",
+        .{root_id},
+    );
+    defer allocator.free(mkdir_json);
+    var mkdir_req = try fs_protocol.parseRequest(allocator, mkdir_json);
+    defer mkdir_req.deinit();
+    var mkdir_result = node_ops.dispatch(mkdir_req);
+    defer mkdir_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.ENOENT, mkdir_result.err_no);
+
+    const rmdir_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":4,\"op\":\"RMDIR\",\"node\":{d},\"a\":{{\"name\":\"mounted\"}}}}",
+        .{root_id},
+    );
+    defer allocator.free(rmdir_json);
+    var rmdir_req = try fs_protocol.parseRequest(allocator, rmdir_json);
+    defer rmdir_req.deinit();
+    var rmdir_result = node_ops.dispatch(rmdir_req);
+    defer rmdir_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.ENOENT, rmdir_result.err_no);
+
+    const symlink_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":5,\"op\":\"SYMLINK\",\"node\":{d},\"a\":{{\"name\":\"mounted\",\"target\":\"/tmp/target\"}}}}",
+        .{root_id},
+    );
+    defer allocator.free(symlink_json);
+    var symlink_req = try fs_protocol.parseRequest(allocator, symlink_json);
+    defer symlink_req.deinit();
+    var symlink_result = node_ops.dispatch(symlink_req);
+    defer symlink_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.ENOENT, symlink_result.err_no);
+
+    const rename_from_hidden_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":6,\"op\":\"RENAME\",\"a\":{{\"old_parent\":{d},\"old_name\":\"mounted\",\"new_parent\":{d},\"new_name\":\"renamed\"}}}}",
+        .{ root_id, root_id },
+    );
+    defer allocator.free(rename_from_hidden_json);
+    var rename_from_hidden_req = try fs_protocol.parseRequest(allocator, rename_from_hidden_json);
+    defer rename_from_hidden_req.deinit();
+    var rename_from_hidden_result = node_ops.dispatch(rename_from_hidden_req);
+    defer rename_from_hidden_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.ENOENT, rename_from_hidden_result.err_no);
+
+    const rename_into_hidden_json = try std.fmt.allocPrint(
+        allocator,
+        "{{\"t\":\"req\",\"id\":7,\"op\":\"RENAME\",\"a\":{{\"old_parent\":{d},\"old_name\":\"visible.txt\",\"new_parent\":{d},\"new_name\":\"mounted\"}}}}",
+        .{ root_id, root_id },
+    );
+    defer allocator.free(rename_into_hidden_json);
+    var rename_into_hidden_req = try fs_protocol.parseRequest(allocator, rename_into_hidden_json);
+    defer rename_into_hidden_req.deinit();
+    var rename_into_hidden_result = node_ops.dispatch(rename_into_hidden_req);
+    defer rename_into_hidden_result.deinit(allocator);
+    try std.testing.expectEqual(fs_protocol.Errno.ENOENT, rename_into_hidden_result.err_no);
 }
 
 test "fs_node_ops: local readdir paging skips hidden entries without duplicates" {
