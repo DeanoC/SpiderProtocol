@@ -34,13 +34,20 @@ pub const NodeService = struct {
         ) anyerror!ChatInputSubmission,
     };
 
+    pub const BeforeOperationHook = struct {
+        ctx: ?*anyopaque = null,
+        run: *const fn (ctx: ?*anyopaque) anyerror!void,
+    };
+
     pub const InitOptions = struct {
         chat_input_hook: ?ChatInputHook = null,
+        before_operation_hook: ?BeforeOperationHook = null,
     };
 
     allocator: std.mem.Allocator,
     ops: fs_node_ops.NodeOps,
     chat_input_hook: ?ChatInputHook = null,
+    before_operation_hook: ?BeforeOperationHook = null,
     mutex: std.Thread.Mutex = .{},
 
     pub fn init(allocator: std.mem.Allocator, export_specs: []const fs_node_ops.ExportSpec) !NodeService {
@@ -56,6 +63,7 @@ pub const NodeService = struct {
             .allocator = allocator,
             .ops = try fs_node_ops.NodeOps.init(allocator, export_specs),
             .chat_input_hook = options.chat_input_hook,
+            .before_operation_hook = options.before_operation_hook,
         };
     }
 
@@ -82,6 +90,7 @@ pub const NodeService = struct {
     };
 
     pub fn handleRequestJsonWithEvents(self: *NodeService, payload: []const u8) !HandledRequest {
+        try self.runBeforeOperationHook();
         self.mutex.lock();
         defer self.mutex.unlock();
 
@@ -121,12 +130,14 @@ pub const NodeService = struct {
     }
 
     pub fn handleParsedRequestWithEvents(self: *NodeService, req: fs_protocol.ParsedRequest) !HandledRequest {
+        try self.runBeforeOperationHook();
         self.mutex.lock();
         defer self.mutex.unlock();
         return self.handleParsedRequestWithEventsUnlocked(req);
     }
 
     pub fn pollFilesystemInvalidations(self: *NodeService, max_events: usize) ![]fs_protocol.InvalidationEvent {
+        try self.runBeforeOperationHook();
         self.mutex.lock();
         defer self.mutex.unlock();
         return self.ops.pollFilesystemInvalidations(self.allocator, max_events);
@@ -160,6 +171,14 @@ pub const NodeService = struct {
         return self.ops.copyPendingEvents(self.allocator);
     }
 
+    pub fn setExportExcludedSubtreesByName(
+        self: *NodeService,
+        export_name: []const u8,
+        paths: []const []const u8,
+    ) !void {
+        try self.ops.setExportExcludedSubtreesByName(export_name, paths);
+    }
+
     pub fn readNamespaceFileContent(
         self: *NodeService,
         allocator: std.mem.Allocator,
@@ -187,6 +206,11 @@ pub const NodeService = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
         return self.ops.takeNamespaceRuntimeStateDirty();
+    }
+
+    fn runBeforeOperationHook(self: *NodeService) !void {
+        const hook = self.before_operation_hook orelse return;
+        try hook.run(hook.ctx);
     }
 
     fn handleParsedRequestWithEventsUnlocked(self: *NodeService, req: fs_protocol.ParsedRequest) !HandledRequest {
