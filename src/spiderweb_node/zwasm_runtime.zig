@@ -1,12 +1,18 @@
 const std = @import("std");
 const builtin = @import("builtin");
 const zwasm = @import("zwasm");
+const windows = std.os.windows;
 const c = if (builtin.os.tag == .windows) @cImport({
     @cInclude("fcntl.h");
     @cInclude("io.h");
 }) else struct {};
 
 const fd_t = if (builtin.os.tag == .windows) c_int else std.posix.fd_t;
+
+extern "kernel32" fn SetStdHandle(
+    nStdHandle: windows.DWORD,
+    hHandle: windows.HANDLE,
+) callconv(.winapi) windows.BOOL;
 
 var stdio_capture_mutex: std.Thread.Mutex = .{};
 
@@ -391,9 +397,35 @@ fn fdDup(fd: fd_t) !fd_t {
 fn fdDup2(from: fd_t, to: fd_t) !void {
     if (builtin.os.tag == .windows) {
         if (c._dup2(from, to) != 0) return error.Dup2Failed;
+        try syncWindowsStdHandle(to);
         return;
     }
     try std.posix.dup2(from, to);
+}
+
+fn syncWindowsStdHandle(fd: fd_t) !void {
+    if (builtin.os.tag != .windows) return;
+
+    const std_handle_id = switch (fd) {
+        0 => windows.STD_INPUT_HANDLE,
+        1 => windows.STD_OUTPUT_HANDLE,
+        2 => windows.STD_ERROR_HANDLE,
+        else => return,
+    };
+
+    const raw_handle = c._get_osfhandle(fd);
+    if (raw_handle == -1) return error.GetOsHandleFailed;
+    const handle: windows.HANDLE = @ptrFromInt(std.math.cast(usize, raw_handle) orelse return error.GetOsHandleFailed);
+
+    if (SetStdHandle(std_handle_id, handle) == 0) return error.SetStdHandleFailed;
+
+    const process_parameters = windows.peb().ProcessParameters;
+    switch (std_handle_id) {
+        windows.STD_INPUT_HANDLE => process_parameters.hStdInput = handle,
+        windows.STD_OUTPUT_HANDLE => process_parameters.hStdOutput = handle,
+        windows.STD_ERROR_HANDLE => process_parameters.hStdError = handle,
+        else => unreachable,
+    }
 }
 
 fn fdRead(fd: fd_t, buffer: []u8) !usize {
