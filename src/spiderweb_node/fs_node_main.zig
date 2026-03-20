@@ -1595,7 +1595,7 @@ fn buildNamespaceVenomExportFromVenomJson(
     }
 
     var owned = NamespaceVenomExportSpecOwned{
-        .name = try std.fmt.allocPrint(allocator, "svc-{s}", .{venom_id}),
+        .name = try allocator.dupe(u8, venom_id),
         .path = try std.fmt.allocPrint(allocator, "service:{s}", .{venom_id}),
         .source_id = try std.fmt.allocPrint(allocator, "service:{s}", .{venom_id}),
         .desc = try std.fmt.allocPrint(allocator, "namespace service {s}", .{venom_id}),
@@ -3646,7 +3646,7 @@ test "fs_node_main: native_proc namespace export is built only when executable p
     try std.testing.expect(with_path != null);
     var export_spec = with_path.?;
     defer export_spec.deinit(allocator);
-    try std.testing.expectEqualStrings("svc-camera-main", export_spec.name);
+    try std.testing.expectEqualStrings("camera-main", export_spec.name);
     try std.testing.expectEqualStrings("service:camera-main", export_spec.path);
     try std.testing.expect(export_spec.runtime_kind == .native_proc);
     try std.testing.expectEqualStrings("./camera-driver", export_spec.executable_path.?);
