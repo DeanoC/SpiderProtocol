@@ -979,6 +979,7 @@ pub fn controlMessageSchema(control_type: unified.ControlType) MessageSchemaSpec
         .mount_path_listxattr_v2 => controlSchema(.mount_path_listxattr_v2, "mount", .request, "AnyJson", "AnyJson", null),
         .mount_path_removexattr_v2 => controlSchema(.mount_path_removexattr_v2, "mount", .request, "AnyJson", "AnyJson", null),
         .mount_path_lock_v2 => controlSchema(.mount_path_lock_v2, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_setattr_v2 => controlSchema(.mount_path_setattr_v2, "mount", .request, "AnyJson", "AnyJson", null),
         .session_resume => controlSchema(.session_resume, "session", .request, "SessionKeyRequest", "SessionStatusResponse", null),
         .session_list => controlSchema(.session_list, "session", .request, null, "SessionListResponse", null),
         .session_close => controlSchema(.session_close, "session", .request, "SessionKeyRequest", "SessionCloseResponse", null),
