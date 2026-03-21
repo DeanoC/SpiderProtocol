@@ -1499,6 +1499,114 @@ fn loadConfiguredManifestVenoms(
     runtime_manager.stopAll();
 }
 
+fn buildManifestInputsFingerprint(
+    allocator: std.mem.Allocator,
+    manifest_paths: []const []const u8,
+    service_dirs: []const []const u8,
+) ![]u8 {
+    var entries = std.ArrayListUnmanaged([]u8){};
+    defer {
+        for (entries.items) |entry| allocator.free(entry);
+        entries.deinit(allocator);
+    }
+
+    for (manifest_paths) |manifest_path| {
+        try appendManifestPathFingerprint(allocator, &entries, manifest_path);
+    }
+    for (service_dirs) |dir_path| {
+        try appendManifestDirectoryFingerprint(allocator, &entries, dir_path);
+    }
+
+    std.mem.sort([]u8, entries.items, {}, struct {
+        fn lessThan(_: void, lhs: []u8, rhs: []u8) bool {
+            return std.mem.order(u8, lhs, rhs) == .lt;
+        }
+    }.lessThan);
+
+    var out = std.ArrayListUnmanaged(u8){};
+    errdefer out.deinit(allocator);
+    for (entries.items) |entry| {
+        try out.appendSlice(allocator, entry);
+        try out.append(allocator, '\n');
+    }
+    return out.toOwnedSlice(allocator);
+}
+
+fn appendManifestPathFingerprint(
+    allocator: std.mem.Allocator,
+    entries: *std.ArrayListUnmanaged([]u8),
+    path: []const u8,
+) !void {
+    const stat = statManifestFile(path) catch |err| switch (err) {
+        error.FileNotFound => {
+            try entries.append(allocator, try std.fmt.allocPrint(allocator, "missing:{s}", .{path}));
+            return;
+        },
+        else => return err,
+    };
+    try entries.append(allocator, try std.fmt.allocPrint(
+        allocator,
+        "file:{s}:{d}:{d}",
+        .{ path, stat.size, stat.mtime },
+    ));
+}
+
+fn appendManifestDirectoryFingerprint(
+    allocator: std.mem.Allocator,
+    entries: *std.ArrayListUnmanaged([]u8),
+    dir_path: []const u8,
+) !void {
+    var dir = openManifestDir(dir_path, .{ .iterate = true }) catch |err| switch (err) {
+        error.FileNotFound => {
+            try entries.append(allocator, try std.fmt.allocPrint(allocator, "missing-dir:{s}", .{dir_path}));
+            return;
+        },
+        else => return err,
+    };
+    defer dir.close();
+
+    var walker = try dir.walk(allocator);
+    defer walker.deinit();
+
+    while (try walker.next()) |entry| {
+        const full_path = if (entry.path.len == 0)
+            try allocator.dupe(u8, dir_path)
+        else
+            try std.fs.path.join(allocator, &.{ dir_path, entry.path });
+        defer allocator.free(full_path);
+
+        const stat = switch (entry.kind) {
+            .directory => entry.dir.stat() catch continue,
+            else => entry.dir.statFile(entry.basename) catch continue,
+        };
+
+        try entries.append(allocator, try std.fmt.allocPrint(
+            allocator,
+            "dir:{s}:{s}:{d}:{d}",
+            .{ dir_path, full_path, stat.size, stat.mtime },
+        ));
+    }
+}
+
+fn openManifestDir(path: []const u8, flags: std.fs.Dir.OpenOptions) !std.fs.Dir {
+    return if (std.fs.path.isAbsolute(path))
+        std.fs.openDirAbsolute(path, flags)
+    else
+        std.fs.cwd().openDir(path, flags);
+}
+
+fn statManifestFile(path: []const u8) !std.fs.File.Stat {
+    if (std.fs.path.isAbsolute(path)) {
+        const file = std.fs.openFileAbsolute(path, .{}) catch |err| switch (err) {
+            error.IsDir => return error.FileNotFound,
+            else => return err,
+        };
+        defer file.close();
+        return file.stat();
+    }
+    return std.fs.cwd().statFile(path);
+}
+
 fn buildNamespaceVenomExportFromVenomJson(
     allocator: std.mem.Allocator,
     venom_json: []const u8,
@@ -2278,9 +2386,26 @@ fn refreshControlRuntimeForNode(
     service: *fs_node_service.NodeService,
     runtime_state_path: []const u8,
     last_manifest_payload: *?[]u8,
+    last_manifest_inputs_fingerprint: *?[]u8,
 ) !bool {
     const node_id = state.node_id orelse return error.MissingField;
     const node_secret = state.node_secret orelse return error.MissingField;
+
+    const next_inputs_fingerprint = try buildManifestInputsFingerprint(
+        allocator,
+        venom_manifest_paths,
+        venom_dirs,
+    );
+    errdefer allocator.free(next_inputs_fingerprint);
+    const inputs_changed = if (last_manifest_inputs_fingerprint.*) |previous|
+        !std.mem.eql(u8, previous, next_inputs_fingerprint)
+    else
+        true;
+
+    if (!inputs_changed) {
+        allocator.free(next_inputs_fingerprint);
+        return false;
+    }
 
     venom_registry.clearExtraVenoms();
     deinitNamespaceVenomExportList(allocator, runtime_namespace_exports);
@@ -2346,6 +2471,8 @@ fn refreshControlRuntimeForNode(
 
     if (last_manifest_payload.*) |previous| allocator.free(previous);
     last_manifest_payload.* = next_payload;
+    if (last_manifest_inputs_fingerprint.*) |previous| allocator.free(previous);
+    last_manifest_inputs_fingerprint.* = next_inputs_fingerprint;
 
     saveNamespaceRuntimeStateToFile(allocator, runtime_state_path, service) catch |save_err| {
         std.log.warn("manifest reload: persist runtime state failed: {s}", .{@errorName(save_err)});
@@ -2549,6 +2676,8 @@ fn runControlRoutedNodeService(
     };
     var last_manifest_payload: ?[]u8 = null;
     defer if (last_manifest_payload) |payload| allocator.free(payload);
+    var last_manifest_inputs_fingerprint: ?[]u8 = null;
+    defer if (last_manifest_inputs_fingerprint) |payload| allocator.free(payload);
     const reload_interval_ms = if (manifest_reload_interval_ms == 0)
         default_manifest_reload_interval_ms
     else
@@ -2587,6 +2716,7 @@ fn runControlRoutedNodeService(
             &service,
             runtime_state_path,
             &last_manifest_payload,
+            &last_manifest_inputs_fingerprint,
         ) catch |reload_err| {
             const wait_ms = computeBackoff(reconnect_backoff_ms, reconnect_backoff_max_ms, attempts);
             attempts +%= 1;
@@ -2663,6 +2793,7 @@ fn runControlRoutedNodeService(
                         &service,
                         runtime_state_path,
                         &last_manifest_payload,
+                        &last_manifest_inputs_fingerprint,
                     ) catch |reload_err| {
                         std.log.warn("control tunnel: manifest reload failed: {s}", .{@errorName(reload_err)});
                         break :blk false;
@@ -3870,6 +4001,8 @@ test "fs_node_main: refreshControlRuntimeForNode detects manifest changes" {
     defer service.deinit();
     var last_payload: ?[]u8 = null;
     defer if (last_payload) |payload| allocator.free(payload);
+    var last_inputs_fingerprint: ?[]u8 = null;
+    defer if (last_inputs_fingerprint) |value| allocator.free(value);
 
     const changed_initial = try refreshControlRuntimeForNode(
         allocator,
@@ -3887,6 +4020,7 @@ test "fs_node_main: refreshControlRuntimeForNode detects manifest changes" {
         &service,
         runtime_state_path,
         &last_payload,
+        &last_inputs_fingerprint,
     );
     try std.testing.expect(changed_initial);
     try std.testing.expectEqual(@as(usize, 1), registry.extra_venoms.items.len);
@@ -3908,6 +4042,7 @@ test "fs_node_main: refreshControlRuntimeForNode detects manifest changes" {
         &service,
         runtime_state_path,
         &last_payload,
+        &last_inputs_fingerprint,
     );
     try std.testing.expect(!changed_noop);
 
@@ -3938,6 +4073,7 @@ test "fs_node_main: refreshControlRuntimeForNode detects manifest changes" {
         &service,
         runtime_state_path,
         &last_payload,
+        &last_inputs_fingerprint,
     );
     try std.testing.expect(changed_update);
     try std.testing.expectEqualStrings("hot-b", registry.extra_venoms.items[0].venom_id);
