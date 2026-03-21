@@ -12,7 +12,7 @@ func main() {
 
 	transport, err := spiderwebprotocol.DialWebSocketTextTransport(
 		ctx,
-		"ws://127.0.0.1:18891/v2/fs",
+		"ws://127.0.0.1:18891/fs",
 		nil,
 	)
 	if err != nil {

@@ -51,7 +51,7 @@ fn project_alias_request_serializes_project_fields() {
 
 #[test]
 fn parse_rejects_invalid_channel() {
-    let error = parse_control_request(r#"{"channel":"acheron","type":"control.version","id":"x","payload":{"protocol":"unified-v2"}}"#).unwrap_err();
+    let error = parse_control_request(r#"{"channel":"acheron","type":"control.version","id":"x","payload":{"protocol":"spiderweb-control"}}"#).unwrap_err();
     assert_eq!(error.code, "invalid_channel");
 }
 
@@ -62,11 +62,11 @@ fn parse_rejects_invalid_tag() {
 }
 
 #[test]
-fn control_event_round_trip_supports_mount_graph_delta_v2() {
-    let raw = r#"{"channel":"control","type":"control.mount_graph_delta_v2","payload":{"mount_session_id":"mount-1","generation":2,"delta":{"ops":[]}}}"#;
+fn control_event_round_trip_supports_mount_graph_delta() {
+    let raw = r#"{"channel":"control","type":"control.mount_graph_delta","payload":{"mount_session_id":"mount-1","generation":2,"delta":{"ops":[]}}}"#;
     let envelope = parse_control_event(raw).unwrap();
     match envelope {
-        ControlEventEnvelopeEnum::MountGraphDeltaV2(inner) => {
+        ControlEventEnvelopeEnum::MountGraphDelta(inner) => {
             assert_eq!(
                 inner.payload.unwrap(),
                 serde_json::json!({
@@ -78,9 +78,9 @@ fn control_event_round_trip_supports_mount_graph_delta_v2() {
         }
     }
 
-    let serialized = stringify_control_event(&ControlEventEnvelopeEnum::MountGraphDeltaV2(ControlEnvelope {
+    let serialized = stringify_control_event(&ControlEventEnvelopeEnum::MountGraphDelta(ControlEnvelope {
         channel: Channel::Control,
-        message_type: ControlMessageType::MountGraphDeltaV2,
+        message_type: ControlMessageType::MountGraphDelta,
         id: None,
         ok: None,
         payload: Some(serde_json::json!({
@@ -89,12 +89,12 @@ fn control_event_round_trip_supports_mount_graph_delta_v2() {
         })),
     }))
     .unwrap();
-    assert!(serialized.contains("\"type\":\"control.mount_graph_delta_v2\""));
+    assert!(serialized.contains("\"type\":\"control.mount_graph_delta\""));
 }
 
 #[tokio::test(flavor = "current_thread")]
 async fn control_client_matches_by_id() {
-    let response = r#"{"channel":"control","type":"control.version_ack","id":"req-1","ok":true,"payload":{"protocol":"unified-v2","acheron_runtime":"acheron-1","acheron_node":"unified-v2-fs","acheron_node_proto":2}}"#.to_string();
+    let response = r#"{"channel":"control","type":"control.version_ack","id":"req-1","ok":true,"payload":{"protocol":"spiderweb-control","acheron_runtime":"acheron-1","acheron_node":"spiderweb-fs","acheron_node_proto":2}}"#.to_string();
     let mut client = ControlClient::new(MockTextTransport::new([response]));
     let envelope = client.negotiate_version("req-1").await.unwrap();
     match envelope {
@@ -119,7 +119,7 @@ async fn acheron_client_pumps_events_before_response() {
     let event =
         r#"{"channel":"acheron","type":"acheron.e_fs_inval","payload":{"node":42,"what":"data"}}"#
             .to_string();
-    let response = r#"{"channel":"acheron","type":"acheron.r_fs_hello","tag":3,"ok":true,"payload":{"protocol":"unified-v2-fs","proto":2,"capabilities":{"exports":true}}}"#.to_string();
+    let response = r#"{"channel":"acheron","type":"acheron.r_fs_hello","tag":3,"ok":true,"payload":{"protocol":"spiderweb-fs","proto":2,"capabilities":{"exports":true}}}"#.to_string();
     let mut client = AcheronClient::new(MockTextTransport::new([event, response]));
     let mut saw_event = false;
     let response = client

@@ -1,9 +1,9 @@
 # Generated from src/sdk_artifacts.zig. Do not edit by hand.
 from __future__ import annotations
 
-CONTROL_PROTOCOL = "unified-v2"
+CONTROL_PROTOCOL = "spiderweb-control"
 ACHERON_RUNTIME_VERSION = "acheron-1"
-NODE_FS_PROTOCOL = "unified-v2-fs"
+NODE_FS_PROTOCOL = "spiderweb-fs"
 NODE_FS_PROTO = 2
 
 CONTROL_MESSAGE_TYPES = (
@@ -13,10 +13,22 @@ CONTROL_MESSAGE_TYPES = (
     "control.connect_ack",
     "control.session_attach",
     "control.session_status",
-    "control.mount_attach_v2",
-    "control.mount_graph_delta_v2",
-    "control.mount_file_read_v2",
-    "control.mount_file_write_v2",
+    "control.mount_attach",
+    "control.mount_graph_delta",
+    "control.mount_file_read",
+    "control.mount_file_write",
+    "control.mount_path_readlink",
+    "control.mount_path_mkdir",
+    "control.mount_path_unlink",
+    "control.mount_path_rmdir",
+    "control.mount_path_rename",
+    "control.mount_path_symlink",
+    "control.mount_path_setxattr",
+    "control.mount_path_getxattr",
+    "control.mount_path_listxattr",
+    "control.mount_path_removexattr",
+    "control.mount_path_lock",
+    "control.mount_path_setattr",
     "control.session_resume",
     "control.session_list",
     "control.session_close",

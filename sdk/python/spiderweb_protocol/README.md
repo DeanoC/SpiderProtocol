@@ -2,9 +2,9 @@
 
 Reference Python helpers for the current Spiderweb public wire surface:
 
-- unified-v2 control
+- spiderweb-control
 - Acheron runtime (`acheron-1`)
-- node FS handshake and Acheron FS messages (`unified-v2-fs`)
+- node FS handshake and Acheron FS messages (`spiderweb-fs`)
 
 The generated constants in `spiderweb_protocol/generated.py` come from
 `zig build sync-sdk`.

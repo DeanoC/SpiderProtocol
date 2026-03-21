@@ -1,10 +1,10 @@
 {
   "generated_by": "src/sdk_artifacts.zig",
   "canonical_repo": "Spiderweb/deps/spider-protocol",
-  "control_protocol": "unified-v2",
+  "control_protocol": "spiderweb-control",
   "acheron_runtime": "acheron-1",
   "node_fs_protocol": {
-    "protocol": "unified-v2-fs",
+    "protocol": "spiderweb-fs",
     "proto": 2
   },
   "envelope_rules": [
@@ -15,7 +15,7 @@
   ],
   "handshakes": {
     "control": [
-      {"message": "control.version", "required_payload": {"protocol": "unified-v2"}},
+      {"message": "control.version", "required_payload": {"protocol": "spiderweb-control"}},
       {"message": "control.connect"}
     ],
     "acheron_runtime": [
@@ -23,7 +23,7 @@
       {"message": "acheron.t_attach"}
     ],
     "node_fs": [
-      {"message": "acheron.t_fs_hello", "required_payload": {"protocol": "unified-v2-fs", "proto": 2}}
+      {"message": "acheron.t_fs_hello", "required_payload": {"protocol": "spiderweb-fs", "proto": 2}}
     ]
   },
   "messages": {
@@ -34,10 +34,22 @@
       {"name": "control.connect_ack", "category": "handshake", "direction": "response", "correlation_field": "id", "root_fields": [], "payload_schema": "ControlConnectAckPayload"},
       {"name": "control.session_attach", "category": "session", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "SessionAttachRequest", "result_schema": "SessionStatusResponse"},
       {"name": "control.session_status", "category": "session", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "SessionStatusRequest", "result_schema": "SessionStatusResponse"},
-      {"name": "control.mount_attach_v2", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "MountAttachRequest", "result_schema": "MountAttachResponse"},
-      {"name": "control.mount_graph_delta_v2", "category": "mount", "direction": "event", "root_fields": [], "payload_schema": "AnyJson"},
-      {"name": "control.mount_file_read_v2", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "MountFileReadRequest", "result_schema": "MountFileReadResponse"},
-      {"name": "control.mount_file_write_v2", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "MountFileWriteRequest", "result_schema": "MountFileWriteResponse"},
+      {"name": "control.mount_attach", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "MountAttachRequest", "result_schema": "MountAttachResponse"},
+      {"name": "control.mount_graph_delta", "category": "mount", "direction": "event", "root_fields": [], "payload_schema": "AnyJson"},
+      {"name": "control.mount_file_read", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "MountFileReadRequest", "result_schema": "MountFileReadResponse"},
+      {"name": "control.mount_file_write", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "MountFileWriteRequest", "result_schema": "MountFileWriteResponse"},
+      {"name": "control.mount_path_readlink", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_mkdir", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_unlink", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_rmdir", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_rename", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_symlink", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_setxattr", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_getxattr", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_listxattr", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_removexattr", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_lock", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
+      {"name": "control.mount_path_setattr", "category": "mount", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
       {"name": "control.session_resume", "category": "session", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "SessionKeyRequest", "result_schema": "SessionStatusResponse"},
       {"name": "control.session_list", "category": "session", "direction": "request", "correlation_field": "id", "root_fields": [], "result_schema": "SessionListResponse"},
       {"name": "control.session_close", "category": "session", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "SessionKeyRequest", "result_schema": "SessionCloseResponse"},

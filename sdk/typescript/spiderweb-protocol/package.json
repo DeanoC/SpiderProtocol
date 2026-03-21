@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Reference TypeScript SDK for Spiderweb unified-v2 and Acheron protocols.",
+  "description": "Reference TypeScript SDK for Spiderweb control and Acheron protocols.",
   "files": [
     "dist",
     "src",

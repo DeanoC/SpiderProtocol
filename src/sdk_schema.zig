@@ -957,29 +957,29 @@ pub fn controlMessageSchema(control_type: unified.ControlType) MessageSchemaSpec
         .connect_ack => controlSchema(.connect_ack, "handshake", .response, "ControlConnectAckPayload", null, null),
         .session_attach => controlSchema(.session_attach, "session", .request, "SessionAttachRequest", "SessionStatusResponse", null),
         .session_status => controlSchema(.session_status, "session", .request, "SessionStatusRequest", "SessionStatusResponse", null),
-        .mount_attach_v2 => controlSchema(.mount_attach_v2, "mount", .request, "MountAttachRequest", "MountAttachResponse", null),
-        .mount_graph_delta_v2 => .{
+        .mount_attach => controlSchema(.mount_attach, "mount", .request, "MountAttachRequest", "MountAttachResponse", null),
+        .mount_graph_delta => .{
             .channel = .control,
-            .wire_name = unified.controlTypeName(.mount_graph_delta_v2),
+            .wire_name = unified.controlTypeName(.mount_graph_delta),
             .category = "mount",
             .direction = .event,
             .correlation_field = null,
             .payload_schema = "AnyJson",
         },
-        .mount_file_read_v2 => controlSchema(.mount_file_read_v2, "mount", .request, "MountFileReadRequest", "MountFileReadResponse", null),
-        .mount_file_write_v2 => controlSchema(.mount_file_write_v2, "mount", .request, "MountFileWriteRequest", "MountFileWriteResponse", null),
-        .mount_path_readlink_v2 => controlSchema(.mount_path_readlink_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_mkdir_v2 => controlSchema(.mount_path_mkdir_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_unlink_v2 => controlSchema(.mount_path_unlink_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_rmdir_v2 => controlSchema(.mount_path_rmdir_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_rename_v2 => controlSchema(.mount_path_rename_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_symlink_v2 => controlSchema(.mount_path_symlink_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_setxattr_v2 => controlSchema(.mount_path_setxattr_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_getxattr_v2 => controlSchema(.mount_path_getxattr_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_listxattr_v2 => controlSchema(.mount_path_listxattr_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_removexattr_v2 => controlSchema(.mount_path_removexattr_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_lock_v2 => controlSchema(.mount_path_lock_v2, "mount", .request, "AnyJson", "AnyJson", null),
-        .mount_path_setattr_v2 => controlSchema(.mount_path_setattr_v2, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_file_read => controlSchema(.mount_file_read, "mount", .request, "MountFileReadRequest", "MountFileReadResponse", null),
+        .mount_file_write => controlSchema(.mount_file_write, "mount", .request, "MountFileWriteRequest", "MountFileWriteResponse", null),
+        .mount_path_readlink => controlSchema(.mount_path_readlink, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_mkdir => controlSchema(.mount_path_mkdir, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_unlink => controlSchema(.mount_path_unlink, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_rmdir => controlSchema(.mount_path_rmdir, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_rename => controlSchema(.mount_path_rename, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_symlink => controlSchema(.mount_path_symlink, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_setxattr => controlSchema(.mount_path_setxattr, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_getxattr => controlSchema(.mount_path_getxattr, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_listxattr => controlSchema(.mount_path_listxattr, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_removexattr => controlSchema(.mount_path_removexattr, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_lock => controlSchema(.mount_path_lock, "mount", .request, "AnyJson", "AnyJson", null),
+        .mount_path_setattr => controlSchema(.mount_path_setattr, "mount", .request, "AnyJson", "AnyJson", null),
         .session_resume => controlSchema(.session_resume, "session", .request, "SessionKeyRequest", "SessionStatusResponse", null),
         .session_list => controlSchema(.session_list, "session", .request, null, "SessionListResponse", null),
         .session_close => controlSchema(.session_close, "session", .request, "SessionKeyRequest", "SessionCloseResponse", null),
@@ -1135,22 +1135,22 @@ pub fn acheronMessageSchema(fsrpc_type: unified.FsrpcType) MessageSchemaSpec {
     };
 }
 
-test "controlMessageSchema covers mount v2 messages" {
-    const attach = controlMessageSchema(.mount_attach_v2);
+test "controlMessageSchema covers mount messages" {
+    const attach = controlMessageSchema(.mount_attach);
     try std.testing.expectEqualStrings("mount", attach.category);
     try std.testing.expectEqual(MessageDirection.request, attach.direction);
     try std.testing.expectEqualStrings("MountAttachRequest", attach.payload_schema.?);
     try std.testing.expectEqualStrings("MountAttachResponse", attach.result_schema.?);
 
-    const delta = controlMessageSchema(.mount_graph_delta_v2);
+    const delta = controlMessageSchema(.mount_graph_delta);
     try std.testing.expectEqual(MessageDirection.event, delta.direction);
     try std.testing.expect(delta.correlation_field == null);
 
-    const read = controlMessageSchema(.mount_file_read_v2);
+    const read = controlMessageSchema(.mount_file_read);
     try std.testing.expectEqualStrings("MountFileReadRequest", read.payload_schema.?);
     try std.testing.expectEqualStrings("MountFileReadResponse", read.result_schema.?);
 
-    const write = controlMessageSchema(.mount_file_write_v2);
+    const write = controlMessageSchema(.mount_file_write);
     try std.testing.expectEqualStrings("MountFileWriteRequest", write.payload_schema.?);
     try std.testing.expectEqualStrings("MountFileWriteResponse", write.result_schema.?);
 }

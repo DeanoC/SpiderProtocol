@@ -20,22 +20,22 @@ pub const ControlType = enum {
     connect_ack,
     session_attach,
     session_status,
-    mount_attach_v2,
-    mount_graph_delta_v2,
-    mount_file_read_v2,
-    mount_file_write_v2,
-    mount_path_readlink_v2,
-    mount_path_mkdir_v2,
-    mount_path_unlink_v2,
-    mount_path_rmdir_v2,
-    mount_path_rename_v2,
-    mount_path_symlink_v2,
-    mount_path_setxattr_v2,
-    mount_path_getxattr_v2,
-    mount_path_listxattr_v2,
-    mount_path_removexattr_v2,
-    mount_path_lock_v2,
-    mount_path_setattr_v2,
+    mount_attach,
+    mount_graph_delta,
+    mount_file_read,
+    mount_file_write,
+    mount_path_readlink,
+    mount_path_mkdir,
+    mount_path_unlink,
+    mount_path_rmdir,
+    mount_path_rename,
+    mount_path_symlink,
+    mount_path_setxattr,
+    mount_path_getxattr,
+    mount_path_listxattr,
+    mount_path_removexattr,
+    mount_path_lock,
+    mount_path_setattr,
     session_resume,
     session_list,
     session_close,
@@ -216,22 +216,22 @@ pub fn controlTypeFromString(value: []const u8) ControlType {
     if (std.mem.eql(u8, value, "control.connect_ack")) return .connect_ack;
     if (std.mem.eql(u8, value, "control.session_attach")) return .session_attach;
     if (std.mem.eql(u8, value, "control.session_status")) return .session_status;
-    if (std.mem.eql(u8, value, "control.mount_attach_v2")) return .mount_attach_v2;
-    if (std.mem.eql(u8, value, "control.mount_graph_delta_v2")) return .mount_graph_delta_v2;
-    if (std.mem.eql(u8, value, "control.mount_file_read_v2")) return .mount_file_read_v2;
-    if (std.mem.eql(u8, value, "control.mount_file_write_v2")) return .mount_file_write_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_readlink_v2")) return .mount_path_readlink_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_mkdir_v2")) return .mount_path_mkdir_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_unlink_v2")) return .mount_path_unlink_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_rmdir_v2")) return .mount_path_rmdir_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_rename_v2")) return .mount_path_rename_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_symlink_v2")) return .mount_path_symlink_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_setxattr_v2")) return .mount_path_setxattr_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_getxattr_v2")) return .mount_path_getxattr_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_listxattr_v2")) return .mount_path_listxattr_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_removexattr_v2")) return .mount_path_removexattr_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_lock_v2")) return .mount_path_lock_v2;
-    if (std.mem.eql(u8, value, "control.mount_path_setattr_v2")) return .mount_path_setattr_v2;
+    if (std.mem.eql(u8, value, "control.mount_attach")) return .mount_attach;
+    if (std.mem.eql(u8, value, "control.mount_graph_delta")) return .mount_graph_delta;
+    if (std.mem.eql(u8, value, "control.mount_file_read")) return .mount_file_read;
+    if (std.mem.eql(u8, value, "control.mount_file_write")) return .mount_file_write;
+    if (std.mem.eql(u8, value, "control.mount_path_readlink")) return .mount_path_readlink;
+    if (std.mem.eql(u8, value, "control.mount_path_mkdir")) return .mount_path_mkdir;
+    if (std.mem.eql(u8, value, "control.mount_path_unlink")) return .mount_path_unlink;
+    if (std.mem.eql(u8, value, "control.mount_path_rmdir")) return .mount_path_rmdir;
+    if (std.mem.eql(u8, value, "control.mount_path_rename")) return .mount_path_rename;
+    if (std.mem.eql(u8, value, "control.mount_path_symlink")) return .mount_path_symlink;
+    if (std.mem.eql(u8, value, "control.mount_path_setxattr")) return .mount_path_setxattr;
+    if (std.mem.eql(u8, value, "control.mount_path_getxattr")) return .mount_path_getxattr;
+    if (std.mem.eql(u8, value, "control.mount_path_listxattr")) return .mount_path_listxattr;
+    if (std.mem.eql(u8, value, "control.mount_path_removexattr")) return .mount_path_removexattr;
+    if (std.mem.eql(u8, value, "control.mount_path_lock")) return .mount_path_lock;
+    if (std.mem.eql(u8, value, "control.mount_path_setattr")) return .mount_path_setattr;
     if (std.mem.eql(u8, value, "control.session_resume")) return .session_resume;
     if (std.mem.eql(u8, value, "control.session_list")) return .session_list;
     if (std.mem.eql(u8, value, "control.session_close")) return .session_close;
@@ -379,22 +379,22 @@ pub fn controlTypeName(value: ControlType) []const u8 {
         .connect_ack => "control.connect_ack",
         .session_attach => "control.session_attach",
         .session_status => "control.session_status",
-        .mount_attach_v2 => "control.mount_attach_v2",
-        .mount_graph_delta_v2 => "control.mount_graph_delta_v2",
-        .mount_file_read_v2 => "control.mount_file_read_v2",
-        .mount_file_write_v2 => "control.mount_file_write_v2",
-        .mount_path_readlink_v2 => "control.mount_path_readlink_v2",
-        .mount_path_mkdir_v2 => "control.mount_path_mkdir_v2",
-        .mount_path_unlink_v2 => "control.mount_path_unlink_v2",
-        .mount_path_rmdir_v2 => "control.mount_path_rmdir_v2",
-        .mount_path_rename_v2 => "control.mount_path_rename_v2",
-        .mount_path_symlink_v2 => "control.mount_path_symlink_v2",
-        .mount_path_setxattr_v2 => "control.mount_path_setxattr_v2",
-        .mount_path_getxattr_v2 => "control.mount_path_getxattr_v2",
-        .mount_path_listxattr_v2 => "control.mount_path_listxattr_v2",
-        .mount_path_removexattr_v2 => "control.mount_path_removexattr_v2",
-        .mount_path_lock_v2 => "control.mount_path_lock_v2",
-        .mount_path_setattr_v2 => "control.mount_path_setattr_v2",
+        .mount_attach => "control.mount_attach",
+        .mount_graph_delta => "control.mount_graph_delta",
+        .mount_file_read => "control.mount_file_read",
+        .mount_file_write => "control.mount_file_write",
+        .mount_path_readlink => "control.mount_path_readlink",
+        .mount_path_mkdir => "control.mount_path_mkdir",
+        .mount_path_unlink => "control.mount_path_unlink",
+        .mount_path_rmdir => "control.mount_path_rmdir",
+        .mount_path_rename => "control.mount_path_rename",
+        .mount_path_symlink => "control.mount_path_symlink",
+        .mount_path_setxattr => "control.mount_path_setxattr",
+        .mount_path_getxattr => "control.mount_path_getxattr",
+        .mount_path_listxattr => "control.mount_path_listxattr",
+        .mount_path_removexattr => "control.mount_path_removexattr",
+        .mount_path_lock => "control.mount_path_lock",
+        .mount_path_setattr => "control.mount_path_setattr",
         .session_resume => "control.session_resume",
         .session_list => "control.session_list",
         .session_close => "control.session_close",
@@ -535,27 +535,27 @@ pub fn acheronTypeName(value: FsrpcType) []const u8 {
     return fsrpcTypeName(value);
 }
 
-test "unified_types: v2 control names round-trip as canonical strings" {
+test "unified_types: mount control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.version, controlTypeFromString(controlTypeName(.version)));
     try std.testing.expectEqual(ControlType.connect, controlTypeFromString(controlTypeName(.connect)));
     try std.testing.expectEqual(ControlType.session_attach, controlTypeFromString(controlTypeName(.session_attach)));
     try std.testing.expectEqual(ControlType.session_status, controlTypeFromString(controlTypeName(.session_status)));
-    try std.testing.expectEqual(ControlType.mount_attach_v2, controlTypeFromString(controlTypeName(.mount_attach_v2)));
-    try std.testing.expectEqual(ControlType.mount_graph_delta_v2, controlTypeFromString(controlTypeName(.mount_graph_delta_v2)));
-    try std.testing.expectEqual(ControlType.mount_file_read_v2, controlTypeFromString(controlTypeName(.mount_file_read_v2)));
-    try std.testing.expectEqual(ControlType.mount_file_write_v2, controlTypeFromString(controlTypeName(.mount_file_write_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_readlink_v2, controlTypeFromString(controlTypeName(.mount_path_readlink_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_mkdir_v2, controlTypeFromString(controlTypeName(.mount_path_mkdir_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_unlink_v2, controlTypeFromString(controlTypeName(.mount_path_unlink_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_rmdir_v2, controlTypeFromString(controlTypeName(.mount_path_rmdir_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_rename_v2, controlTypeFromString(controlTypeName(.mount_path_rename_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_symlink_v2, controlTypeFromString(controlTypeName(.mount_path_symlink_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_setxattr_v2, controlTypeFromString(controlTypeName(.mount_path_setxattr_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_getxattr_v2, controlTypeFromString(controlTypeName(.mount_path_getxattr_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_listxattr_v2, controlTypeFromString(controlTypeName(.mount_path_listxattr_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_removexattr_v2, controlTypeFromString(controlTypeName(.mount_path_removexattr_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_lock_v2, controlTypeFromString(controlTypeName(.mount_path_lock_v2)));
-    try std.testing.expectEqual(ControlType.mount_path_setattr_v2, controlTypeFromString(controlTypeName(.mount_path_setattr_v2)));
+    try std.testing.expectEqual(ControlType.mount_attach, controlTypeFromString(controlTypeName(.mount_attach)));
+    try std.testing.expectEqual(ControlType.mount_graph_delta, controlTypeFromString(controlTypeName(.mount_graph_delta)));
+    try std.testing.expectEqual(ControlType.mount_file_read, controlTypeFromString(controlTypeName(.mount_file_read)));
+    try std.testing.expectEqual(ControlType.mount_file_write, controlTypeFromString(controlTypeName(.mount_file_write)));
+    try std.testing.expectEqual(ControlType.mount_path_readlink, controlTypeFromString(controlTypeName(.mount_path_readlink)));
+    try std.testing.expectEqual(ControlType.mount_path_mkdir, controlTypeFromString(controlTypeName(.mount_path_mkdir)));
+    try std.testing.expectEqual(ControlType.mount_path_unlink, controlTypeFromString(controlTypeName(.mount_path_unlink)));
+    try std.testing.expectEqual(ControlType.mount_path_rmdir, controlTypeFromString(controlTypeName(.mount_path_rmdir)));
+    try std.testing.expectEqual(ControlType.mount_path_rename, controlTypeFromString(controlTypeName(.mount_path_rename)));
+    try std.testing.expectEqual(ControlType.mount_path_symlink, controlTypeFromString(controlTypeName(.mount_path_symlink)));
+    try std.testing.expectEqual(ControlType.mount_path_setxattr, controlTypeFromString(controlTypeName(.mount_path_setxattr)));
+    try std.testing.expectEqual(ControlType.mount_path_getxattr, controlTypeFromString(controlTypeName(.mount_path_getxattr)));
+    try std.testing.expectEqual(ControlType.mount_path_listxattr, controlTypeFromString(controlTypeName(.mount_path_listxattr)));
+    try std.testing.expectEqual(ControlType.mount_path_removexattr, controlTypeFromString(controlTypeName(.mount_path_removexattr)));
+    try std.testing.expectEqual(ControlType.mount_path_lock, controlTypeFromString(controlTypeName(.mount_path_lock)));
+    try std.testing.expectEqual(ControlType.mount_path_setattr, controlTypeFromString(controlTypeName(.mount_path_setattr)));
     try std.testing.expectEqual(ControlType.session_restore, controlTypeFromString(controlTypeName(.session_restore)));
     try std.testing.expectEqual(ControlType.session_history, controlTypeFromString(controlTypeName(.session_history)));
     try std.testing.expectEqual(ControlType.node_join_request, controlTypeFromString(controlTypeName(.node_join_request)));

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "spiderweb-protocol"
 version = "0.1.0"
-description = "Reference Python protocol helpers for Spiderweb unified-v2 and Acheron."
+description = "Reference Python protocol helpers for Spiderweb control and Acheron."
 readme = "README.md"
 requires-python = ">=3.11"
 

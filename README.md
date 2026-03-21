@@ -2,7 +2,7 @@
 
 Shared Spiderweb protocol parsing/building utilities for Zig-based servers and clients.
 
-SpiderProtocol defines the unified-v2 control + Acheron filesystem protocol types, plus node runtime modules used by Spiderweb and SpiderNode.
+SpiderProtocol defines the spiderweb-control control + Acheron filesystem protocol types, plus node runtime modules used by Spiderweb and SpiderNode.
 
 Supported SDK artifact targets:
 - `sdk/typescript/spiderweb-protocol`

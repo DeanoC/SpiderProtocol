@@ -38,7 +38,7 @@ Executable namespace drivers follow the ABI documented in:
 
 ## Canonical Protocol References
 
-- `protocols/unified-v2-control.md`
+- `protocols/spiderweb-control-control.md`
 - `protocols/acheron-runtime-v1.md`
-- `protocols/node-fs-unified-v2.md`
+- `protocols/node-fs-spiderweb-control.md`
 - `protocols/spider-venom-wasm-abi-v1.md`

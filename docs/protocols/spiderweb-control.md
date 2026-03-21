@@ -1,4 +1,4 @@
-# Unified-v2 Control Protocol
+# Spiderweb Control Protocol (`spiderweb-control`)
 
 Status: generated from `sdk/spec/protocol.json`
 
@@ -6,7 +6,7 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 
 ## Constants
 
-- protocol name: `unified-v2`
+- protocol name: `spiderweb-control`
 - websocket endpoint: control lives on the base websocket path (`/`)
 - request correlation field: `id`
 - error message type: `control.error`
@@ -21,7 +21,7 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 
 ## Required Handshake
 
-1. Send `control.version` with payload `{"protocol":"unified-v2"}`.
+1. Send `control.version` with payload `{"protocol":"spiderweb-control"}`.
 2. Wait for `control.version_ack`.
 3. Send `control.connect`.
 4. Wait for `control.connect_ack`.
@@ -35,10 +35,22 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 | `control.connect_ack` | handshake | response |
 | `control.session_attach` | session | request |
 | `control.session_status` | session | request |
-| `control.mount_attach_v2` | mount | request |
-| `control.mount_graph_delta_v2` | mount | event |
-| `control.mount_file_read_v2` | mount | request |
-| `control.mount_file_write_v2` | mount | request |
+| `control.mount_attach` | mount | request |
+| `control.mount_graph_delta` | mount | event |
+| `control.mount_file_read` | mount | request |
+| `control.mount_file_write` | mount | request |
+| `control.mount_path_readlink` | mount | request |
+| `control.mount_path_mkdir` | mount | request |
+| `control.mount_path_unlink` | mount | request |
+| `control.mount_path_rmdir` | mount | request |
+| `control.mount_path_rename` | mount | request |
+| `control.mount_path_symlink` | mount | request |
+| `control.mount_path_setxattr` | mount | request |
+| `control.mount_path_getxattr` | mount | request |
+| `control.mount_path_listxattr` | mount | request |
+| `control.mount_path_removexattr` | mount | request |
+| `control.mount_path_lock` | mount | request |
+| `control.mount_path_setattr` | mount | request |
 | `control.session_resume` | session | request |
 | `control.session_list` | session | request |
 | `control.session_close` | session | request |

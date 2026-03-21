@@ -1,9 +1,9 @@
 // Code generated from src/sdk_artifacts.zig. DO NOT EDIT.
 package spiderwebprotocol
 
-const ControlProtocol = "unified-v2"
+const ControlProtocol = "spiderweb-control"
 const AcheronRuntimeVersion = "acheron-1"
-const NodeFSProtocol = "unified-v2-fs"
+const NodeFSProtocol = "spiderweb-fs"
 const NodeFSProto uint32 = 2
 
 var ControlMessageTypes = []string{
@@ -13,10 +13,22 @@ var ControlMessageTypes = []string{
     "control.connect_ack",
     "control.session_attach",
     "control.session_status",
-    "control.mount_attach_v2",
-    "control.mount_graph_delta_v2",
-    "control.mount_file_read_v2",
-    "control.mount_file_write_v2",
+    "control.mount_attach",
+    "control.mount_graph_delta",
+    "control.mount_file_read",
+    "control.mount_file_write",
+    "control.mount_path_readlink",
+    "control.mount_path_mkdir",
+    "control.mount_path_unlink",
+    "control.mount_path_rmdir",
+    "control.mount_path_rename",
+    "control.mount_path_symlink",
+    "control.mount_path_setxattr",
+    "control.mount_path_getxattr",
+    "control.mount_path_listxattr",
+    "control.mount_path_removexattr",
+    "control.mount_path_lock",
+    "control.mount_path_setattr",
     "control.session_resume",
     "control.session_list",
     "control.session_close",

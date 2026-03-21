@@ -5,7 +5,7 @@ const fs_node_ops = @import("fs_node_ops.zig");
 const fs_node_service = @import("fs_node_service.zig");
 const fs_watch_runtime = @import("fs_watch_runtime.zig");
 const unified = @import("spider-protocol").unified;
-const fsrpc_node_protocol_version = "unified-v2-fs";
+const fsrpc_node_protocol_version = "spiderweb-fs";
 const fsrpc_node_proto_id: i64 = 2;
 
 pub fn run(
@@ -38,7 +38,7 @@ pub fn run(
     var tcp_server = try address.listen(.{ .reuse_address = true });
     defer tcp_server.deinit();
 
-    std.log.info("FS node websocket server listening at ws://{s}:{d}/v2/fs", .{ bind_addr, port });
+    std.log.info("FS node websocket server listening at ws://{s}:{d}/fs", .{ bind_addr, port });
 
     while (true) {
         var connection = tcp_server.accept() catch |err| {
@@ -200,7 +200,7 @@ fn handleConnection(ctx: *ConnectionContext) !void {
     var handshake = try websocket_transport.performHandshakeWithInfo(ctx.allocator, &ctx.stream);
     defer handshake.deinit(ctx.allocator);
 
-    if (!(std.mem.eql(u8, handshake.path, "/v2/fs") or std.mem.eql(u8, handshake.path, "/"))) {
+    if (!(std.mem.eql(u8, handshake.path, "/fs") or std.mem.eql(u8, handshake.path, "/"))) {
         const response = try unified.buildFsrpcFsError(
             ctx.allocator,
             null,

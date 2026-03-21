@@ -3,9 +3,9 @@ use serde::{Deserialize, Serialize};
 
 pub type AnyJson = serde_json::Value;
 
-pub const CONTROL_PROTOCOL: &str = "unified-v2";
+pub const CONTROL_PROTOCOL: &str = "spiderweb-control";
 pub const ACHERON_RUNTIME_VERSION: &str = "acheron-1";
-pub const NODE_FS_PROTOCOL: &str = "unified-v2-fs";
+pub const NODE_FS_PROTOCOL: &str = "spiderweb-fs";
 pub const NODE_FS_PROTO: u32 = 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -30,14 +30,38 @@ pub enum ControlMessageType {
     SessionAttach,
     #[serde(rename = "control.session_status")]
     SessionStatus,
-    #[serde(rename = "control.mount_attach_v2")]
-    MountAttachV2,
-    #[serde(rename = "control.mount_graph_delta_v2")]
-    MountGraphDeltaV2,
-    #[serde(rename = "control.mount_file_read_v2")]
-    MountFileReadV2,
-    #[serde(rename = "control.mount_file_write_v2")]
-    MountFileWriteV2,
+    #[serde(rename = "control.mount_attach")]
+    MountAttach,
+    #[serde(rename = "control.mount_graph_delta")]
+    MountGraphDelta,
+    #[serde(rename = "control.mount_file_read")]
+    MountFileRead,
+    #[serde(rename = "control.mount_file_write")]
+    MountFileWrite,
+    #[serde(rename = "control.mount_path_readlink")]
+    MountPathReadlink,
+    #[serde(rename = "control.mount_path_mkdir")]
+    MountPathMkdir,
+    #[serde(rename = "control.mount_path_unlink")]
+    MountPathUnlink,
+    #[serde(rename = "control.mount_path_rmdir")]
+    MountPathRmdir,
+    #[serde(rename = "control.mount_path_rename")]
+    MountPathRename,
+    #[serde(rename = "control.mount_path_symlink")]
+    MountPathSymlink,
+    #[serde(rename = "control.mount_path_setxattr")]
+    MountPathSetxattr,
+    #[serde(rename = "control.mount_path_getxattr")]
+    MountPathGetxattr,
+    #[serde(rename = "control.mount_path_listxattr")]
+    MountPathListxattr,
+    #[serde(rename = "control.mount_path_removexattr")]
+    MountPathRemovexattr,
+    #[serde(rename = "control.mount_path_lock")]
+    MountPathLock,
+    #[serde(rename = "control.mount_path_setattr")]
+    MountPathSetattr,
     #[serde(rename = "control.session_resume")]
     SessionResume,
     #[serde(rename = "control.session_list")]
@@ -1506,9 +1530,21 @@ pub enum ControlRequestEnvelope {
     Connect(ControlEnvelope<EmptyObject>),
     SessionAttach(ControlEnvelope<SessionAttachRequest>),
     SessionStatus(ControlEnvelope<SessionStatusRequest>),
-    MountAttachV2(ControlEnvelope<MountAttachRequest>),
-    MountFileReadV2(ControlEnvelope<MountFileReadRequest>),
-    MountFileWriteV2(ControlEnvelope<MountFileWriteRequest>),
+    MountAttach(ControlEnvelope<MountAttachRequest>),
+    MountFileRead(ControlEnvelope<MountFileReadRequest>),
+    MountFileWrite(ControlEnvelope<MountFileWriteRequest>),
+    MountPathReadlink(ControlEnvelope<AnyJson>),
+    MountPathMkdir(ControlEnvelope<AnyJson>),
+    MountPathUnlink(ControlEnvelope<AnyJson>),
+    MountPathRmdir(ControlEnvelope<AnyJson>),
+    MountPathRename(ControlEnvelope<AnyJson>),
+    MountPathSymlink(ControlEnvelope<AnyJson>),
+    MountPathSetxattr(ControlEnvelope<AnyJson>),
+    MountPathGetxattr(ControlEnvelope<AnyJson>),
+    MountPathListxattr(ControlEnvelope<AnyJson>),
+    MountPathRemovexattr(ControlEnvelope<AnyJson>),
+    MountPathLock(ControlEnvelope<AnyJson>),
+    MountPathSetattr(ControlEnvelope<AnyJson>),
     SessionResume(ControlEnvelope<SessionKeyRequest>),
     SessionList(ControlEnvelope<EmptyObject>),
     SessionClose(ControlEnvelope<SessionKeyRequest>),
@@ -1575,9 +1611,21 @@ pub enum ControlResponseEnvelope {
     ConnectAck(ControlEnvelope<ControlConnectAckPayload>),
     SessionAttach(ControlEnvelope<SessionStatusResponse>),
     SessionStatus(ControlEnvelope<SessionStatusResponse>),
-    MountAttachV2(ControlEnvelope<MountAttachResponse>),
-    MountFileReadV2(ControlEnvelope<MountFileReadResponse>),
-    MountFileWriteV2(ControlEnvelope<MountFileWriteResponse>),
+    MountAttach(ControlEnvelope<MountAttachResponse>),
+    MountFileRead(ControlEnvelope<MountFileReadResponse>),
+    MountFileWrite(ControlEnvelope<MountFileWriteResponse>),
+    MountPathReadlink(ControlEnvelope<AnyJson>),
+    MountPathMkdir(ControlEnvelope<AnyJson>),
+    MountPathUnlink(ControlEnvelope<AnyJson>),
+    MountPathRmdir(ControlEnvelope<AnyJson>),
+    MountPathRename(ControlEnvelope<AnyJson>),
+    MountPathSymlink(ControlEnvelope<AnyJson>),
+    MountPathSetxattr(ControlEnvelope<AnyJson>),
+    MountPathGetxattr(ControlEnvelope<AnyJson>),
+    MountPathListxattr(ControlEnvelope<AnyJson>),
+    MountPathRemovexattr(ControlEnvelope<AnyJson>),
+    MountPathLock(ControlEnvelope<AnyJson>),
+    MountPathSetattr(ControlEnvelope<AnyJson>),
     SessionResume(ControlEnvelope<SessionStatusResponse>),
     SessionList(ControlEnvelope<SessionListResponse>),
     SessionClose(ControlEnvelope<SessionCloseResponse>),
@@ -1641,7 +1689,7 @@ pub enum ControlResponseEnvelope {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ControlEventEnvelopeEnum {
-    MountGraphDeltaV2(ControlEnvelope<AnyJson>),
+    MountGraphDelta(ControlEnvelope<AnyJson>),
 }
 
 impl ControlRequestEnvelope {
@@ -1651,9 +1699,21 @@ impl ControlRequestEnvelope {
             Self::Connect(inner) => serde_json::to_value(inner),
             Self::SessionAttach(inner) => serde_json::to_value(inner),
             Self::SessionStatus(inner) => serde_json::to_value(inner),
-            Self::MountAttachV2(inner) => serde_json::to_value(inner),
-            Self::MountFileReadV2(inner) => serde_json::to_value(inner),
-            Self::MountFileWriteV2(inner) => serde_json::to_value(inner),
+            Self::MountAttach(inner) => serde_json::to_value(inner),
+            Self::MountFileRead(inner) => serde_json::to_value(inner),
+            Self::MountFileWrite(inner) => serde_json::to_value(inner),
+            Self::MountPathReadlink(inner) => serde_json::to_value(inner),
+            Self::MountPathMkdir(inner) => serde_json::to_value(inner),
+            Self::MountPathUnlink(inner) => serde_json::to_value(inner),
+            Self::MountPathRmdir(inner) => serde_json::to_value(inner),
+            Self::MountPathRename(inner) => serde_json::to_value(inner),
+            Self::MountPathSymlink(inner) => serde_json::to_value(inner),
+            Self::MountPathSetxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathGetxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathListxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathRemovexattr(inner) => serde_json::to_value(inner),
+            Self::MountPathLock(inner) => serde_json::to_value(inner),
+            Self::MountPathSetattr(inner) => serde_json::to_value(inner),
             Self::SessionResume(inner) => serde_json::to_value(inner),
             Self::SessionList(inner) => serde_json::to_value(inner),
             Self::SessionClose(inner) => serde_json::to_value(inner),
@@ -1722,9 +1782,21 @@ impl ControlRequestEnvelope {
             "control.connect" => Ok(Self::Connect(serde_json::from_value(value)?)),
             "control.session_attach" => Ok(Self::SessionAttach(serde_json::from_value(value)?)),
             "control.session_status" => Ok(Self::SessionStatus(serde_json::from_value(value)?)),
-            "control.mount_attach_v2" => Ok(Self::MountAttachV2(serde_json::from_value(value)?)),
-            "control.mount_file_read_v2" => Ok(Self::MountFileReadV2(serde_json::from_value(value)?)),
-            "control.mount_file_write_v2" => Ok(Self::MountFileWriteV2(serde_json::from_value(value)?)),
+            "control.mount_attach" => Ok(Self::MountAttach(serde_json::from_value(value)?)),
+            "control.mount_file_read" => Ok(Self::MountFileRead(serde_json::from_value(value)?)),
+            "control.mount_file_write" => Ok(Self::MountFileWrite(serde_json::from_value(value)?)),
+            "control.mount_path_readlink" => Ok(Self::MountPathReadlink(serde_json::from_value(value)?)),
+            "control.mount_path_mkdir" => Ok(Self::MountPathMkdir(serde_json::from_value(value)?)),
+            "control.mount_path_unlink" => Ok(Self::MountPathUnlink(serde_json::from_value(value)?)),
+            "control.mount_path_rmdir" => Ok(Self::MountPathRmdir(serde_json::from_value(value)?)),
+            "control.mount_path_rename" => Ok(Self::MountPathRename(serde_json::from_value(value)?)),
+            "control.mount_path_symlink" => Ok(Self::MountPathSymlink(serde_json::from_value(value)?)),
+            "control.mount_path_setxattr" => Ok(Self::MountPathSetxattr(serde_json::from_value(value)?)),
+            "control.mount_path_getxattr" => Ok(Self::MountPathGetxattr(serde_json::from_value(value)?)),
+            "control.mount_path_listxattr" => Ok(Self::MountPathListxattr(serde_json::from_value(value)?)),
+            "control.mount_path_removexattr" => Ok(Self::MountPathRemovexattr(serde_json::from_value(value)?)),
+            "control.mount_path_lock" => Ok(Self::MountPathLock(serde_json::from_value(value)?)),
+            "control.mount_path_setattr" => Ok(Self::MountPathSetattr(serde_json::from_value(value)?)),
             "control.session_resume" => Ok(Self::SessionResume(serde_json::from_value(value)?)),
             "control.session_list" => Ok(Self::SessionList(serde_json::from_value(value)?)),
             "control.session_close" => Ok(Self::SessionClose(serde_json::from_value(value)?)),
@@ -1793,9 +1865,21 @@ impl ControlRequestEnvelope {
             Self::Connect(_) => ControlMessageType::Connect,
             Self::SessionAttach(_) => ControlMessageType::SessionAttach,
             Self::SessionStatus(_) => ControlMessageType::SessionStatus,
-            Self::MountAttachV2(_) => ControlMessageType::MountAttachV2,
-            Self::MountFileReadV2(_) => ControlMessageType::MountFileReadV2,
-            Self::MountFileWriteV2(_) => ControlMessageType::MountFileWriteV2,
+            Self::MountAttach(_) => ControlMessageType::MountAttach,
+            Self::MountFileRead(_) => ControlMessageType::MountFileRead,
+            Self::MountFileWrite(_) => ControlMessageType::MountFileWrite,
+            Self::MountPathReadlink(_) => ControlMessageType::MountPathReadlink,
+            Self::MountPathMkdir(_) => ControlMessageType::MountPathMkdir,
+            Self::MountPathUnlink(_) => ControlMessageType::MountPathUnlink,
+            Self::MountPathRmdir(_) => ControlMessageType::MountPathRmdir,
+            Self::MountPathRename(_) => ControlMessageType::MountPathRename,
+            Self::MountPathSymlink(_) => ControlMessageType::MountPathSymlink,
+            Self::MountPathSetxattr(_) => ControlMessageType::MountPathSetxattr,
+            Self::MountPathGetxattr(_) => ControlMessageType::MountPathGetxattr,
+            Self::MountPathListxattr(_) => ControlMessageType::MountPathListxattr,
+            Self::MountPathRemovexattr(_) => ControlMessageType::MountPathRemovexattr,
+            Self::MountPathLock(_) => ControlMessageType::MountPathLock,
+            Self::MountPathSetattr(_) => ControlMessageType::MountPathSetattr,
             Self::SessionResume(_) => ControlMessageType::SessionResume,
             Self::SessionList(_) => ControlMessageType::SessionList,
             Self::SessionClose(_) => ControlMessageType::SessionClose,
@@ -1865,9 +1949,21 @@ impl ControlResponseEnvelope {
             Self::ConnectAck(inner) => serde_json::to_value(inner),
             Self::SessionAttach(inner) => serde_json::to_value(inner),
             Self::SessionStatus(inner) => serde_json::to_value(inner),
-            Self::MountAttachV2(inner) => serde_json::to_value(inner),
-            Self::MountFileReadV2(inner) => serde_json::to_value(inner),
-            Self::MountFileWriteV2(inner) => serde_json::to_value(inner),
+            Self::MountAttach(inner) => serde_json::to_value(inner),
+            Self::MountFileRead(inner) => serde_json::to_value(inner),
+            Self::MountFileWrite(inner) => serde_json::to_value(inner),
+            Self::MountPathReadlink(inner) => serde_json::to_value(inner),
+            Self::MountPathMkdir(inner) => serde_json::to_value(inner),
+            Self::MountPathUnlink(inner) => serde_json::to_value(inner),
+            Self::MountPathRmdir(inner) => serde_json::to_value(inner),
+            Self::MountPathRename(inner) => serde_json::to_value(inner),
+            Self::MountPathSymlink(inner) => serde_json::to_value(inner),
+            Self::MountPathSetxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathGetxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathListxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathRemovexattr(inner) => serde_json::to_value(inner),
+            Self::MountPathLock(inner) => serde_json::to_value(inner),
+            Self::MountPathSetattr(inner) => serde_json::to_value(inner),
             Self::SessionResume(inner) => serde_json::to_value(inner),
             Self::SessionList(inner) => serde_json::to_value(inner),
             Self::SessionClose(inner) => serde_json::to_value(inner),
@@ -1937,9 +2033,21 @@ impl ControlResponseEnvelope {
             "control.connect_ack" => Ok(Self::ConnectAck(serde_json::from_value(value)?)),
             "control.session_attach" => Ok(Self::SessionAttach(serde_json::from_value(value)?)),
             "control.session_status" => Ok(Self::SessionStatus(serde_json::from_value(value)?)),
-            "control.mount_attach_v2" => Ok(Self::MountAttachV2(serde_json::from_value(value)?)),
-            "control.mount_file_read_v2" => Ok(Self::MountFileReadV2(serde_json::from_value(value)?)),
-            "control.mount_file_write_v2" => Ok(Self::MountFileWriteV2(serde_json::from_value(value)?)),
+            "control.mount_attach" => Ok(Self::MountAttach(serde_json::from_value(value)?)),
+            "control.mount_file_read" => Ok(Self::MountFileRead(serde_json::from_value(value)?)),
+            "control.mount_file_write" => Ok(Self::MountFileWrite(serde_json::from_value(value)?)),
+            "control.mount_path_readlink" => Ok(Self::MountPathReadlink(serde_json::from_value(value)?)),
+            "control.mount_path_mkdir" => Ok(Self::MountPathMkdir(serde_json::from_value(value)?)),
+            "control.mount_path_unlink" => Ok(Self::MountPathUnlink(serde_json::from_value(value)?)),
+            "control.mount_path_rmdir" => Ok(Self::MountPathRmdir(serde_json::from_value(value)?)),
+            "control.mount_path_rename" => Ok(Self::MountPathRename(serde_json::from_value(value)?)),
+            "control.mount_path_symlink" => Ok(Self::MountPathSymlink(serde_json::from_value(value)?)),
+            "control.mount_path_setxattr" => Ok(Self::MountPathSetxattr(serde_json::from_value(value)?)),
+            "control.mount_path_getxattr" => Ok(Self::MountPathGetxattr(serde_json::from_value(value)?)),
+            "control.mount_path_listxattr" => Ok(Self::MountPathListxattr(serde_json::from_value(value)?)),
+            "control.mount_path_removexattr" => Ok(Self::MountPathRemovexattr(serde_json::from_value(value)?)),
+            "control.mount_path_lock" => Ok(Self::MountPathLock(serde_json::from_value(value)?)),
+            "control.mount_path_setattr" => Ok(Self::MountPathSetattr(serde_json::from_value(value)?)),
             "control.session_resume" => Ok(Self::SessionResume(serde_json::from_value(value)?)),
             "control.session_list" => Ok(Self::SessionList(serde_json::from_value(value)?)),
             "control.session_close" => Ok(Self::SessionClose(serde_json::from_value(value)?)),
@@ -2009,9 +2117,21 @@ impl ControlResponseEnvelope {
             Self::ConnectAck(_) => ControlMessageType::ConnectAck,
             Self::SessionAttach(_) => ControlMessageType::SessionAttach,
             Self::SessionStatus(_) => ControlMessageType::SessionStatus,
-            Self::MountAttachV2(_) => ControlMessageType::MountAttachV2,
-            Self::MountFileReadV2(_) => ControlMessageType::MountFileReadV2,
-            Self::MountFileWriteV2(_) => ControlMessageType::MountFileWriteV2,
+            Self::MountAttach(_) => ControlMessageType::MountAttach,
+            Self::MountFileRead(_) => ControlMessageType::MountFileRead,
+            Self::MountFileWrite(_) => ControlMessageType::MountFileWrite,
+            Self::MountPathReadlink(_) => ControlMessageType::MountPathReadlink,
+            Self::MountPathMkdir(_) => ControlMessageType::MountPathMkdir,
+            Self::MountPathUnlink(_) => ControlMessageType::MountPathUnlink,
+            Self::MountPathRmdir(_) => ControlMessageType::MountPathRmdir,
+            Self::MountPathRename(_) => ControlMessageType::MountPathRename,
+            Self::MountPathSymlink(_) => ControlMessageType::MountPathSymlink,
+            Self::MountPathSetxattr(_) => ControlMessageType::MountPathSetxattr,
+            Self::MountPathGetxattr(_) => ControlMessageType::MountPathGetxattr,
+            Self::MountPathListxattr(_) => ControlMessageType::MountPathListxattr,
+            Self::MountPathRemovexattr(_) => ControlMessageType::MountPathRemovexattr,
+            Self::MountPathLock(_) => ControlMessageType::MountPathLock,
+            Self::MountPathSetattr(_) => ControlMessageType::MountPathSetattr,
             Self::SessionResume(_) => ControlMessageType::SessionResume,
             Self::SessionList(_) => ControlMessageType::SessionList,
             Self::SessionClose(_) => ControlMessageType::SessionClose,
@@ -2078,21 +2198,21 @@ impl ControlResponseEnvelope {
 impl ControlEventEnvelopeEnum {
     pub fn to_value(&self) -> serde_json::Result<serde_json::Value> {
         match self {
-            Self::MountGraphDeltaV2(inner) => serde_json::to_value(inner),
+            Self::MountGraphDelta(inner) => serde_json::to_value(inner),
         }
     }
 
     pub fn from_value(value: serde_json::Value) -> serde_json::Result<Self> {
         let message_type = value.get("type").and_then(|v| v.as_str()).ok_or_else(|| serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "missing type")))?;
         match message_type {
-            "control.mount_graph_delta_v2" => Ok(Self::MountGraphDeltaV2(serde_json::from_value(value)?)),
+            "control.mount_graph_delta" => Ok(Self::MountGraphDelta(serde_json::from_value(value)?)),
             _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "unsupported type"))),
         }
     }
 
     pub fn message_type(&self) -> ControlMessageType {
         match self {
-            Self::MountGraphDeltaV2(_) => ControlMessageType::MountGraphDeltaV2,
+            Self::MountGraphDelta(_) => ControlMessageType::MountGraphDelta,
         }
     }
 }

@@ -24,7 +24,7 @@ const default_lease_refresh_interval_ms: u64 = 60 * 1000;
 const default_manifest_reload_interval_ms: u64 = 2_000;
 const default_runtime_probe_catalog_sync_interval_ms: u64 = 1_000;
 const control_reply_timeout_ms: i32 = 45_000;
-const fsrpc_node_protocol_version = "unified-v2-fs";
+const fsrpc_node_protocol_version = "spiderweb-fs";
 const fsrpc_node_proto_id: i64 = 2;
 const control_node_not_found_code = "node_not_found";
 const control_node_auth_failed_code = "node_auth_failed";
@@ -852,7 +852,7 @@ pub fn main() !void {
     const effective_fs_url = if (advertised_fs_url) |value|
         value
     else
-        try std.fmt.allocPrint(allocator, "ws://{s}:{d}/v2/fs", .{ bind_addr, port });
+        try std.fmt.allocPrint(allocator, "ws://{s}:{d}/fs", .{ bind_addr, port });
     defer if (advertised_fs_url == null) allocator.free(effective_fs_url);
 
     var venom_registry = try node_capability_providers.Registry.init(allocator, .{
@@ -2208,7 +2208,7 @@ fn buildControlRoutedFsUrl(
     const parsed = try parseWsUrlWithDefaultPath(control_url, "/");
     return std.fmt.allocPrint(
         allocator,
-        "ws://{s}:{d}/v2/fs/node/{s}",
+        "ws://{s}:{d}/fs/node/{s}",
         .{ parsed.host, parsed.port, node_id },
     );
 }
@@ -3253,7 +3253,7 @@ fn negotiateControlVersion(
     defer allocator.free(escaped_request_id);
     const message = try std.fmt.allocPrint(
         allocator,
-        "{{\"channel\":\"control\",\"type\":\"control.version\",\"id\":\"{s}\",\"payload\":{{\"protocol\":\"unified-v2\"}}}}",
+        "{{\"channel\":\"control\",\"type\":\"control.version\",\"id\":\"{s}\",\"payload\":{{\"protocol\":\"spiderweb-control\"}}}}",
         .{escaped_request_id},
     );
     defer allocator.free(message);
@@ -3473,7 +3473,7 @@ fn printHelp() !void {
         \\  spiderweb-fs-node --bind 0.0.0.0 --port 18891 --export repo=/home/user/repo:ro
         \\  spiderweb-fs-node --export cloud=drive:root:ro:cred=gdrive.team
         \\  spiderweb-fs-node --auth-token my-node-session-token
-        \\  spiderweb-fs-node --control-url ws://127.0.0.1:18790/ --pair-mode invite --invite-token invite-abc --node-name clawz --fs-url ws://10.0.0.8:18891/v2/fs
+        \\  spiderweb-fs-node --control-url ws://127.0.0.1:18790/ --pair-mode invite --invite-token invite-abc --node-name clawz --fs-url ws://10.0.0.8:18891/fs
         \\  spiderweb-fs-node --control-url ws://127.0.0.1:18790/ --pair-mode request --node-name edge-1 --state-file ./node-state.json
         \\  spiderweb-fs-node --control-url ws://127.0.0.1:18790/ --pair-mode request --terminal-id 1 --terminal-id 2 --label site=hq --label tier=edge
         \\  spiderweb-fs-node --control-url ws://127.0.0.1:18790/ --pair-mode request --venoms-dir ./services.d
@@ -3730,7 +3730,7 @@ test "fs_node_main: node pair state save/load roundtrip" {
         .lease_expires_at_ms = 1739999999999,
         .request_id = try allocator.dupe(u8, "pending-join-2"),
         .node_name = try allocator.dupe(u8, "edge-12"),
-        .fs_url = try allocator.dupe(u8, "ws://10.0.0.12:18891/v2/fs"),
+        .fs_url = try allocator.dupe(u8, "ws://10.0.0.12:18891/fs"),
     };
     defer state.deinit(allocator);
 
@@ -3746,7 +3746,7 @@ test "fs_node_main: node pair state save/load roundtrip" {
     try std.testing.expectEqual(@as(i64, 1739999999999), loaded.lease_expires_at_ms);
     try std.testing.expectEqualStrings("pending-join-2", loaded.request_id.?);
     try std.testing.expectEqualStrings("edge-12", loaded.node_name.?);
-    try std.testing.expectEqualStrings("ws://10.0.0.12:18891/v2/fs", loaded.fs_url.?);
+    try std.testing.expectEqualStrings("ws://10.0.0.12:18891/fs", loaded.fs_url.?);
 }
 
 test "fs_node_main: runtime state path derives from node state path" {
