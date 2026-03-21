@@ -1742,7 +1742,7 @@ fn controlCategory(control_type: unified.ControlType) []const u8 {
     return switch (control_type) {
         .version, .version_ack, .connect, .connect_ack => "handshake",
         .session_attach, .session_status, .session_resume, .session_list, .session_close, .session_restore, .session_history => "session",
-        .mount_attach_v2, .mount_graph_delta_v2, .mount_file_read_v2, .mount_file_write_v2 => "mount",
+        .mount_attach_v2, .mount_graph_delta_v2, .mount_file_read_v2, .mount_file_write_v2, .mount_path_mkdir_v2, .mount_path_unlink_v2, .mount_path_rmdir_v2, .mount_path_rename_v2 => "mount",
         .agent_ensure, .agent_list, .agent_get => "agent",
         .node_invite_create, .node_join_request, .node_join_pending_list, .node_join_approve, .node_join_deny, .node_join, .node_ensure, .node_lease_refresh, .node_list, .node_get, .node_delete => "node",
         .venom_bind, .venom_upsert, .venom_get => "venom",

@@ -24,6 +24,10 @@ pub const ControlType = enum {
     mount_graph_delta_v2,
     mount_file_read_v2,
     mount_file_write_v2,
+    mount_path_mkdir_v2,
+    mount_path_unlink_v2,
+    mount_path_rmdir_v2,
+    mount_path_rename_v2,
     session_resume,
     session_list,
     session_close,
@@ -208,6 +212,10 @@ pub fn controlTypeFromString(value: []const u8) ControlType {
     if (std.mem.eql(u8, value, "control.mount_graph_delta_v2")) return .mount_graph_delta_v2;
     if (std.mem.eql(u8, value, "control.mount_file_read_v2")) return .mount_file_read_v2;
     if (std.mem.eql(u8, value, "control.mount_file_write_v2")) return .mount_file_write_v2;
+    if (std.mem.eql(u8, value, "control.mount_path_mkdir_v2")) return .mount_path_mkdir_v2;
+    if (std.mem.eql(u8, value, "control.mount_path_unlink_v2")) return .mount_path_unlink_v2;
+    if (std.mem.eql(u8, value, "control.mount_path_rmdir_v2")) return .mount_path_rmdir_v2;
+    if (std.mem.eql(u8, value, "control.mount_path_rename_v2")) return .mount_path_rename_v2;
     if (std.mem.eql(u8, value, "control.session_resume")) return .session_resume;
     if (std.mem.eql(u8, value, "control.session_list")) return .session_list;
     if (std.mem.eql(u8, value, "control.session_close")) return .session_close;
@@ -359,6 +367,10 @@ pub fn controlTypeName(value: ControlType) []const u8 {
         .mount_graph_delta_v2 => "control.mount_graph_delta_v2",
         .mount_file_read_v2 => "control.mount_file_read_v2",
         .mount_file_write_v2 => "control.mount_file_write_v2",
+        .mount_path_mkdir_v2 => "control.mount_path_mkdir_v2",
+        .mount_path_unlink_v2 => "control.mount_path_unlink_v2",
+        .mount_path_rmdir_v2 => "control.mount_path_rmdir_v2",
+        .mount_path_rename_v2 => "control.mount_path_rename_v2",
         .session_resume => "control.session_resume",
         .session_list => "control.session_list",
         .session_close => "control.session_close",
