@@ -1,4 +1,4 @@
-# Unified-v2 Control Protocol
+# Spiderweb Control Protocol (`spiderweb-control`)
 
 Status: generated from `sdk/spec/protocol.json`
 
@@ -6,7 +6,7 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 
 ## Constants
 
-- protocol name: `unified-v2`
+- protocol name: `spiderweb-control`
 - websocket endpoint: control lives on the base websocket path (`/`)
 - request correlation field: `id`
 - error message type: `control.error`
@@ -21,7 +21,7 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 
 ## Required Handshake
 
-1. Send `control.version` with payload `{"protocol":"unified-v2"}`.
+1. Send `control.version` with payload `{"protocol":"spiderweb-control"}`.
 2. Wait for `control.version_ack`.
 3. Send `control.connect`.
 4. Wait for `control.connect_ack`.
@@ -35,10 +35,22 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 | `control.connect_ack` | handshake | response |
 | `control.session_attach` | session | request |
 | `control.session_status` | session | request |
-| `control.mount_attach_v2` | mount | request |
-| `control.mount_graph_delta_v2` | mount | event |
-| `control.mount_file_read_v2` | mount | request |
-| `control.mount_file_write_v2` | mount | request |
+| `control.mount_attach` | mount | request |
+| `control.mount_graph_delta` | mount | event |
+| `control.mount_file_read` | mount | request |
+| `control.mount_file_write` | mount | request |
+| `control.mount_path_readlink` | mount | request |
+| `control.mount_path_mkdir` | mount | request |
+| `control.mount_path_unlink` | mount | request |
+| `control.mount_path_rmdir` | mount | request |
+| `control.mount_path_rename` | mount | request |
+| `control.mount_path_symlink` | mount | request |
+| `control.mount_path_setxattr` | mount | request |
+| `control.mount_path_getxattr` | mount | request |
+| `control.mount_path_listxattr` | mount | request |
+| `control.mount_path_removexattr` | mount | request |
+| `control.mount_path_lock` | mount | request |
+| `control.mount_path_setattr` | mount | request |
 | `control.session_resume` | session | request |
 | `control.session_list` | session | request |
 | `control.session_close` | session | request |
@@ -60,9 +72,6 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 | `control.venom_bind` | venom | request |
 | `control.venom_upsert` | venom | request |
 | `control.venom_get` | venom | request |
-| `control.agent_ensure` | agent | request |
-| `control.agent_list` | agent | request |
-| `control.agent_get` | agent | request |
 | `control.node_list` | node | request |
 | `control.node_get` | node | request |
 | `control.node_delete` | node | request |
@@ -83,20 +92,8 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 | `control.workspace_token_revoke` | workspace | request |
 | `control.workspace_activate` | workspace | request |
 | `control.workspace_up` | workspace | request |
-| `control.project_create` | project | request |
-| `control.project_update` | project | request |
-| `control.project_delete` | project | request |
-| `control.project_list` | project | request |
-| `control.project_get` | project | request |
-| `control.project_mount_set` | project | request |
-| `control.project_mount_remove` | project | request |
-| `control.project_mount_list` | project | request |
-| `control.project_token_rotate` | project | request |
-| `control.project_token_revoke` | project | request |
-| `control.project_activate` | project | request |
 | `control.workspace_status` | workspace | request |
 | `control.reconcile_status` | workspace | request |
-| `control.project_up` | project | request |
 | `control.audit_tail` | audit | request |
 | `control.error` | error | error |
 

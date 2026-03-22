@@ -25,11 +25,7 @@ Official Zig module name:
   - WebSocket frame helpers (`websocket_transport`)
   - FS client transport (`fs_client`)
 
-- `spiderweb_node`
-  - Standalone node runtime components (`fs_node_main`, `fs_node_server`, `fs_node_ops`)
-  - Source adapter stack (linux/posix/windows/gdrive/namespace/local)
-  - Service catalog + manifest loader
-  - Namespace driver/runtime scaffolding (native_proc / native_inproc / wasm)
+Standalone node runtime implementation now lives in SpiderNode rather than SpiderProtocol.
 
 ## Driver ABI
 
@@ -38,7 +34,7 @@ Executable namespace drivers follow the ABI documented in:
 
 ## Canonical Protocol References
 
-- `protocols/unified-v2-control.md`
+- `protocols/spiderweb-control-control.md`
 - `protocols/acheron-runtime-v1.md`
-- `protocols/node-fs-unified-v2.md`
+- `protocols/node-fs-spiderweb-control.md`
 - `protocols/spider-venom-wasm-abi-v1.md`

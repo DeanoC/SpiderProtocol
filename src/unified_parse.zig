@@ -131,13 +131,13 @@ test "unified_parse: parses control connect envelope" {
     try std.testing.expectEqualStrings("c1", parsed.id.?);
 }
 
-test "unified_parse: parses control project op envelope" {
+test "unified_parse: parses control workspace op envelope" {
     const allocator = std.testing.allocator;
-    var parsed = try parseMessage(allocator, "{\"channel\":\"control\",\"type\":\"control.project_list\",\"id\":\"p1\"}");
+    var parsed = try parseMessage(allocator, "{\"channel\":\"control\",\"type\":\"control.workspace_list\",\"id\":\"p1\"}");
     defer parsed.deinit(allocator);
 
     try std.testing.expectEqual(types.Channel.control, parsed.channel);
-    try std.testing.expectEqual(types.ControlType.project_list, parsed.control_type.?);
+    try std.testing.expectEqual(types.ControlType.workspace_list, parsed.control_type.?);
     try std.testing.expectEqualStrings("p1", parsed.id.?);
 }
 
@@ -193,7 +193,7 @@ test "unified_parse: parses fsrpc distributed-fs envelope" {
     try std.testing.expect(std.mem.indexOf(u8, parsed.payload_json.?, "\"name\":\"README.md\"") != null);
 }
 
-test "unified_parse: rejects envelope missing channel in v2" {
+test "unified_parse: rejects envelope missing channel" {
     const allocator = std.testing.allocator;
     try std.testing.expectError(
         types.ParseError.MissingField,

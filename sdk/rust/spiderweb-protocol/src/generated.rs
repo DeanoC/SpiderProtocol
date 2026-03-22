@@ -3,9 +3,9 @@ use serde::{Deserialize, Serialize};
 
 pub type AnyJson = serde_json::Value;
 
-pub const CONTROL_PROTOCOL: &str = "unified-v2";
+pub const CONTROL_PROTOCOL: &str = "spiderweb-control";
 pub const ACHERON_RUNTIME_VERSION: &str = "acheron-1";
-pub const NODE_FS_PROTOCOL: &str = "unified-v2-fs";
+pub const NODE_FS_PROTOCOL: &str = "spiderweb-fs";
 pub const NODE_FS_PROTO: u32 = 2;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -30,14 +30,38 @@ pub enum ControlMessageType {
     SessionAttach,
     #[serde(rename = "control.session_status")]
     SessionStatus,
-    #[serde(rename = "control.mount_attach_v2")]
-    MountAttachV2,
-    #[serde(rename = "control.mount_graph_delta_v2")]
-    MountGraphDeltaV2,
-    #[serde(rename = "control.mount_file_read_v2")]
-    MountFileReadV2,
-    #[serde(rename = "control.mount_file_write_v2")]
-    MountFileWriteV2,
+    #[serde(rename = "control.mount_attach")]
+    MountAttach,
+    #[serde(rename = "control.mount_graph_delta")]
+    MountGraphDelta,
+    #[serde(rename = "control.mount_file_read")]
+    MountFileRead,
+    #[serde(rename = "control.mount_file_write")]
+    MountFileWrite,
+    #[serde(rename = "control.mount_path_readlink")]
+    MountPathReadlink,
+    #[serde(rename = "control.mount_path_mkdir")]
+    MountPathMkdir,
+    #[serde(rename = "control.mount_path_unlink")]
+    MountPathUnlink,
+    #[serde(rename = "control.mount_path_rmdir")]
+    MountPathRmdir,
+    #[serde(rename = "control.mount_path_rename")]
+    MountPathRename,
+    #[serde(rename = "control.mount_path_symlink")]
+    MountPathSymlink,
+    #[serde(rename = "control.mount_path_setxattr")]
+    MountPathSetxattr,
+    #[serde(rename = "control.mount_path_getxattr")]
+    MountPathGetxattr,
+    #[serde(rename = "control.mount_path_listxattr")]
+    MountPathListxattr,
+    #[serde(rename = "control.mount_path_removexattr")]
+    MountPathRemovexattr,
+    #[serde(rename = "control.mount_path_lock")]
+    MountPathLock,
+    #[serde(rename = "control.mount_path_setattr")]
+    MountPathSetattr,
     #[serde(rename = "control.session_resume")]
     SessionResume,
     #[serde(rename = "control.session_list")]
@@ -80,12 +104,6 @@ pub enum ControlMessageType {
     VenomUpsert,
     #[serde(rename = "control.venom_get")]
     VenomGet,
-    #[serde(rename = "control.agent_ensure")]
-    AgentEnsure,
-    #[serde(rename = "control.agent_list")]
-    AgentList,
-    #[serde(rename = "control.agent_get")]
-    AgentGet,
     #[serde(rename = "control.node_list")]
     NodeList,
     #[serde(rename = "control.node_get")]
@@ -126,34 +144,10 @@ pub enum ControlMessageType {
     WorkspaceActivate,
     #[serde(rename = "control.workspace_up")]
     WorkspaceUp,
-    #[serde(rename = "control.project_create")]
-    ProjectCreate,
-    #[serde(rename = "control.project_update")]
-    ProjectUpdate,
-    #[serde(rename = "control.project_delete")]
-    ProjectDelete,
-    #[serde(rename = "control.project_list")]
-    ProjectList,
-    #[serde(rename = "control.project_get")]
-    ProjectGet,
-    #[serde(rename = "control.project_mount_set")]
-    ProjectMountSet,
-    #[serde(rename = "control.project_mount_remove")]
-    ProjectMountRemove,
-    #[serde(rename = "control.project_mount_list")]
-    ProjectMountList,
-    #[serde(rename = "control.project_token_rotate")]
-    ProjectTokenRotate,
-    #[serde(rename = "control.project_token_revoke")]
-    ProjectTokenRevoke,
-    #[serde(rename = "control.project_activate")]
-    ProjectActivate,
     #[serde(rename = "control.workspace_status")]
     WorkspaceStatus,
     #[serde(rename = "control.reconcile_status")]
     ReconcileStatus,
-    #[serde(rename = "control.project_up")]
-    ProjectUp,
     #[serde(rename = "control.audit_tail")]
     AuditTail,
     #[serde(rename = "control.error")]
@@ -466,18 +460,10 @@ pub struct ConnectAckWorkspace {
 pub struct ControlConnectAckPayload {
     pub agent_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_id: Option<String>,
+    pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session: Option<String>,
     pub protocol: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub role: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bootstrap_only: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bootstrap_message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub requires_session_attach: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace: Option<ConnectAckWorkspace>,
 }
@@ -517,35 +503,7 @@ pub struct BindView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceSummary {
-    #[serde(alias = "id", alias = "project_id")]
     pub workspace_id: String,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vision: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub is_delete_protected: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token_locked: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mount_count: Option<u64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bind_count: Option<u64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created_at_ms: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at_ms: Option<i64>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectSummary {
-    #[serde(alias = "id", alias = "workspace_id")]
-    pub project_id: String,
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vision: Option<String>,
@@ -571,7 +529,6 @@ pub struct ProjectSummary {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceDetail {
-    #[serde(alias = "id", alias = "project_id")]
     pub workspace_id: String,
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -590,37 +547,8 @@ pub struct WorkspaceDetail {
     pub created_at_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at_ms: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "project_token")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mounts: Option<Vec<MountView>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub binds: Option<Vec<BindView>>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectDetail {
-    #[serde(alias = "id", alias = "workspace_id")]
-    pub project_id: String,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vision: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub is_delete_protected: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token_locked: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created_at_ms: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at_ms: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "workspace_token")]
-    pub project_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mounts: Option<Vec<MountView>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -632,13 +560,6 @@ pub struct WorkspaceRefRequest {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectRefRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -665,9 +586,9 @@ pub struct SessionKeyRequest {
 pub struct SessionAttachRequest {
     pub session_key: String,
     pub agent_id: String,
-    pub project_id: String,
+    pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
+    pub workspace_token: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -779,41 +700,10 @@ pub struct WorkspaceCreateRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectCreateRequest {
-    pub name: String,
-    pub vision: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operator_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub access_policy: Option<AnyJson>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceUpdateRequest {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vision: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub access_policy: Option<AnyJson>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectUpdateRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -837,32 +727,10 @@ pub struct WorkspaceMountSetRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectMountSetRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
-    pub node_id: String,
-    pub export_name: String,
-    pub mount_path: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceMountRemoveRequest {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    pub mount_path: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub node_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub export_name: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectMountRemoveRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
     pub mount_path: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
@@ -880,27 +748,10 @@ pub struct WorkspaceBindSetRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectBindSetRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
-    pub bind_path: String,
-    pub target_path: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceBindRemoveRequest {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    pub bind_path: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectBindRemoveRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
     pub bind_path: String,
 }
 
@@ -920,32 +771,6 @@ pub struct WorkspaceUpRequest {
     pub template_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub access_policy: Option<AnyJson>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub desired_mounts: Option<AnyJson>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub desired_binds: Option<AnyJson>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub activate: Option<bool>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectUpRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vision: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub access_policy: Option<AnyJson>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -978,7 +803,7 @@ pub struct VenomBindRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_id: Option<String>,
+    pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
 }
@@ -1014,19 +839,8 @@ pub struct WorkspaceListResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectListResponse {
-    pub projects: Vec<ProjectSummary>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceMountListResponse {
     pub workspace_id: String,
-    pub mounts: Vec<MountView>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectMountListResponse {
-    pub project_id: String,
     pub mounts: Vec<MountView>,
 }
 
@@ -1037,45 +851,17 @@ pub struct WorkspaceBindListResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectBindListResponse {
-    pub project_id: String,
-    pub binds: Vec<BindView>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceDeleteResponse {
     pub deleted: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "id", alias = "project_id")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectDeleteResponse {
-    pub deleted: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "id", alias = "workspace_id")]
-    pub project_id: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceTokenMutation {
-    #[serde(alias = "id", alias = "project_id")]
     pub workspace_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "project_token")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at_ms: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub rotated: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub revoked: Option<bool>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectTokenMutation {
-    #[serde(alias = "id", alias = "workspace_id")]
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "workspace_token")]
-    pub project_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1123,7 +909,7 @@ pub struct AvailabilitySummary {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceStatus {
     pub agent_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "id", alias = "project_id")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_root: Option<String>,
@@ -1150,15 +936,6 @@ pub struct WorkspaceStatus {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectActivation {
-    pub agent_id: String,
-    #[serde(alias = "id", alias = "workspace_id")]
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub workspace_root: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct SessionAttachState {
     pub state: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1178,7 +955,7 @@ pub struct SessionStatusResponse {
     pub session_key: String,
     pub agent_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_id: Option<String>,
+    pub workspace_id: Option<String>,
     pub attach: SessionAttachState,
 }
 
@@ -1187,7 +964,7 @@ pub struct SessionSummary {
     pub session_key: String,
     pub agent_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_id: Option<String>,
+    pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_active_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1222,8 +999,8 @@ pub struct SessionHistoryResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ReconcileProjectStatus {
-    pub project_id: String,
+pub struct ReconcileWorkspaceStatus {
+    pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mounts: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1259,7 +1036,7 @@ pub struct ReconcileStatusResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failed_ops: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub projects: Option<Vec<ReconcileProjectStatus>>,
+    pub workspaces: Option<Vec<ReconcileWorkspaceStatus>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -1287,47 +1064,10 @@ pub struct NodeGetResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct AgentInfo {
-    #[serde(alias = "id")]
-    pub agent_id: String,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub is_default: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity_loaded: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub needs_hatching: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capabilities: Option<Vec<String>>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct AgentListResponse {
-    pub agents: Vec<AgentInfo>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct AgentGetResponse {
-    pub agent: AgentInfo,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceUpResponse {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    pub created: bool,
-    pub activated: bool,
-    pub workspace: AnyJson,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectUpResponse {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
     pub created: bool,
     pub activated: bool,
     pub workspace: AnyJson,
@@ -1506,9 +1246,21 @@ pub enum ControlRequestEnvelope {
     Connect(ControlEnvelope<EmptyObject>),
     SessionAttach(ControlEnvelope<SessionAttachRequest>),
     SessionStatus(ControlEnvelope<SessionStatusRequest>),
-    MountAttachV2(ControlEnvelope<MountAttachRequest>),
-    MountFileReadV2(ControlEnvelope<MountFileReadRequest>),
-    MountFileWriteV2(ControlEnvelope<MountFileWriteRequest>),
+    MountAttach(ControlEnvelope<MountAttachRequest>),
+    MountFileRead(ControlEnvelope<MountFileReadRequest>),
+    MountFileWrite(ControlEnvelope<MountFileWriteRequest>),
+    MountPathReadlink(ControlEnvelope<AnyJson>),
+    MountPathMkdir(ControlEnvelope<AnyJson>),
+    MountPathUnlink(ControlEnvelope<AnyJson>),
+    MountPathRmdir(ControlEnvelope<AnyJson>),
+    MountPathRename(ControlEnvelope<AnyJson>),
+    MountPathSymlink(ControlEnvelope<AnyJson>),
+    MountPathSetxattr(ControlEnvelope<AnyJson>),
+    MountPathGetxattr(ControlEnvelope<AnyJson>),
+    MountPathListxattr(ControlEnvelope<AnyJson>),
+    MountPathRemovexattr(ControlEnvelope<AnyJson>),
+    MountPathLock(ControlEnvelope<AnyJson>),
+    MountPathSetattr(ControlEnvelope<AnyJson>),
     SessionResume(ControlEnvelope<SessionKeyRequest>),
     SessionList(ControlEnvelope<EmptyObject>),
     SessionClose(ControlEnvelope<SessionKeyRequest>),
@@ -1529,9 +1281,6 @@ pub enum ControlRequestEnvelope {
     VenomBind(ControlEnvelope<VenomBindRequest>),
     VenomUpsert(ControlEnvelope<AnyJson>),
     VenomGet(ControlEnvelope<AnyJson>),
-    AgentEnsure(ControlEnvelope<AnyJson>),
-    AgentList(ControlEnvelope<EmptyObject>),
-    AgentGet(ControlEnvelope<AgentIdRequest>),
     NodeList(ControlEnvelope<EmptyObject>),
     NodeGet(ControlEnvelope<NodeIdRequest>),
     NodeDelete(ControlEnvelope<NodeIdRequest>),
@@ -1552,20 +1301,8 @@ pub enum ControlRequestEnvelope {
     WorkspaceTokenRevoke(ControlEnvelope<WorkspaceRefRequest>),
     WorkspaceActivate(ControlEnvelope<WorkspaceRefRequest>),
     WorkspaceUp(ControlEnvelope<WorkspaceUpRequest>),
-    ProjectCreate(ControlEnvelope<ProjectCreateRequest>),
-    ProjectUpdate(ControlEnvelope<ProjectUpdateRequest>),
-    ProjectDelete(ControlEnvelope<ProjectRefRequest>),
-    ProjectList(ControlEnvelope<EmptyObject>),
-    ProjectGet(ControlEnvelope<ProjectRefRequest>),
-    ProjectMountSet(ControlEnvelope<ProjectMountSetRequest>),
-    ProjectMountRemove(ControlEnvelope<ProjectMountRemoveRequest>),
-    ProjectMountList(ControlEnvelope<ProjectRefRequest>),
-    ProjectTokenRotate(ControlEnvelope<ProjectRefRequest>),
-    ProjectTokenRevoke(ControlEnvelope<ProjectRefRequest>),
-    ProjectActivate(ControlEnvelope<ProjectRefRequest>),
     WorkspaceStatus(ControlEnvelope<WorkspaceStatusRequest>),
     ReconcileStatus(ControlEnvelope<ReconcileStatusRequest>),
-    ProjectUp(ControlEnvelope<ProjectUpRequest>),
     AuditTail(ControlEnvelope<AnyJson>),
 }
 
@@ -1575,9 +1312,21 @@ pub enum ControlResponseEnvelope {
     ConnectAck(ControlEnvelope<ControlConnectAckPayload>),
     SessionAttach(ControlEnvelope<SessionStatusResponse>),
     SessionStatus(ControlEnvelope<SessionStatusResponse>),
-    MountAttachV2(ControlEnvelope<MountAttachResponse>),
-    MountFileReadV2(ControlEnvelope<MountFileReadResponse>),
-    MountFileWriteV2(ControlEnvelope<MountFileWriteResponse>),
+    MountAttach(ControlEnvelope<MountAttachResponse>),
+    MountFileRead(ControlEnvelope<MountFileReadResponse>),
+    MountFileWrite(ControlEnvelope<MountFileWriteResponse>),
+    MountPathReadlink(ControlEnvelope<AnyJson>),
+    MountPathMkdir(ControlEnvelope<AnyJson>),
+    MountPathUnlink(ControlEnvelope<AnyJson>),
+    MountPathRmdir(ControlEnvelope<AnyJson>),
+    MountPathRename(ControlEnvelope<AnyJson>),
+    MountPathSymlink(ControlEnvelope<AnyJson>),
+    MountPathSetxattr(ControlEnvelope<AnyJson>),
+    MountPathGetxattr(ControlEnvelope<AnyJson>),
+    MountPathListxattr(ControlEnvelope<AnyJson>),
+    MountPathRemovexattr(ControlEnvelope<AnyJson>),
+    MountPathLock(ControlEnvelope<AnyJson>),
+    MountPathSetattr(ControlEnvelope<AnyJson>),
     SessionResume(ControlEnvelope<SessionStatusResponse>),
     SessionList(ControlEnvelope<SessionListResponse>),
     SessionClose(ControlEnvelope<SessionCloseResponse>),
@@ -1599,9 +1348,6 @@ pub enum ControlResponseEnvelope {
     VenomBind(ControlEnvelope<AnyJson>),
     VenomUpsert(ControlEnvelope<AnyJson>),
     VenomGet(ControlEnvelope<AnyJson>),
-    AgentEnsure(ControlEnvelope<AnyJson>),
-    AgentList(ControlEnvelope<AgentListResponse>),
-    AgentGet(ControlEnvelope<AgentGetResponse>),
     NodeList(ControlEnvelope<NodeListResponse>),
     NodeGet(ControlEnvelope<NodeGetResponse>),
     NodeDelete(ControlEnvelope<AnyJson>),
@@ -1622,26 +1368,14 @@ pub enum ControlResponseEnvelope {
     WorkspaceTokenRevoke(ControlEnvelope<WorkspaceTokenMutation>),
     WorkspaceActivate(ControlEnvelope<WorkspaceStatus>),
     WorkspaceUp(ControlEnvelope<WorkspaceUpResponse>),
-    ProjectCreate(ControlEnvelope<ProjectDetail>),
-    ProjectUpdate(ControlEnvelope<ProjectDetail>),
-    ProjectDelete(ControlEnvelope<ProjectDeleteResponse>),
-    ProjectList(ControlEnvelope<ProjectListResponse>),
-    ProjectGet(ControlEnvelope<ProjectDetail>),
-    ProjectMountSet(ControlEnvelope<ProjectDetail>),
-    ProjectMountRemove(ControlEnvelope<ProjectDetail>),
-    ProjectMountList(ControlEnvelope<ProjectMountListResponse>),
-    ProjectTokenRotate(ControlEnvelope<ProjectTokenMutation>),
-    ProjectTokenRevoke(ControlEnvelope<ProjectTokenMutation>),
-    ProjectActivate(ControlEnvelope<ProjectActivation>),
     WorkspaceStatus(ControlEnvelope<WorkspaceStatus>),
     ReconcileStatus(ControlEnvelope<ReconcileStatusResponse>),
-    ProjectUp(ControlEnvelope<ProjectUpResponse>),
     AuditTail(ControlEnvelope<AnyJson>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ControlEventEnvelopeEnum {
-    MountGraphDeltaV2(ControlEnvelope<AnyJson>),
+    MountGraphDelta(ControlEnvelope<AnyJson>),
 }
 
 impl ControlRequestEnvelope {
@@ -1651,9 +1385,21 @@ impl ControlRequestEnvelope {
             Self::Connect(inner) => serde_json::to_value(inner),
             Self::SessionAttach(inner) => serde_json::to_value(inner),
             Self::SessionStatus(inner) => serde_json::to_value(inner),
-            Self::MountAttachV2(inner) => serde_json::to_value(inner),
-            Self::MountFileReadV2(inner) => serde_json::to_value(inner),
-            Self::MountFileWriteV2(inner) => serde_json::to_value(inner),
+            Self::MountAttach(inner) => serde_json::to_value(inner),
+            Self::MountFileRead(inner) => serde_json::to_value(inner),
+            Self::MountFileWrite(inner) => serde_json::to_value(inner),
+            Self::MountPathReadlink(inner) => serde_json::to_value(inner),
+            Self::MountPathMkdir(inner) => serde_json::to_value(inner),
+            Self::MountPathUnlink(inner) => serde_json::to_value(inner),
+            Self::MountPathRmdir(inner) => serde_json::to_value(inner),
+            Self::MountPathRename(inner) => serde_json::to_value(inner),
+            Self::MountPathSymlink(inner) => serde_json::to_value(inner),
+            Self::MountPathSetxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathGetxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathListxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathRemovexattr(inner) => serde_json::to_value(inner),
+            Self::MountPathLock(inner) => serde_json::to_value(inner),
+            Self::MountPathSetattr(inner) => serde_json::to_value(inner),
             Self::SessionResume(inner) => serde_json::to_value(inner),
             Self::SessionList(inner) => serde_json::to_value(inner),
             Self::SessionClose(inner) => serde_json::to_value(inner),
@@ -1674,9 +1420,6 @@ impl ControlRequestEnvelope {
             Self::VenomBind(inner) => serde_json::to_value(inner),
             Self::VenomUpsert(inner) => serde_json::to_value(inner),
             Self::VenomGet(inner) => serde_json::to_value(inner),
-            Self::AgentEnsure(inner) => serde_json::to_value(inner),
-            Self::AgentList(inner) => serde_json::to_value(inner),
-            Self::AgentGet(inner) => serde_json::to_value(inner),
             Self::NodeList(inner) => serde_json::to_value(inner),
             Self::NodeGet(inner) => serde_json::to_value(inner),
             Self::NodeDelete(inner) => serde_json::to_value(inner),
@@ -1697,20 +1440,8 @@ impl ControlRequestEnvelope {
             Self::WorkspaceTokenRevoke(inner) => serde_json::to_value(inner),
             Self::WorkspaceActivate(inner) => serde_json::to_value(inner),
             Self::WorkspaceUp(inner) => serde_json::to_value(inner),
-            Self::ProjectCreate(inner) => serde_json::to_value(inner),
-            Self::ProjectUpdate(inner) => serde_json::to_value(inner),
-            Self::ProjectDelete(inner) => serde_json::to_value(inner),
-            Self::ProjectList(inner) => serde_json::to_value(inner),
-            Self::ProjectGet(inner) => serde_json::to_value(inner),
-            Self::ProjectMountSet(inner) => serde_json::to_value(inner),
-            Self::ProjectMountRemove(inner) => serde_json::to_value(inner),
-            Self::ProjectMountList(inner) => serde_json::to_value(inner),
-            Self::ProjectTokenRotate(inner) => serde_json::to_value(inner),
-            Self::ProjectTokenRevoke(inner) => serde_json::to_value(inner),
-            Self::ProjectActivate(inner) => serde_json::to_value(inner),
             Self::WorkspaceStatus(inner) => serde_json::to_value(inner),
             Self::ReconcileStatus(inner) => serde_json::to_value(inner),
-            Self::ProjectUp(inner) => serde_json::to_value(inner),
             Self::AuditTail(inner) => serde_json::to_value(inner),
         }
     }
@@ -1722,9 +1453,21 @@ impl ControlRequestEnvelope {
             "control.connect" => Ok(Self::Connect(serde_json::from_value(value)?)),
             "control.session_attach" => Ok(Self::SessionAttach(serde_json::from_value(value)?)),
             "control.session_status" => Ok(Self::SessionStatus(serde_json::from_value(value)?)),
-            "control.mount_attach_v2" => Ok(Self::MountAttachV2(serde_json::from_value(value)?)),
-            "control.mount_file_read_v2" => Ok(Self::MountFileReadV2(serde_json::from_value(value)?)),
-            "control.mount_file_write_v2" => Ok(Self::MountFileWriteV2(serde_json::from_value(value)?)),
+            "control.mount_attach" => Ok(Self::MountAttach(serde_json::from_value(value)?)),
+            "control.mount_file_read" => Ok(Self::MountFileRead(serde_json::from_value(value)?)),
+            "control.mount_file_write" => Ok(Self::MountFileWrite(serde_json::from_value(value)?)),
+            "control.mount_path_readlink" => Ok(Self::MountPathReadlink(serde_json::from_value(value)?)),
+            "control.mount_path_mkdir" => Ok(Self::MountPathMkdir(serde_json::from_value(value)?)),
+            "control.mount_path_unlink" => Ok(Self::MountPathUnlink(serde_json::from_value(value)?)),
+            "control.mount_path_rmdir" => Ok(Self::MountPathRmdir(serde_json::from_value(value)?)),
+            "control.mount_path_rename" => Ok(Self::MountPathRename(serde_json::from_value(value)?)),
+            "control.mount_path_symlink" => Ok(Self::MountPathSymlink(serde_json::from_value(value)?)),
+            "control.mount_path_setxattr" => Ok(Self::MountPathSetxattr(serde_json::from_value(value)?)),
+            "control.mount_path_getxattr" => Ok(Self::MountPathGetxattr(serde_json::from_value(value)?)),
+            "control.mount_path_listxattr" => Ok(Self::MountPathListxattr(serde_json::from_value(value)?)),
+            "control.mount_path_removexattr" => Ok(Self::MountPathRemovexattr(serde_json::from_value(value)?)),
+            "control.mount_path_lock" => Ok(Self::MountPathLock(serde_json::from_value(value)?)),
+            "control.mount_path_setattr" => Ok(Self::MountPathSetattr(serde_json::from_value(value)?)),
             "control.session_resume" => Ok(Self::SessionResume(serde_json::from_value(value)?)),
             "control.session_list" => Ok(Self::SessionList(serde_json::from_value(value)?)),
             "control.session_close" => Ok(Self::SessionClose(serde_json::from_value(value)?)),
@@ -1745,9 +1488,6 @@ impl ControlRequestEnvelope {
             "control.venom_bind" => Ok(Self::VenomBind(serde_json::from_value(value)?)),
             "control.venom_upsert" => Ok(Self::VenomUpsert(serde_json::from_value(value)?)),
             "control.venom_get" => Ok(Self::VenomGet(serde_json::from_value(value)?)),
-            "control.agent_ensure" => Ok(Self::AgentEnsure(serde_json::from_value(value)?)),
-            "control.agent_list" => Ok(Self::AgentList(serde_json::from_value(value)?)),
-            "control.agent_get" => Ok(Self::AgentGet(serde_json::from_value(value)?)),
             "control.node_list" => Ok(Self::NodeList(serde_json::from_value(value)?)),
             "control.node_get" => Ok(Self::NodeGet(serde_json::from_value(value)?)),
             "control.node_delete" => Ok(Self::NodeDelete(serde_json::from_value(value)?)),
@@ -1768,20 +1508,8 @@ impl ControlRequestEnvelope {
             "control.workspace_token_revoke" => Ok(Self::WorkspaceTokenRevoke(serde_json::from_value(value)?)),
             "control.workspace_activate" => Ok(Self::WorkspaceActivate(serde_json::from_value(value)?)),
             "control.workspace_up" => Ok(Self::WorkspaceUp(serde_json::from_value(value)?)),
-            "control.project_create" => Ok(Self::ProjectCreate(serde_json::from_value(value)?)),
-            "control.project_update" => Ok(Self::ProjectUpdate(serde_json::from_value(value)?)),
-            "control.project_delete" => Ok(Self::ProjectDelete(serde_json::from_value(value)?)),
-            "control.project_list" => Ok(Self::ProjectList(serde_json::from_value(value)?)),
-            "control.project_get" => Ok(Self::ProjectGet(serde_json::from_value(value)?)),
-            "control.project_mount_set" => Ok(Self::ProjectMountSet(serde_json::from_value(value)?)),
-            "control.project_mount_remove" => Ok(Self::ProjectMountRemove(serde_json::from_value(value)?)),
-            "control.project_mount_list" => Ok(Self::ProjectMountList(serde_json::from_value(value)?)),
-            "control.project_token_rotate" => Ok(Self::ProjectTokenRotate(serde_json::from_value(value)?)),
-            "control.project_token_revoke" => Ok(Self::ProjectTokenRevoke(serde_json::from_value(value)?)),
-            "control.project_activate" => Ok(Self::ProjectActivate(serde_json::from_value(value)?)),
             "control.workspace_status" => Ok(Self::WorkspaceStatus(serde_json::from_value(value)?)),
             "control.reconcile_status" => Ok(Self::ReconcileStatus(serde_json::from_value(value)?)),
-            "control.project_up" => Ok(Self::ProjectUp(serde_json::from_value(value)?)),
             "control.audit_tail" => Ok(Self::AuditTail(serde_json::from_value(value)?)),
             _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "unsupported type"))),
         }
@@ -1793,9 +1521,21 @@ impl ControlRequestEnvelope {
             Self::Connect(_) => ControlMessageType::Connect,
             Self::SessionAttach(_) => ControlMessageType::SessionAttach,
             Self::SessionStatus(_) => ControlMessageType::SessionStatus,
-            Self::MountAttachV2(_) => ControlMessageType::MountAttachV2,
-            Self::MountFileReadV2(_) => ControlMessageType::MountFileReadV2,
-            Self::MountFileWriteV2(_) => ControlMessageType::MountFileWriteV2,
+            Self::MountAttach(_) => ControlMessageType::MountAttach,
+            Self::MountFileRead(_) => ControlMessageType::MountFileRead,
+            Self::MountFileWrite(_) => ControlMessageType::MountFileWrite,
+            Self::MountPathReadlink(_) => ControlMessageType::MountPathReadlink,
+            Self::MountPathMkdir(_) => ControlMessageType::MountPathMkdir,
+            Self::MountPathUnlink(_) => ControlMessageType::MountPathUnlink,
+            Self::MountPathRmdir(_) => ControlMessageType::MountPathRmdir,
+            Self::MountPathRename(_) => ControlMessageType::MountPathRename,
+            Self::MountPathSymlink(_) => ControlMessageType::MountPathSymlink,
+            Self::MountPathSetxattr(_) => ControlMessageType::MountPathSetxattr,
+            Self::MountPathGetxattr(_) => ControlMessageType::MountPathGetxattr,
+            Self::MountPathListxattr(_) => ControlMessageType::MountPathListxattr,
+            Self::MountPathRemovexattr(_) => ControlMessageType::MountPathRemovexattr,
+            Self::MountPathLock(_) => ControlMessageType::MountPathLock,
+            Self::MountPathSetattr(_) => ControlMessageType::MountPathSetattr,
             Self::SessionResume(_) => ControlMessageType::SessionResume,
             Self::SessionList(_) => ControlMessageType::SessionList,
             Self::SessionClose(_) => ControlMessageType::SessionClose,
@@ -1816,9 +1556,6 @@ impl ControlRequestEnvelope {
             Self::VenomBind(_) => ControlMessageType::VenomBind,
             Self::VenomUpsert(_) => ControlMessageType::VenomUpsert,
             Self::VenomGet(_) => ControlMessageType::VenomGet,
-            Self::AgentEnsure(_) => ControlMessageType::AgentEnsure,
-            Self::AgentList(_) => ControlMessageType::AgentList,
-            Self::AgentGet(_) => ControlMessageType::AgentGet,
             Self::NodeList(_) => ControlMessageType::NodeList,
             Self::NodeGet(_) => ControlMessageType::NodeGet,
             Self::NodeDelete(_) => ControlMessageType::NodeDelete,
@@ -1839,20 +1576,8 @@ impl ControlRequestEnvelope {
             Self::WorkspaceTokenRevoke(_) => ControlMessageType::WorkspaceTokenRevoke,
             Self::WorkspaceActivate(_) => ControlMessageType::WorkspaceActivate,
             Self::WorkspaceUp(_) => ControlMessageType::WorkspaceUp,
-            Self::ProjectCreate(_) => ControlMessageType::ProjectCreate,
-            Self::ProjectUpdate(_) => ControlMessageType::ProjectUpdate,
-            Self::ProjectDelete(_) => ControlMessageType::ProjectDelete,
-            Self::ProjectList(_) => ControlMessageType::ProjectList,
-            Self::ProjectGet(_) => ControlMessageType::ProjectGet,
-            Self::ProjectMountSet(_) => ControlMessageType::ProjectMountSet,
-            Self::ProjectMountRemove(_) => ControlMessageType::ProjectMountRemove,
-            Self::ProjectMountList(_) => ControlMessageType::ProjectMountList,
-            Self::ProjectTokenRotate(_) => ControlMessageType::ProjectTokenRotate,
-            Self::ProjectTokenRevoke(_) => ControlMessageType::ProjectTokenRevoke,
-            Self::ProjectActivate(_) => ControlMessageType::ProjectActivate,
             Self::WorkspaceStatus(_) => ControlMessageType::WorkspaceStatus,
             Self::ReconcileStatus(_) => ControlMessageType::ReconcileStatus,
-            Self::ProjectUp(_) => ControlMessageType::ProjectUp,
             Self::AuditTail(_) => ControlMessageType::AuditTail,
         }
     }
@@ -1865,9 +1590,21 @@ impl ControlResponseEnvelope {
             Self::ConnectAck(inner) => serde_json::to_value(inner),
             Self::SessionAttach(inner) => serde_json::to_value(inner),
             Self::SessionStatus(inner) => serde_json::to_value(inner),
-            Self::MountAttachV2(inner) => serde_json::to_value(inner),
-            Self::MountFileReadV2(inner) => serde_json::to_value(inner),
-            Self::MountFileWriteV2(inner) => serde_json::to_value(inner),
+            Self::MountAttach(inner) => serde_json::to_value(inner),
+            Self::MountFileRead(inner) => serde_json::to_value(inner),
+            Self::MountFileWrite(inner) => serde_json::to_value(inner),
+            Self::MountPathReadlink(inner) => serde_json::to_value(inner),
+            Self::MountPathMkdir(inner) => serde_json::to_value(inner),
+            Self::MountPathUnlink(inner) => serde_json::to_value(inner),
+            Self::MountPathRmdir(inner) => serde_json::to_value(inner),
+            Self::MountPathRename(inner) => serde_json::to_value(inner),
+            Self::MountPathSymlink(inner) => serde_json::to_value(inner),
+            Self::MountPathSetxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathGetxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathListxattr(inner) => serde_json::to_value(inner),
+            Self::MountPathRemovexattr(inner) => serde_json::to_value(inner),
+            Self::MountPathLock(inner) => serde_json::to_value(inner),
+            Self::MountPathSetattr(inner) => serde_json::to_value(inner),
             Self::SessionResume(inner) => serde_json::to_value(inner),
             Self::SessionList(inner) => serde_json::to_value(inner),
             Self::SessionClose(inner) => serde_json::to_value(inner),
@@ -1889,9 +1626,6 @@ impl ControlResponseEnvelope {
             Self::VenomBind(inner) => serde_json::to_value(inner),
             Self::VenomUpsert(inner) => serde_json::to_value(inner),
             Self::VenomGet(inner) => serde_json::to_value(inner),
-            Self::AgentEnsure(inner) => serde_json::to_value(inner),
-            Self::AgentList(inner) => serde_json::to_value(inner),
-            Self::AgentGet(inner) => serde_json::to_value(inner),
             Self::NodeList(inner) => serde_json::to_value(inner),
             Self::NodeGet(inner) => serde_json::to_value(inner),
             Self::NodeDelete(inner) => serde_json::to_value(inner),
@@ -1912,20 +1646,8 @@ impl ControlResponseEnvelope {
             Self::WorkspaceTokenRevoke(inner) => serde_json::to_value(inner),
             Self::WorkspaceActivate(inner) => serde_json::to_value(inner),
             Self::WorkspaceUp(inner) => serde_json::to_value(inner),
-            Self::ProjectCreate(inner) => serde_json::to_value(inner),
-            Self::ProjectUpdate(inner) => serde_json::to_value(inner),
-            Self::ProjectDelete(inner) => serde_json::to_value(inner),
-            Self::ProjectList(inner) => serde_json::to_value(inner),
-            Self::ProjectGet(inner) => serde_json::to_value(inner),
-            Self::ProjectMountSet(inner) => serde_json::to_value(inner),
-            Self::ProjectMountRemove(inner) => serde_json::to_value(inner),
-            Self::ProjectMountList(inner) => serde_json::to_value(inner),
-            Self::ProjectTokenRotate(inner) => serde_json::to_value(inner),
-            Self::ProjectTokenRevoke(inner) => serde_json::to_value(inner),
-            Self::ProjectActivate(inner) => serde_json::to_value(inner),
             Self::WorkspaceStatus(inner) => serde_json::to_value(inner),
             Self::ReconcileStatus(inner) => serde_json::to_value(inner),
-            Self::ProjectUp(inner) => serde_json::to_value(inner),
             Self::AuditTail(inner) => serde_json::to_value(inner),
         }
     }
@@ -1937,9 +1659,21 @@ impl ControlResponseEnvelope {
             "control.connect_ack" => Ok(Self::ConnectAck(serde_json::from_value(value)?)),
             "control.session_attach" => Ok(Self::SessionAttach(serde_json::from_value(value)?)),
             "control.session_status" => Ok(Self::SessionStatus(serde_json::from_value(value)?)),
-            "control.mount_attach_v2" => Ok(Self::MountAttachV2(serde_json::from_value(value)?)),
-            "control.mount_file_read_v2" => Ok(Self::MountFileReadV2(serde_json::from_value(value)?)),
-            "control.mount_file_write_v2" => Ok(Self::MountFileWriteV2(serde_json::from_value(value)?)),
+            "control.mount_attach" => Ok(Self::MountAttach(serde_json::from_value(value)?)),
+            "control.mount_file_read" => Ok(Self::MountFileRead(serde_json::from_value(value)?)),
+            "control.mount_file_write" => Ok(Self::MountFileWrite(serde_json::from_value(value)?)),
+            "control.mount_path_readlink" => Ok(Self::MountPathReadlink(serde_json::from_value(value)?)),
+            "control.mount_path_mkdir" => Ok(Self::MountPathMkdir(serde_json::from_value(value)?)),
+            "control.mount_path_unlink" => Ok(Self::MountPathUnlink(serde_json::from_value(value)?)),
+            "control.mount_path_rmdir" => Ok(Self::MountPathRmdir(serde_json::from_value(value)?)),
+            "control.mount_path_rename" => Ok(Self::MountPathRename(serde_json::from_value(value)?)),
+            "control.mount_path_symlink" => Ok(Self::MountPathSymlink(serde_json::from_value(value)?)),
+            "control.mount_path_setxattr" => Ok(Self::MountPathSetxattr(serde_json::from_value(value)?)),
+            "control.mount_path_getxattr" => Ok(Self::MountPathGetxattr(serde_json::from_value(value)?)),
+            "control.mount_path_listxattr" => Ok(Self::MountPathListxattr(serde_json::from_value(value)?)),
+            "control.mount_path_removexattr" => Ok(Self::MountPathRemovexattr(serde_json::from_value(value)?)),
+            "control.mount_path_lock" => Ok(Self::MountPathLock(serde_json::from_value(value)?)),
+            "control.mount_path_setattr" => Ok(Self::MountPathSetattr(serde_json::from_value(value)?)),
             "control.session_resume" => Ok(Self::SessionResume(serde_json::from_value(value)?)),
             "control.session_list" => Ok(Self::SessionList(serde_json::from_value(value)?)),
             "control.session_close" => Ok(Self::SessionClose(serde_json::from_value(value)?)),
@@ -1961,9 +1695,6 @@ impl ControlResponseEnvelope {
             "control.venom_bind" => Ok(Self::VenomBind(serde_json::from_value(value)?)),
             "control.venom_upsert" => Ok(Self::VenomUpsert(serde_json::from_value(value)?)),
             "control.venom_get" => Ok(Self::VenomGet(serde_json::from_value(value)?)),
-            "control.agent_ensure" => Ok(Self::AgentEnsure(serde_json::from_value(value)?)),
-            "control.agent_list" => Ok(Self::AgentList(serde_json::from_value(value)?)),
-            "control.agent_get" => Ok(Self::AgentGet(serde_json::from_value(value)?)),
             "control.node_list" => Ok(Self::NodeList(serde_json::from_value(value)?)),
             "control.node_get" => Ok(Self::NodeGet(serde_json::from_value(value)?)),
             "control.node_delete" => Ok(Self::NodeDelete(serde_json::from_value(value)?)),
@@ -1984,20 +1715,8 @@ impl ControlResponseEnvelope {
             "control.workspace_token_revoke" => Ok(Self::WorkspaceTokenRevoke(serde_json::from_value(value)?)),
             "control.workspace_activate" => Ok(Self::WorkspaceActivate(serde_json::from_value(value)?)),
             "control.workspace_up" => Ok(Self::WorkspaceUp(serde_json::from_value(value)?)),
-            "control.project_create" => Ok(Self::ProjectCreate(serde_json::from_value(value)?)),
-            "control.project_update" => Ok(Self::ProjectUpdate(serde_json::from_value(value)?)),
-            "control.project_delete" => Ok(Self::ProjectDelete(serde_json::from_value(value)?)),
-            "control.project_list" => Ok(Self::ProjectList(serde_json::from_value(value)?)),
-            "control.project_get" => Ok(Self::ProjectGet(serde_json::from_value(value)?)),
-            "control.project_mount_set" => Ok(Self::ProjectMountSet(serde_json::from_value(value)?)),
-            "control.project_mount_remove" => Ok(Self::ProjectMountRemove(serde_json::from_value(value)?)),
-            "control.project_mount_list" => Ok(Self::ProjectMountList(serde_json::from_value(value)?)),
-            "control.project_token_rotate" => Ok(Self::ProjectTokenRotate(serde_json::from_value(value)?)),
-            "control.project_token_revoke" => Ok(Self::ProjectTokenRevoke(serde_json::from_value(value)?)),
-            "control.project_activate" => Ok(Self::ProjectActivate(serde_json::from_value(value)?)),
             "control.workspace_status" => Ok(Self::WorkspaceStatus(serde_json::from_value(value)?)),
             "control.reconcile_status" => Ok(Self::ReconcileStatus(serde_json::from_value(value)?)),
-            "control.project_up" => Ok(Self::ProjectUp(serde_json::from_value(value)?)),
             "control.audit_tail" => Ok(Self::AuditTail(serde_json::from_value(value)?)),
             _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "unsupported type"))),
         }
@@ -2009,9 +1728,21 @@ impl ControlResponseEnvelope {
             Self::ConnectAck(_) => ControlMessageType::ConnectAck,
             Self::SessionAttach(_) => ControlMessageType::SessionAttach,
             Self::SessionStatus(_) => ControlMessageType::SessionStatus,
-            Self::MountAttachV2(_) => ControlMessageType::MountAttachV2,
-            Self::MountFileReadV2(_) => ControlMessageType::MountFileReadV2,
-            Self::MountFileWriteV2(_) => ControlMessageType::MountFileWriteV2,
+            Self::MountAttach(_) => ControlMessageType::MountAttach,
+            Self::MountFileRead(_) => ControlMessageType::MountFileRead,
+            Self::MountFileWrite(_) => ControlMessageType::MountFileWrite,
+            Self::MountPathReadlink(_) => ControlMessageType::MountPathReadlink,
+            Self::MountPathMkdir(_) => ControlMessageType::MountPathMkdir,
+            Self::MountPathUnlink(_) => ControlMessageType::MountPathUnlink,
+            Self::MountPathRmdir(_) => ControlMessageType::MountPathRmdir,
+            Self::MountPathRename(_) => ControlMessageType::MountPathRename,
+            Self::MountPathSymlink(_) => ControlMessageType::MountPathSymlink,
+            Self::MountPathSetxattr(_) => ControlMessageType::MountPathSetxattr,
+            Self::MountPathGetxattr(_) => ControlMessageType::MountPathGetxattr,
+            Self::MountPathListxattr(_) => ControlMessageType::MountPathListxattr,
+            Self::MountPathRemovexattr(_) => ControlMessageType::MountPathRemovexattr,
+            Self::MountPathLock(_) => ControlMessageType::MountPathLock,
+            Self::MountPathSetattr(_) => ControlMessageType::MountPathSetattr,
             Self::SessionResume(_) => ControlMessageType::SessionResume,
             Self::SessionList(_) => ControlMessageType::SessionList,
             Self::SessionClose(_) => ControlMessageType::SessionClose,
@@ -2033,9 +1764,6 @@ impl ControlResponseEnvelope {
             Self::VenomBind(_) => ControlMessageType::VenomBind,
             Self::VenomUpsert(_) => ControlMessageType::VenomUpsert,
             Self::VenomGet(_) => ControlMessageType::VenomGet,
-            Self::AgentEnsure(_) => ControlMessageType::AgentEnsure,
-            Self::AgentList(_) => ControlMessageType::AgentList,
-            Self::AgentGet(_) => ControlMessageType::AgentGet,
             Self::NodeList(_) => ControlMessageType::NodeList,
             Self::NodeGet(_) => ControlMessageType::NodeGet,
             Self::NodeDelete(_) => ControlMessageType::NodeDelete,
@@ -2056,20 +1784,8 @@ impl ControlResponseEnvelope {
             Self::WorkspaceTokenRevoke(_) => ControlMessageType::WorkspaceTokenRevoke,
             Self::WorkspaceActivate(_) => ControlMessageType::WorkspaceActivate,
             Self::WorkspaceUp(_) => ControlMessageType::WorkspaceUp,
-            Self::ProjectCreate(_) => ControlMessageType::ProjectCreate,
-            Self::ProjectUpdate(_) => ControlMessageType::ProjectUpdate,
-            Self::ProjectDelete(_) => ControlMessageType::ProjectDelete,
-            Self::ProjectList(_) => ControlMessageType::ProjectList,
-            Self::ProjectGet(_) => ControlMessageType::ProjectGet,
-            Self::ProjectMountSet(_) => ControlMessageType::ProjectMountSet,
-            Self::ProjectMountRemove(_) => ControlMessageType::ProjectMountRemove,
-            Self::ProjectMountList(_) => ControlMessageType::ProjectMountList,
-            Self::ProjectTokenRotate(_) => ControlMessageType::ProjectTokenRotate,
-            Self::ProjectTokenRevoke(_) => ControlMessageType::ProjectTokenRevoke,
-            Self::ProjectActivate(_) => ControlMessageType::ProjectActivate,
             Self::WorkspaceStatus(_) => ControlMessageType::WorkspaceStatus,
             Self::ReconcileStatus(_) => ControlMessageType::ReconcileStatus,
-            Self::ProjectUp(_) => ControlMessageType::ProjectUp,
             Self::AuditTail(_) => ControlMessageType::AuditTail,
         }
     }
@@ -2078,21 +1794,21 @@ impl ControlResponseEnvelope {
 impl ControlEventEnvelopeEnum {
     pub fn to_value(&self) -> serde_json::Result<serde_json::Value> {
         match self {
-            Self::MountGraphDeltaV2(inner) => serde_json::to_value(inner),
+            Self::MountGraphDelta(inner) => serde_json::to_value(inner),
         }
     }
 
     pub fn from_value(value: serde_json::Value) -> serde_json::Result<Self> {
         let message_type = value.get("type").and_then(|v| v.as_str()).ok_or_else(|| serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "missing type")))?;
         match message_type {
-            "control.mount_graph_delta_v2" => Ok(Self::MountGraphDeltaV2(serde_json::from_value(value)?)),
+            "control.mount_graph_delta" => Ok(Self::MountGraphDelta(serde_json::from_value(value)?)),
             _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "unsupported type"))),
         }
     }
 
     pub fn message_type(&self) -> ControlMessageType {
         match self {
-            Self::MountGraphDeltaV2(_) => ControlMessageType::MountGraphDeltaV2,
+            Self::MountGraphDelta(_) => ControlMessageType::MountGraphDelta,
         }
     }
 }

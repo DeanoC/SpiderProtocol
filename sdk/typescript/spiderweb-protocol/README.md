@@ -3,9 +3,9 @@
 Reference TypeScript implementation for the current Spiderweb public wire
 surface:
 
-- unified-v2 control
+- spiderweb-control
 - Acheron runtime (`acheron-1`)
-- node FS handshake and Acheron FS messages (`unified-v2-fs`)
+- node FS handshake and Acheron FS messages (`spiderweb-fs`)
 
 The generated constants in [`src/generated.ts`](./src/generated.ts) come from
 the canonical Zig implementation via `zig build sync-sdk`.

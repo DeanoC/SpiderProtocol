@@ -1,1 +1,1 @@
-{"channel":"control","type":"control.version","id":"version-1","payload":{"protocol":"unified-v2"}}
+{"channel":"control","type":"control.version","id":"version-1","payload":{"protocol":"spiderweb-control"}}

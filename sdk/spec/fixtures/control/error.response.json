@@ -1,1 +1,1 @@
-{"channel":"control","type":"control.error","id":"connect-1","ok":false,"error":{"code":"missing_field","message":"project_id is required"}}
+{"channel":"control","type":"control.error","id":"connect-1","ok":false,"error":{"code":"missing_field","message":"workspace_id is required"}}

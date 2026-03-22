@@ -20,10 +20,22 @@ pub const ControlType = enum {
     connect_ack,
     session_attach,
     session_status,
-    mount_attach_v2,
-    mount_graph_delta_v2,
-    mount_file_read_v2,
-    mount_file_write_v2,
+    mount_attach,
+    mount_graph_delta,
+    mount_file_read,
+    mount_file_write,
+    mount_path_readlink,
+    mount_path_mkdir,
+    mount_path_unlink,
+    mount_path_rmdir,
+    mount_path_rename,
+    mount_path_symlink,
+    mount_path_setxattr,
+    mount_path_getxattr,
+    mount_path_listxattr,
+    mount_path_removexattr,
+    mount_path_lock,
+    mount_path_setattr,
     session_resume,
     session_list,
     session_close,
@@ -45,9 +57,6 @@ pub const ControlType = enum {
     venom_bind,
     venom_upsert,
     venom_get,
-    agent_ensure,
-    agent_list,
-    agent_get,
     node_list,
     node_get,
     node_delete,
@@ -68,20 +77,8 @@ pub const ControlType = enum {
     workspace_token_revoke,
     workspace_activate,
     workspace_up,
-    project_create,
-    project_update,
-    project_delete,
-    project_list,
-    project_get,
-    project_mount_set,
-    project_mount_remove,
-    project_mount_list,
-    project_token_rotate,
-    project_token_revoke,
-    project_activate,
     workspace_status,
     reconcile_status,
-    project_up,
     audit_tail,
     err,
     unknown,
@@ -204,10 +201,22 @@ pub fn controlTypeFromString(value: []const u8) ControlType {
     if (std.mem.eql(u8, value, "control.connect_ack")) return .connect_ack;
     if (std.mem.eql(u8, value, "control.session_attach")) return .session_attach;
     if (std.mem.eql(u8, value, "control.session_status")) return .session_status;
-    if (std.mem.eql(u8, value, "control.mount_attach_v2")) return .mount_attach_v2;
-    if (std.mem.eql(u8, value, "control.mount_graph_delta_v2")) return .mount_graph_delta_v2;
-    if (std.mem.eql(u8, value, "control.mount_file_read_v2")) return .mount_file_read_v2;
-    if (std.mem.eql(u8, value, "control.mount_file_write_v2")) return .mount_file_write_v2;
+    if (std.mem.eql(u8, value, "control.mount_attach")) return .mount_attach;
+    if (std.mem.eql(u8, value, "control.mount_graph_delta")) return .mount_graph_delta;
+    if (std.mem.eql(u8, value, "control.mount_file_read")) return .mount_file_read;
+    if (std.mem.eql(u8, value, "control.mount_file_write")) return .mount_file_write;
+    if (std.mem.eql(u8, value, "control.mount_path_readlink")) return .mount_path_readlink;
+    if (std.mem.eql(u8, value, "control.mount_path_mkdir")) return .mount_path_mkdir;
+    if (std.mem.eql(u8, value, "control.mount_path_unlink")) return .mount_path_unlink;
+    if (std.mem.eql(u8, value, "control.mount_path_rmdir")) return .mount_path_rmdir;
+    if (std.mem.eql(u8, value, "control.mount_path_rename")) return .mount_path_rename;
+    if (std.mem.eql(u8, value, "control.mount_path_symlink")) return .mount_path_symlink;
+    if (std.mem.eql(u8, value, "control.mount_path_setxattr")) return .mount_path_setxattr;
+    if (std.mem.eql(u8, value, "control.mount_path_getxattr")) return .mount_path_getxattr;
+    if (std.mem.eql(u8, value, "control.mount_path_listxattr")) return .mount_path_listxattr;
+    if (std.mem.eql(u8, value, "control.mount_path_removexattr")) return .mount_path_removexattr;
+    if (std.mem.eql(u8, value, "control.mount_path_lock")) return .mount_path_lock;
+    if (std.mem.eql(u8, value, "control.mount_path_setattr")) return .mount_path_setattr;
     if (std.mem.eql(u8, value, "control.session_resume")) return .session_resume;
     if (std.mem.eql(u8, value, "control.session_list")) return .session_list;
     if (std.mem.eql(u8, value, "control.session_close")) return .session_close;
@@ -229,9 +238,6 @@ pub fn controlTypeFromString(value: []const u8) ControlType {
     if (std.mem.eql(u8, value, "control.venom_bind")) return .venom_bind;
     if (std.mem.eql(u8, value, "control.venom_upsert")) return .venom_upsert;
     if (std.mem.eql(u8, value, "control.venom_get")) return .venom_get;
-    if (std.mem.eql(u8, value, "control.agent_ensure")) return .agent_ensure;
-    if (std.mem.eql(u8, value, "control.agent_list")) return .agent_list;
-    if (std.mem.eql(u8, value, "control.agent_get")) return .agent_get;
     if (std.mem.eql(u8, value, "control.node_list")) return .node_list;
     if (std.mem.eql(u8, value, "control.node_get")) return .node_get;
     if (std.mem.eql(u8, value, "control.node_delete")) return .node_delete;
@@ -252,20 +258,8 @@ pub fn controlTypeFromString(value: []const u8) ControlType {
     if (std.mem.eql(u8, value, "control.workspace_token_revoke")) return .workspace_token_revoke;
     if (std.mem.eql(u8, value, "control.workspace_activate")) return .workspace_activate;
     if (std.mem.eql(u8, value, "control.workspace_up")) return .workspace_up;
-    if (std.mem.eql(u8, value, "control.project_create")) return .project_create;
-    if (std.mem.eql(u8, value, "control.project_update")) return .project_update;
-    if (std.mem.eql(u8, value, "control.project_delete")) return .project_delete;
-    if (std.mem.eql(u8, value, "control.project_list")) return .project_list;
-    if (std.mem.eql(u8, value, "control.project_get")) return .project_get;
-    if (std.mem.eql(u8, value, "control.project_mount_set")) return .project_mount_set;
-    if (std.mem.eql(u8, value, "control.project_mount_remove")) return .project_mount_remove;
-    if (std.mem.eql(u8, value, "control.project_mount_list")) return .project_mount_list;
-    if (std.mem.eql(u8, value, "control.project_token_rotate")) return .project_token_rotate;
-    if (std.mem.eql(u8, value, "control.project_token_revoke")) return .project_token_revoke;
-    if (std.mem.eql(u8, value, "control.project_activate")) return .project_activate;
     if (std.mem.eql(u8, value, "control.workspace_status")) return .workspace_status;
     if (std.mem.eql(u8, value, "control.reconcile_status")) return .reconcile_status;
-    if (std.mem.eql(u8, value, "control.project_up")) return .project_up;
     if (std.mem.eql(u8, value, "control.audit_tail")) return .audit_tail;
     if (std.mem.eql(u8, value, "control.error")) return .err;
     return .unknown;
@@ -355,10 +349,22 @@ pub fn controlTypeName(value: ControlType) []const u8 {
         .connect_ack => "control.connect_ack",
         .session_attach => "control.session_attach",
         .session_status => "control.session_status",
-        .mount_attach_v2 => "control.mount_attach_v2",
-        .mount_graph_delta_v2 => "control.mount_graph_delta_v2",
-        .mount_file_read_v2 => "control.mount_file_read_v2",
-        .mount_file_write_v2 => "control.mount_file_write_v2",
+        .mount_attach => "control.mount_attach",
+        .mount_graph_delta => "control.mount_graph_delta",
+        .mount_file_read => "control.mount_file_read",
+        .mount_file_write => "control.mount_file_write",
+        .mount_path_readlink => "control.mount_path_readlink",
+        .mount_path_mkdir => "control.mount_path_mkdir",
+        .mount_path_unlink => "control.mount_path_unlink",
+        .mount_path_rmdir => "control.mount_path_rmdir",
+        .mount_path_rename => "control.mount_path_rename",
+        .mount_path_symlink => "control.mount_path_symlink",
+        .mount_path_setxattr => "control.mount_path_setxattr",
+        .mount_path_getxattr => "control.mount_path_getxattr",
+        .mount_path_listxattr => "control.mount_path_listxattr",
+        .mount_path_removexattr => "control.mount_path_removexattr",
+        .mount_path_lock => "control.mount_path_lock",
+        .mount_path_setattr => "control.mount_path_setattr",
         .session_resume => "control.session_resume",
         .session_list => "control.session_list",
         .session_close => "control.session_close",
@@ -380,9 +386,6 @@ pub fn controlTypeName(value: ControlType) []const u8 {
         .venom_bind => "control.venom_bind",
         .venom_upsert => "control.venom_upsert",
         .venom_get => "control.venom_get",
-        .agent_ensure => "control.agent_ensure",
-        .agent_list => "control.agent_list",
-        .agent_get => "control.agent_get",
         .node_list => "control.node_list",
         .node_get => "control.node_get",
         .node_delete => "control.node_delete",
@@ -403,20 +406,8 @@ pub fn controlTypeName(value: ControlType) []const u8 {
         .workspace_token_revoke => "control.workspace_token_revoke",
         .workspace_activate => "control.workspace_activate",
         .workspace_up => "control.workspace_up",
-        .project_create => "control.project_create",
-        .project_update => "control.project_update",
-        .project_delete => "control.project_delete",
-        .project_list => "control.project_list",
-        .project_get => "control.project_get",
-        .project_mount_set => "control.project_mount_set",
-        .project_mount_remove => "control.project_mount_remove",
-        .project_mount_list => "control.project_mount_list",
-        .project_token_rotate => "control.project_token_rotate",
-        .project_token_revoke => "control.project_token_revoke",
-        .project_activate => "control.project_activate",
         .workspace_status => "control.workspace_status",
         .reconcile_status => "control.reconcile_status",
-        .project_up => "control.project_up",
         .audit_tail => "control.audit_tail",
         .err => "control.error",
         .unknown => "control.unknown",
@@ -499,15 +490,27 @@ pub fn acheronTypeName(value: FsrpcType) []const u8 {
     return fsrpcTypeName(value);
 }
 
-test "unified_types: v2 control names round-trip as canonical strings" {
+test "unified_types: mount control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.version, controlTypeFromString(controlTypeName(.version)));
     try std.testing.expectEqual(ControlType.connect, controlTypeFromString(controlTypeName(.connect)));
     try std.testing.expectEqual(ControlType.session_attach, controlTypeFromString(controlTypeName(.session_attach)));
     try std.testing.expectEqual(ControlType.session_status, controlTypeFromString(controlTypeName(.session_status)));
-    try std.testing.expectEqual(ControlType.mount_attach_v2, controlTypeFromString(controlTypeName(.mount_attach_v2)));
-    try std.testing.expectEqual(ControlType.mount_graph_delta_v2, controlTypeFromString(controlTypeName(.mount_graph_delta_v2)));
-    try std.testing.expectEqual(ControlType.mount_file_read_v2, controlTypeFromString(controlTypeName(.mount_file_read_v2)));
-    try std.testing.expectEqual(ControlType.mount_file_write_v2, controlTypeFromString(controlTypeName(.mount_file_write_v2)));
+    try std.testing.expectEqual(ControlType.mount_attach, controlTypeFromString(controlTypeName(.mount_attach)));
+    try std.testing.expectEqual(ControlType.mount_graph_delta, controlTypeFromString(controlTypeName(.mount_graph_delta)));
+    try std.testing.expectEqual(ControlType.mount_file_read, controlTypeFromString(controlTypeName(.mount_file_read)));
+    try std.testing.expectEqual(ControlType.mount_file_write, controlTypeFromString(controlTypeName(.mount_file_write)));
+    try std.testing.expectEqual(ControlType.mount_path_readlink, controlTypeFromString(controlTypeName(.mount_path_readlink)));
+    try std.testing.expectEqual(ControlType.mount_path_mkdir, controlTypeFromString(controlTypeName(.mount_path_mkdir)));
+    try std.testing.expectEqual(ControlType.mount_path_unlink, controlTypeFromString(controlTypeName(.mount_path_unlink)));
+    try std.testing.expectEqual(ControlType.mount_path_rmdir, controlTypeFromString(controlTypeName(.mount_path_rmdir)));
+    try std.testing.expectEqual(ControlType.mount_path_rename, controlTypeFromString(controlTypeName(.mount_path_rename)));
+    try std.testing.expectEqual(ControlType.mount_path_symlink, controlTypeFromString(controlTypeName(.mount_path_symlink)));
+    try std.testing.expectEqual(ControlType.mount_path_setxattr, controlTypeFromString(controlTypeName(.mount_path_setxattr)));
+    try std.testing.expectEqual(ControlType.mount_path_getxattr, controlTypeFromString(controlTypeName(.mount_path_getxattr)));
+    try std.testing.expectEqual(ControlType.mount_path_listxattr, controlTypeFromString(controlTypeName(.mount_path_listxattr)));
+    try std.testing.expectEqual(ControlType.mount_path_removexattr, controlTypeFromString(controlTypeName(.mount_path_removexattr)));
+    try std.testing.expectEqual(ControlType.mount_path_lock, controlTypeFromString(controlTypeName(.mount_path_lock)));
+    try std.testing.expectEqual(ControlType.mount_path_setattr, controlTypeFromString(controlTypeName(.mount_path_setattr)));
     try std.testing.expectEqual(ControlType.session_restore, controlTypeFromString(controlTypeName(.session_restore)));
     try std.testing.expectEqual(ControlType.session_history, controlTypeFromString(controlTypeName(.session_history)));
     try std.testing.expectEqual(ControlType.node_join_request, controlTypeFromString(controlTypeName(.node_join_request)));
@@ -516,9 +519,6 @@ test "unified_types: v2 control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.venom_bind, controlTypeFromString(controlTypeName(.venom_bind)));
     try std.testing.expectEqual(ControlType.venom_upsert, controlTypeFromString(controlTypeName(.venom_upsert)));
     try std.testing.expectEqual(ControlType.venom_get, controlTypeFromString(controlTypeName(.venom_get)));
-    try std.testing.expectEqual(ControlType.agent_ensure, controlTypeFromString(controlTypeName(.agent_ensure)));
-    try std.testing.expectEqual(ControlType.agent_list, controlTypeFromString(controlTypeName(.agent_list)));
-    try std.testing.expectEqual(ControlType.agent_get, controlTypeFromString(controlTypeName(.agent_get)));
     try std.testing.expectEqual(ControlType.workspace_create, controlTypeFromString(controlTypeName(.workspace_create)));
     try std.testing.expectEqual(ControlType.workspace_template_list, controlTypeFromString(controlTypeName(.workspace_template_list)));
     try std.testing.expectEqual(ControlType.workspace_template_get, controlTypeFromString(controlTypeName(.workspace_template_get)));
@@ -527,20 +527,49 @@ test "unified_types: v2 control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.workspace_bind_remove, controlTypeFromString(controlTypeName(.workspace_bind_remove)));
     try std.testing.expectEqual(ControlType.workspace_bind_list, controlTypeFromString(controlTypeName(.workspace_bind_list)));
     try std.testing.expectEqual(ControlType.workspace_up, controlTypeFromString(controlTypeName(.workspace_up)));
-    try std.testing.expectEqual(ControlType.project_mount_set, controlTypeFromString(controlTypeName(.project_mount_set)));
     try std.testing.expectEqual(ControlType.workspace_status, controlTypeFromString(controlTypeName(.workspace_status)));
     try std.testing.expectEqual(ControlType.reconcile_status, controlTypeFromString(controlTypeName(.reconcile_status)));
-    try std.testing.expectEqual(ControlType.project_up, controlTypeFromString(controlTypeName(.project_up)));
     try std.testing.expectEqual(ControlType.audit_tail, controlTypeFromString(controlTypeName(.audit_tail)));
     try std.testing.expectEqual(ControlType.err, controlTypeFromString(controlTypeName(.err)));
 }
 
-test "unified_types: v2 fsrpc names round-trip as canonical strings" {
+test "unified_types: fsrpc names round-trip as canonical strings" {
     try std.testing.expectEqual(FsrpcType.t_version, fsrpcTypeFromString(fsrpcTypeName(.t_version)));
     try std.testing.expectEqual(FsrpcType.fs_t_hello, fsrpcTypeFromString(fsrpcTypeName(.fs_t_hello)));
     try std.testing.expectEqual(FsrpcType.fs_t_readdirp, fsrpcTypeFromString(fsrpcTypeName(.fs_t_readdirp)));
     try std.testing.expectEqual(FsrpcType.fs_evt_inval, fsrpcTypeFromString(fsrpcTypeName(.fs_evt_inval)));
     try std.testing.expectEqual(FsrpcType.err, fsrpcTypeFromString(fsrpcTypeName(.err)));
+}
+
+test "unified_types: fsrpc canonical names are unique and exhaustive" {
+    const allocator = std.testing.allocator;
+    var seen = std.StringHashMapUnmanaged(FsrpcType){};
+    defer seen.deinit(allocator);
+
+    inline for (std.meta.fields(FsrpcType)) |field| {
+        const value: FsrpcType = @enumFromInt(field.value);
+        if (value == .unknown) continue;
+
+        const wire_name = fsrpcTypeName(value);
+        const existing = try seen.getOrPut(allocator, wire_name);
+        if (existing.found_existing) {
+            std.debug.print(
+                "duplicate FsrpcType wire name '{s}' for {s} and {s}\n",
+                .{ wire_name, @tagName(existing.value_ptr.*), @tagName(value) },
+            );
+        }
+        try std.testing.expect(!existing.found_existing);
+        existing.value_ptr.* = value;
+
+        try std.testing.expectEqual(value, fsrpcTypeFromString(wire_name));
+    }
+
+    try std.testing.expectEqualStrings("acheron.t_open", fsrpcTypeName(.t_open));
+    try std.testing.expectEqualStrings("acheron.t_fs_open", fsrpcTypeName(.fs_t_open));
+    try std.testing.expectEqualStrings("acheron.t_read", fsrpcTypeName(.t_read));
+    try std.testing.expectEqualStrings("acheron.t_fs_read", fsrpcTypeName(.fs_t_read));
+    try std.testing.expectEqualStrings("acheron.t_write", fsrpcTypeName(.t_write));
+    try std.testing.expectEqualStrings("acheron.t_fs_write", fsrpcTypeName(.fs_t_write));
 }
 
 test "unified_types: legacy message names are not recognized" {

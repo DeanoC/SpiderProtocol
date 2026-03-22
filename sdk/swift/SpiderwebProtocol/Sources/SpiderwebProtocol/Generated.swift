@@ -1,9 +1,9 @@
 // Generated from src/sdk_artifacts.zig. Do not edit by hand.
 import Foundation
 
-public let controlProtocol = "unified-v2"
+public let controlProtocol = "spiderweb-control"
 public let acheronRuntimeVersion = "acheron-1"
-public let nodeFsProtocol = "unified-v2-fs"
+public let nodeFsProtocol = "spiderweb-fs"
 public let nodeFsProto: UInt32 = 2
 
 public let controlMessageTypes: [String] = [
@@ -13,10 +13,22 @@ public let controlMessageTypes: [String] = [
     "control.connect_ack",
     "control.session_attach",
     "control.session_status",
-    "control.mount_attach_v2",
-    "control.mount_graph_delta_v2",
-    "control.mount_file_read_v2",
-    "control.mount_file_write_v2",
+    "control.mount_attach",
+    "control.mount_graph_delta",
+    "control.mount_file_read",
+    "control.mount_file_write",
+    "control.mount_path_readlink",
+    "control.mount_path_mkdir",
+    "control.mount_path_unlink",
+    "control.mount_path_rmdir",
+    "control.mount_path_rename",
+    "control.mount_path_symlink",
+    "control.mount_path_setxattr",
+    "control.mount_path_getxattr",
+    "control.mount_path_listxattr",
+    "control.mount_path_removexattr",
+    "control.mount_path_lock",
+    "control.mount_path_setattr",
     "control.session_resume",
     "control.session_list",
     "control.session_close",
@@ -38,9 +50,6 @@ public let controlMessageTypes: [String] = [
     "control.venom_bind",
     "control.venom_upsert",
     "control.venom_get",
-    "control.agent_ensure",
-    "control.agent_list",
-    "control.agent_get",
     "control.node_list",
     "control.node_get",
     "control.node_delete",
@@ -61,20 +70,8 @@ public let controlMessageTypes: [String] = [
     "control.workspace_token_revoke",
     "control.workspace_activate",
     "control.workspace_up",
-    "control.project_create",
-    "control.project_update",
-    "control.project_delete",
-    "control.project_list",
-    "control.project_get",
-    "control.project_mount_set",
-    "control.project_mount_remove",
-    "control.project_mount_list",
-    "control.project_token_rotate",
-    "control.project_token_revoke",
-    "control.project_activate",
     "control.workspace_status",
     "control.reconcile_status",
-    "control.project_up",
     "control.audit_tail",
     "control.error",
 ]

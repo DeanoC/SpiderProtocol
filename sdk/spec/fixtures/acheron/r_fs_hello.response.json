@@ -1,1 +1,1 @@
-{"channel":"acheron","type":"acheron.r_fs_hello","tag":3,"ok":true,"payload":{"protocol":"unified-v2-fs","proto":2,"capabilities":{"exports":true,"read":true,"write":true}}}
+{"channel":"acheron","type":"acheron.r_fs_hello","tag":3,"ok":true,"payload":{"protocol":"spiderweb-fs","proto":2,"capabilities":{"exports":true,"read":true,"write":true}}}

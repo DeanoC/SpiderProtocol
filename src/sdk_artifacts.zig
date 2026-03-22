@@ -1,16 +1,16 @@
 const std = @import("std");
 const unified = @import("unified.zig");
 const unified_build = @import("unified_build.zig");
-const spider_venom_wasm_constants = @import("spiderweb_node/spider_venom_wasm_constants.zig");
+const spider_venom_wasm_constants = @import("spider_venom_wasm_constants.zig");
 const sdk_schema = @import("sdk_schema.zig");
 
 comptime {
     @setEvalBranchQuota(100_000);
 }
 
-pub const control_protocol_name = "unified-v2";
+pub const control_protocol_name = "spiderweb-control";
 pub const acheron_runtime_version = "acheron-1";
-pub const node_fs_protocol_name = "unified-v2-fs";
+pub const node_fs_protocol_name = "spiderweb-fs";
 pub const node_fs_protocol_proto: u32 = 2;
 
 const legacy_rejected_control_names = [_][]const u8{
@@ -43,13 +43,13 @@ const spiderdocs_protocol_overview_files = [_][]const []const u8{
     &.{ "..", "..", "..", "SpiderDocs", "protocols", "control-agent-session.md" },
     &.{ "..", "..", "..", "SpiderDocs", "protocols", "acheron-worldfs.md" },
     &.{ "..", "..", "..", "SpiderDocs", "protocols", "node-service-catalog.md" },
-    &.{ "..", "..", "..", "SpiderDocs", "protocols", "unified-v2-fs-migration.md" },
+    &.{ "..", "..", "..", "SpiderDocs", "protocols", "spiderweb-fs-migration.md" },
 };
 
 const canonical_reference_links = [_][]const u8{
-    "../../Spiderweb/deps/spider-protocol/docs/protocols/unified-v2-control.md",
+    "../../Spiderweb/deps/spider-protocol/docs/protocols/spiderweb-control.md",
     "../../Spiderweb/deps/spider-protocol/docs/protocols/acheron-runtime-v1.md",
-    "../../Spiderweb/deps/spider-protocol/docs/protocols/node-fs-unified-v2.md",
+    "../../Spiderweb/deps/spider-protocol/docs/protocols/spiderweb-fs.md",
     "../../Spiderweb/deps/spider-protocol/docs/protocols/spider-venom-wasm-abi-v1.md",
     "../../Spiderweb/deps/spider-protocol/docs/protocols/namespace-driver-abi-v1.md",
 };
@@ -132,9 +132,9 @@ const artifacts = [_]Artifact{
     .{ .kind = .fixture_acheron_error_response, .rel_path = &.{ "sdk", "spec", "fixtures", "acheron", "error.response.json" } },
     .{ .kind = .fixture_acheron_err_fs_response, .rel_path = &.{ "sdk", "spec", "fixtures", "acheron", "err_fs.response.json" } },
     .{ .kind = .fixture_acheron_e_fs_inval_event, .rel_path = &.{ "sdk", "spec", "fixtures", "acheron", "e_fs_inval.event.json" } },
-    .{ .kind = .doc_control_reference, .rel_path = &.{ "docs", "protocols", "unified-v2-control.md" } },
+    .{ .kind = .doc_control_reference, .rel_path = &.{ "docs", "protocols", "spiderweb-control.md" } },
     .{ .kind = .doc_acheron_reference, .rel_path = &.{ "docs", "protocols", "acheron-runtime-v1.md" } },
-    .{ .kind = .doc_node_fs_reference, .rel_path = &.{ "docs", "protocols", "node-fs-unified-v2.md" } },
+    .{ .kind = .doc_node_fs_reference, .rel_path = &.{ "docs", "protocols", "spiderweb-fs.md" } },
     .{ .kind = .doc_wasm_abi_reference, .rel_path = &.{ "docs", "protocols", "spider-venom-wasm-abi-v1.md" } },
     .{ .kind = .ts_generated, .rel_path = &.{ "sdk", "typescript", "spiderweb-protocol", "src", "generated.ts" } },
     .{ .kind = .py_generated, .rel_path = &.{ "sdk", "python", "spiderweb_protocol", "spiderweb_protocol", "generated.py" } },
@@ -223,7 +223,7 @@ fn renderProtocolJson(allocator: std.mem.Allocator) ![]u8 {
     try writer.writeAll("\n  ],\n");
     try writer.writeAll("  \"handshakes\": {\n");
     try writer.writeAll("    \"control\": [\n");
-    try writer.writeAll("      {\"message\": \"control.version\", \"required_payload\": {\"protocol\": \"unified-v2\"}},\n");
+    try writer.writeAll("      {\"message\": \"control.version\", \"required_payload\": {\"protocol\": \"spiderweb-control\"}},\n");
     try writer.writeAll("      {\"message\": \"control.connect\"}\n");
     try writer.writeAll("    ],\n");
     try writer.writeAll("    \"acheron_runtime\": [\n");
@@ -231,7 +231,7 @@ fn renderProtocolJson(allocator: std.mem.Allocator) ![]u8 {
     try writer.writeAll("      {\"message\": \"acheron.t_attach\"}\n");
     try writer.writeAll("    ],\n");
     try writer.writeAll("    \"node_fs\": [\n");
-    try writer.writeAll("      {\"message\": \"acheron.t_fs_hello\", \"required_payload\": {\"protocol\": \"unified-v2-fs\", \"proto\": 2}}\n");
+    try writer.writeAll("      {\"message\": \"acheron.t_fs_hello\", \"required_payload\": {\"protocol\": \"spiderweb-fs\", \"proto\": 2}}\n");
     try writer.writeAll("    ]\n");
     try writer.writeAll("  },\n");
     try writer.writeAll("  \"messages\": {\n    \"control\": [\n");
@@ -312,7 +312,7 @@ fn renderControlReferenceDoc(allocator: std.mem.Allocator) ![]u8 {
     const writer = out.writer(allocator);
 
     try writer.writeAll(
-        \\# Unified-v2 Control Protocol
+        \\# Spiderweb Control Protocol (`spiderweb-control`)
         \\
         \\Status: generated from `sdk/spec/protocol.json`
         \\
@@ -320,7 +320,7 @@ fn renderControlReferenceDoc(allocator: std.mem.Allocator) ![]u8 {
         \\
         \\## Constants
         \\
-        \\- protocol name: `unified-v2`
+        \\- protocol name: `spiderweb-control`
         \\- websocket endpoint: control lives on the base websocket path (`/`)
         \\- request correlation field: `id`
         \\- error message type: `control.error`
@@ -335,7 +335,7 @@ fn renderControlReferenceDoc(allocator: std.mem.Allocator) ![]u8 {
         \\
         \\## Required Handshake
         \\
-        \\1. Send `control.version` with payload `{"protocol":"unified-v2"}`.
+        \\1. Send `control.version` with payload `{"protocol":"spiderweb-control"}`.
         \\2. Wait for `control.version_ack`.
         \\3. Send `control.connect`.
         \\4. Wait for `control.connect_ack`.
@@ -438,24 +438,24 @@ fn renderNodeFsReferenceDoc(allocator: std.mem.Allocator) ![]u8 {
     const writer = out.writer(allocator);
 
     try writer.writeAll(
-        \\# Node FS Protocol (`unified-v2-fs`)
+        \\# Spiderweb FS Protocol (`spiderweb-fs`)
         \\
         \\Status: generated from `sdk/spec/protocol.json`
         \\
-        \\This is the canonical public reference for the node filesystem handshake and Acheron FS message family carried over websocket text frames on `/v2/fs`.
+        \\This is the canonical public reference for the node filesystem handshake and Acheron FS message family carried over websocket text frames on `/fs`.
         \\
         \\## Constants
         \\
         \\- handshake message: `acheron.t_fs_hello`
-        \\- required payload: `{"protocol":"unified-v2-fs","proto":2}`
+        \\- required payload: `{"protocol":"spiderweb-fs","proto":2}`
         \\- request correlation field: `tag`
         \\- fs error message type: `acheron.err_fs`
         \\- fs invalidation events: `acheron.e_fs_inval`, `acheron.e_fs_inval_dir`
         \\
         \\## Required Node FS Handshake
         \\
-        \\1. Open websocket to `/v2/fs`.
-        \\2. Send `acheron.t_fs_hello` with payload `{"protocol":"unified-v2-fs","proto":2}`.
+        \\1. Open websocket to `/fs`.
+        \\2. Send `acheron.t_fs_hello` with payload `{"protocol":"spiderweb-fs","proto":2}`.
         \\3. Wait for `acheron.r_fs_hello`.
         \\
         \\If FS auth is enforced, the hello payload may also include `auth_token`. Node-to-node flows may also include `node_id` and `node_secret`.
@@ -806,7 +806,7 @@ fn renderSwiftGenerated(allocator: std.mem.Allocator) ![]u8 {
 }
 
 fn renderFixtureControlVersionRequest(allocator: std.mem.Allocator) ![]u8 {
-    return allocator.dupe(u8, "{\"channel\":\"control\",\"type\":\"control.version\",\"id\":\"version-1\",\"payload\":{\"protocol\":\"unified-v2\"}}\n");
+    return allocator.dupe(u8, "{\"channel\":\"control\",\"type\":\"control.version\",\"id\":\"version-1\",\"payload\":{\"protocol\":\"spiderweb-control\"}}\n");
 }
 
 fn renderFixtureControlVersionAckResponse(allocator: std.mem.Allocator) ![]u8 {
@@ -814,7 +814,7 @@ fn renderFixtureControlVersionAckResponse(allocator: std.mem.Allocator) ![]u8 {
         allocator,
         .version_ack,
         "version-1",
-        "{\"protocol\":\"unified-v2\",\"acheron_runtime\":\"acheron-1\",\"acheron_node\":\"unified-v2-fs\",\"acheron_node_proto\":2}",
+        "{\"protocol\":\"spiderweb-control\",\"acheron_runtime\":\"acheron-1\",\"acheron_node\":\"spiderweb-fs\",\"acheron_node_proto\":2}",
     );
 }
 
@@ -827,12 +827,12 @@ fn renderFixtureControlConnectAckResponse(allocator: std.mem.Allocator) ![]u8 {
         allocator,
         .connect_ack,
         "connect-1",
-        "{\"agent_id\":\"spiderweb\",\"project_id\":\"proj-demo\",\"session\":\"sess-demo\",\"protocol\":\"unified-v2\",\"role\":\"admin\",\"bootstrap_only\":false,\"bootstrap_message\":null,\"requires_session_attach\":true,\"workspace\":{\"mounts\":[{\"mount_path\":\"/nodes/local/fs\",\"fs_url\":\"ws://127.0.0.1:18891/v2/fs\",\"state\":\"online\",\"online\":true}]}}",
+        "{\"agent_id\":\"spiderweb\",\"workspace_id\":\"proj-demo\",\"session\":\"sess-demo\",\"protocol\":\"spiderweb-control\",\"workspace\":{\"mounts\":[{\"mount_path\":\"/nodes/local/fs\",\"fs_url\":\"ws://127.0.0.1:18891/fs\",\"state\":\"online\",\"online\":true}]}}",
     );
 }
 
 fn renderFixtureControlErrorResponse(allocator: std.mem.Allocator) ![]u8 {
-    return unified_build.buildControlError(allocator, "connect-1", "missing_field", "project_id is required");
+    return unified_build.buildControlError(allocator, "connect-1", "missing_field", "workspace_id is required");
 }
 
 fn renderFixtureAcheronTVersionRequest(allocator: std.mem.Allocator) ![]u8 {
@@ -848,15 +848,15 @@ fn renderFixtureAcheronTAttachRequest(allocator: std.mem.Allocator) ![]u8 {
 }
 
 fn renderFixtureAcheronRAttachResponse(allocator: std.mem.Allocator) ![]u8 {
-    return unified_build.buildFsrpcResponse(allocator, .r_attach, 2, "{\"layout\":\"unified-v2-fs\",\"roots\":[\"/\",\"/global\",\"/nodes\",\"/agents\"]}");
+    return unified_build.buildFsrpcResponse(allocator, .r_attach, 2, "{\"layout\":\"spiderweb-fs\",\"roots\":[\"/\",\"/global\",\"/nodes\",\"/agents\"]}");
 }
 
 fn renderFixtureAcheronTFsHelloRequest(allocator: std.mem.Allocator) ![]u8 {
-    return allocator.dupe(u8, "{\"channel\":\"acheron\",\"type\":\"acheron.t_fs_hello\",\"tag\":3,\"payload\":{\"protocol\":\"unified-v2-fs\",\"proto\":2}}\n");
+    return allocator.dupe(u8, "{\"channel\":\"acheron\",\"type\":\"acheron.t_fs_hello\",\"tag\":3,\"payload\":{\"protocol\":\"spiderweb-fs\",\"proto\":2}}\n");
 }
 
 fn renderFixtureAcheronRFsHelloResponse(allocator: std.mem.Allocator) ![]u8 {
-    return unified_build.buildFsrpcResponse(allocator, .fs_r_hello, 3, "{\"protocol\":\"unified-v2-fs\",\"proto\":2,\"capabilities\":{\"exports\":true,\"read\":true,\"write\":true}}");
+    return unified_build.buildFsrpcResponse(allocator, .fs_r_hello, 3, "{\"protocol\":\"spiderweb-fs\",\"proto\":2,\"capabilities\":{\"exports\":true,\"read\":true,\"write\":true}}");
 }
 
 fn renderFixtureAcheronTFsLookupRequest(allocator: std.mem.Allocator) ![]u8 {
@@ -974,10 +974,6 @@ fn writeMessageSchemaSpec(writer: anytype, spec: sdk_schema.MessageSchemaSpec, i
         try writer.writeAll(", \"error_schema\": ");
         try writeJsonString(writer, value);
     }
-    if (spec.alias_of) |value| {
-        try writer.writeAll(", \"alias_of\": ");
-        try writeJsonString(writer, value);
-    }
     try writer.writeAll("}");
 }
 
@@ -1082,16 +1078,10 @@ fn writeRustField(writer: anytype, allocator: std.mem.Allocator, field: sdk_sche
     defer allocator.free(wrapped_type);
 
     try writer.writeAll("    ");
-    if (field.aliases.len > 0 or field.optional) {
+    if (field.optional) {
         try writer.writeAll("#[serde(");
         if (field.optional) {
             try writer.writeAll("default, skip_serializing_if = \"Option::is_none\"");
-            if (field.aliases.len > 0) try writer.writeAll(", ");
-        }
-        for (field.aliases, 0..) |alias, index| {
-            if (index != 0) try writer.writeAll(", ");
-            try writer.writeAll("alias = ");
-            try writeRustString(writer, alias);
         }
         try writer.writeAll(")]\n    ");
     }
@@ -1429,12 +1419,7 @@ fn writeFieldSpec(writer: anytype, field: sdk_schema.FieldSpec, indent: usize) !
     try writer.writeAll(if (field.nullable) "true" else "false");
     try writer.writeAll(", \"is_array\": ");
     try writer.writeAll(if (field.is_array) "true" else "false");
-    try writer.writeAll(", \"aliases\": [");
-    for (field.aliases, 0..) |alias, index| {
-        if (index != 0) try writer.writeAll(", ");
-        try writeJsonString(writer, alias);
-    }
-    try writer.writeAll("]}");
+    try writer.writeAll("}");
 }
 
 fn writeSchemaRegistry(writer: anytype) !void {
@@ -1742,12 +1727,10 @@ fn controlCategory(control_type: unified.ControlType) []const u8 {
     return switch (control_type) {
         .version, .version_ack, .connect, .connect_ack => "handshake",
         .session_attach, .session_status, .session_resume, .session_list, .session_close, .session_restore, .session_history => "session",
-        .mount_attach_v2, .mount_graph_delta_v2, .mount_file_read_v2, .mount_file_write_v2 => "mount",
-        .agent_ensure, .agent_list, .agent_get => "agent",
+        .mount_attach, .mount_graph_delta, .mount_file_read, .mount_file_write, .mount_path_readlink, .mount_path_mkdir, .mount_path_unlink, .mount_path_rmdir, .mount_path_rename, .mount_path_symlink, .mount_path_setxattr, .mount_path_getxattr, .mount_path_listxattr, .mount_path_removexattr, .mount_path_lock, .mount_path_setattr => "mount",
         .node_invite_create, .node_join_request, .node_join_pending_list, .node_join_approve, .node_join_deny, .node_join, .node_ensure, .node_lease_refresh, .node_list, .node_get, .node_delete => "node",
         .venom_bind, .venom_upsert, .venom_get => "venom",
         .workspace_create, .workspace_update, .workspace_delete, .workspace_list, .workspace_get, .workspace_template_list, .workspace_template_get, .workspace_mount_set, .workspace_mount_remove, .workspace_mount_list, .workspace_bind_set, .workspace_bind_remove, .workspace_bind_list, .workspace_token_rotate, .workspace_token_revoke, .workspace_activate, .workspace_up, .workspace_status, .reconcile_status => "workspace",
-        .project_create, .project_update, .project_delete, .project_list, .project_get, .project_mount_set, .project_mount_remove, .project_mount_list, .project_token_rotate, .project_token_revoke, .project_activate, .project_up => "project",
         .auth_status, .auth_rotate => "auth",
         .audit_tail => "audit",
         .err => "error",
@@ -1759,7 +1742,7 @@ fn controlDirection(control_type: unified.ControlType) []const u8 {
     return switch (control_type) {
         .err => "error",
         .version_ack, .connect_ack, .pong => "response",
-        .mount_graph_delta_v2 => "event",
+        .mount_graph_delta => "event",
         else => "request",
     };
 }

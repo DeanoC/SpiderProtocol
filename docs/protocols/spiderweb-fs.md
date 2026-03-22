@@ -1,21 +1,21 @@
-# Node FS Protocol (`unified-v2-fs`)
+# Spiderweb FS Protocol (`spiderweb-fs`)
 
 Status: generated from `sdk/spec/protocol.json`
 
-This is the canonical public reference for the node filesystem handshake and Acheron FS message family carried over websocket text frames on `/v2/fs`.
+This is the canonical public reference for the node filesystem handshake and Acheron FS message family carried over websocket text frames on `/fs`.
 
 ## Constants
 
 - handshake message: `acheron.t_fs_hello`
-- required payload: `{"protocol":"unified-v2-fs","proto":2}`
+- required payload: `{"protocol":"spiderweb-fs","proto":2}`
 - request correlation field: `tag`
 - fs error message type: `acheron.err_fs`
 - fs invalidation events: `acheron.e_fs_inval`, `acheron.e_fs_inval_dir`
 
 ## Required Node FS Handshake
 
-1. Open websocket to `/v2/fs`.
-2. Send `acheron.t_fs_hello` with payload `{"protocol":"unified-v2-fs","proto":2}`.
+1. Open websocket to `/fs`.
+2. Send `acheron.t_fs_hello` with payload `{"protocol":"spiderweb-fs","proto":2}`.
 3. Wait for `acheron.r_fs_hello`.
 
 If FS auth is enforced, the hello payload may also include `auth_token`. Node-to-node flows may also include `node_id` and `node_secret`.

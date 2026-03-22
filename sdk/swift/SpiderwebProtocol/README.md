@@ -4,7 +4,7 @@ Reference Swift package for generated Spiderweb protocol constants.
 
 It currently exposes:
 
-- unified-v2 control protocol constants
+- spiderweb-control protocol constants
 - Acheron runtime and node-FS message type catalogs
 - envelope rule metadata
 
