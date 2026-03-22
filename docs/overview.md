@@ -25,11 +25,7 @@ Official Zig module name:
   - WebSocket frame helpers (`websocket_transport`)
   - FS client transport (`fs_client`)
 
-- `spiderweb_node`
-  - Standalone node runtime components (`fs_node_main`, `fs_node_server`, `fs_node_ops`)
-  - Source adapter stack (linux/posix/windows/gdrive/namespace/local)
-  - Service catalog + manifest loader
-  - Namespace driver/runtime scaffolding (native_proc / native_inproc / wasm)
+Standalone node runtime implementation now lives in SpiderNode rather than SpiderProtocol.
 
 ## Driver ABI
 

@@ -22,15 +22,6 @@ pub fn build(b: *std.Build) void {
     });
     spiderweb_fs.addImport("spider-protocol", lib);
 
-    const spiderweb_node = b.addModule("spiderweb_node", .{
-        .root_source_file = b.path("src/spiderweb_node/lib.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    spiderweb_node.addImport("spider-protocol", lib);
-    spiderweb_node.addImport("spiderweb_fs", spiderweb_fs);
-    spiderweb_node.addImport("zwasm", zwasm.module("zwasm"));
-
     const lib_tests = b.addTest(.{ .root_module = lib });
     const run_lib_tests = b.addRunArtifact(lib_tests);
     const sdk_artifacts_module = b.createModule(.{
@@ -52,7 +43,6 @@ pub fn build(b: *std.Build) void {
     });
     sync_sdk_exe.root_module.addImport("spider-protocol", lib);
     sync_sdk_exe.root_module.addImport("spiderweb_fs", spiderweb_fs);
-    sync_sdk_exe.root_module.addImport("spiderweb_node", spiderweb_node);
     const run_sync_sdk = b.addRunArtifact(sync_sdk_exe);
 
     const test_step = b.step("test", "Run library tests");
