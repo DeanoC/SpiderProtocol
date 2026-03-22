@@ -57,9 +57,6 @@ pub const ControlType = enum {
     venom_bind,
     venom_upsert,
     venom_get,
-    agent_ensure,
-    agent_list,
-    agent_get,
     node_list,
     node_get,
     node_delete,
@@ -241,9 +238,6 @@ pub fn controlTypeFromString(value: []const u8) ControlType {
     if (std.mem.eql(u8, value, "control.venom_bind")) return .venom_bind;
     if (std.mem.eql(u8, value, "control.venom_upsert")) return .venom_upsert;
     if (std.mem.eql(u8, value, "control.venom_get")) return .venom_get;
-    if (std.mem.eql(u8, value, "control.agent_ensure")) return .agent_ensure;
-    if (std.mem.eql(u8, value, "control.agent_list")) return .agent_list;
-    if (std.mem.eql(u8, value, "control.agent_get")) return .agent_get;
     if (std.mem.eql(u8, value, "control.node_list")) return .node_list;
     if (std.mem.eql(u8, value, "control.node_get")) return .node_get;
     if (std.mem.eql(u8, value, "control.node_delete")) return .node_delete;
@@ -392,9 +386,6 @@ pub fn controlTypeName(value: ControlType) []const u8 {
         .venom_bind => "control.venom_bind",
         .venom_upsert => "control.venom_upsert",
         .venom_get => "control.venom_get",
-        .agent_ensure => "control.agent_ensure",
-        .agent_list => "control.agent_list",
-        .agent_get => "control.agent_get",
         .node_list => "control.node_list",
         .node_get => "control.node_get",
         .node_delete => "control.node_delete",
@@ -528,9 +519,6 @@ test "unified_types: mount control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.venom_bind, controlTypeFromString(controlTypeName(.venom_bind)));
     try std.testing.expectEqual(ControlType.venom_upsert, controlTypeFromString(controlTypeName(.venom_upsert)));
     try std.testing.expectEqual(ControlType.venom_get, controlTypeFromString(controlTypeName(.venom_get)));
-    try std.testing.expectEqual(ControlType.agent_ensure, controlTypeFromString(controlTypeName(.agent_ensure)));
-    try std.testing.expectEqual(ControlType.agent_list, controlTypeFromString(controlTypeName(.agent_list)));
-    try std.testing.expectEqual(ControlType.agent_get, controlTypeFromString(controlTypeName(.agent_get)));
     try std.testing.expectEqual(ControlType.workspace_create, controlTypeFromString(controlTypeName(.workspace_create)));
     try std.testing.expectEqual(ControlType.workspace_template_list, controlTypeFromString(controlTypeName(.workspace_template_list)));
     try std.testing.expectEqual(ControlType.workspace_template_get, controlTypeFromString(controlTypeName(.workspace_template_get)));
@@ -551,6 +539,37 @@ test "unified_types: fsrpc names round-trip as canonical strings" {
     try std.testing.expectEqual(FsrpcType.fs_t_readdirp, fsrpcTypeFromString(fsrpcTypeName(.fs_t_readdirp)));
     try std.testing.expectEqual(FsrpcType.fs_evt_inval, fsrpcTypeFromString(fsrpcTypeName(.fs_evt_inval)));
     try std.testing.expectEqual(FsrpcType.err, fsrpcTypeFromString(fsrpcTypeName(.err)));
+}
+
+test "unified_types: fsrpc canonical names are unique and exhaustive" {
+    const allocator = std.testing.allocator;
+    var seen = std.StringHashMapUnmanaged(FsrpcType){};
+    defer seen.deinit(allocator);
+
+    inline for (std.meta.fields(FsrpcType)) |field| {
+        const value: FsrpcType = @enumFromInt(field.value);
+        if (value == .unknown) continue;
+
+        const wire_name = fsrpcTypeName(value);
+        const existing = try seen.getOrPut(allocator, wire_name);
+        if (existing.found_existing) {
+            std.debug.print(
+                "duplicate FsrpcType wire name '{s}' for {s} and {s}\n",
+                .{ wire_name, @tagName(existing.value_ptr.*), @tagName(value) },
+            );
+        }
+        try std.testing.expect(!existing.found_existing);
+        existing.value_ptr.* = value;
+
+        try std.testing.expectEqual(value, fsrpcTypeFromString(wire_name));
+    }
+
+    try std.testing.expectEqualStrings("acheron.t_open", fsrpcTypeName(.t_open));
+    try std.testing.expectEqualStrings("acheron.t_fs_open", fsrpcTypeName(.fs_t_open));
+    try std.testing.expectEqualStrings("acheron.t_read", fsrpcTypeName(.t_read));
+    try std.testing.expectEqualStrings("acheron.t_fs_read", fsrpcTypeName(.fs_t_read));
+    try std.testing.expectEqualStrings("acheron.t_write", fsrpcTypeName(.t_write));
+    try std.testing.expectEqualStrings("acheron.t_fs_write", fsrpcTypeName(.fs_t_write));
 }
 
 test "unified_types: legacy message names are not recognized" {

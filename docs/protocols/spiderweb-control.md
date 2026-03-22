@@ -72,9 +72,6 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 | `control.venom_bind` | venom | request |
 | `control.venom_upsert` | venom | request |
 | `control.venom_get` | venom | request |
-| `control.agent_ensure` | agent | request |
-| `control.agent_list` | agent | request |
-| `control.agent_get` | agent | request |
 | `control.node_list` | node | request |
 | `control.node_get` | node | request |
 | `control.node_delete` | node | request |

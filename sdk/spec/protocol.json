@@ -71,9 +71,6 @@
       {"name": "control.venom_bind", "category": "venom", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "VenomBindRequest", "result_schema": "AnyJson"},
       {"name": "control.venom_upsert", "category": "venom", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
       {"name": "control.venom_get", "category": "venom", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
-      {"name": "control.agent_ensure", "category": "agent", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
-      {"name": "control.agent_list", "category": "agent", "direction": "request", "correlation_field": "id", "root_fields": [], "result_schema": "AgentListResponse"},
-      {"name": "control.agent_get", "category": "agent", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AgentIdRequest", "result_schema": "AgentGetResponse"},
       {"name": "control.node_list", "category": "node", "direction": "request", "correlation_field": "id", "root_fields": [], "result_schema": "NodeListResponse"},
       {"name": "control.node_get", "category": "node", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "NodeIdRequest", "result_schema": "NodeGetResponse"},
       {"name": "control.node_delete", "category": "node", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "NodeIdRequest", "result_schema": "AnyJson"},
@@ -574,21 +571,6 @@
       ]},
     "NodeGetResponse": {"kind": "object", "fields": [
         {"name": "node", "type": "NodeInfo", "optional": false, "nullable": false, "is_array": false}
-      ]},
-    "AgentInfo": {"kind": "object", "fields": [
-        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
-        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false},
-        {"name": "description", "type": "string", "optional": true, "nullable": false, "is_array": false},
-        {"name": "is_default", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
-        {"name": "identity_loaded", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
-        {"name": "needs_hatching", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
-        {"name": "capabilities", "type": "string", "optional": true, "nullable": false, "is_array": true}
-      ]},
-    "AgentListResponse": {"kind": "object", "fields": [
-        {"name": "agents", "type": "AgentInfo", "optional": false, "nullable": false, "is_array": true}
-      ]},
-    "AgentGetResponse": {"kind": "object", "fields": [
-        {"name": "agent", "type": "AgentInfo", "optional": false, "nullable": false, "is_array": false}
       ]},
     "WorkspaceUpResponse": {"kind": "object", "fields": [
         {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},

@@ -1728,7 +1728,6 @@ fn controlCategory(control_type: unified.ControlType) []const u8 {
         .version, .version_ack, .connect, .connect_ack => "handshake",
         .session_attach, .session_status, .session_resume, .session_list, .session_close, .session_restore, .session_history => "session",
         .mount_attach, .mount_graph_delta, .mount_file_read, .mount_file_write, .mount_path_readlink, .mount_path_mkdir, .mount_path_unlink, .mount_path_rmdir, .mount_path_rename, .mount_path_symlink, .mount_path_setxattr, .mount_path_getxattr, .mount_path_listxattr, .mount_path_removexattr, .mount_path_lock, .mount_path_setattr => "mount",
-        .agent_ensure, .agent_list, .agent_get => "agent",
         .node_invite_create, .node_join_request, .node_join_pending_list, .node_join_approve, .node_join_deny, .node_join, .node_ensure, .node_lease_refresh, .node_list, .node_get, .node_delete => "node",
         .venom_bind, .venom_upsert, .venom_get => "venom",
         .workspace_create, .workspace_update, .workspace_delete, .workspace_list, .workspace_get, .workspace_template_list, .workspace_template_get, .workspace_mount_set, .workspace_mount_remove, .workspace_mount_list, .workspace_bind_set, .workspace_bind_remove, .workspace_bind_list, .workspace_token_rotate, .workspace_token_revoke, .workspace_activate, .workspace_up, .workspace_status, .reconcile_status => "workspace",

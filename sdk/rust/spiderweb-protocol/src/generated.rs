@@ -104,12 +104,6 @@ pub enum ControlMessageType {
     VenomUpsert,
     #[serde(rename = "control.venom_get")]
     VenomGet,
-    #[serde(rename = "control.agent_ensure")]
-    AgentEnsure,
-    #[serde(rename = "control.agent_list")]
-    AgentList,
-    #[serde(rename = "control.agent_get")]
-    AgentGet,
     #[serde(rename = "control.node_list")]
     NodeList,
     #[serde(rename = "control.node_get")]
@@ -1070,32 +1064,6 @@ pub struct NodeGetResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct AgentInfo {
-    pub agent_id: String,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub is_default: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity_loaded: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub needs_hatching: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capabilities: Option<Vec<String>>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct AgentListResponse {
-    pub agents: Vec<AgentInfo>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct AgentGetResponse {
-    pub agent: AgentInfo,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceUpResponse {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1313,9 +1281,6 @@ pub enum ControlRequestEnvelope {
     VenomBind(ControlEnvelope<VenomBindRequest>),
     VenomUpsert(ControlEnvelope<AnyJson>),
     VenomGet(ControlEnvelope<AnyJson>),
-    AgentEnsure(ControlEnvelope<AnyJson>),
-    AgentList(ControlEnvelope<EmptyObject>),
-    AgentGet(ControlEnvelope<AgentIdRequest>),
     NodeList(ControlEnvelope<EmptyObject>),
     NodeGet(ControlEnvelope<NodeIdRequest>),
     NodeDelete(ControlEnvelope<NodeIdRequest>),
@@ -1383,9 +1348,6 @@ pub enum ControlResponseEnvelope {
     VenomBind(ControlEnvelope<AnyJson>),
     VenomUpsert(ControlEnvelope<AnyJson>),
     VenomGet(ControlEnvelope<AnyJson>),
-    AgentEnsure(ControlEnvelope<AnyJson>),
-    AgentList(ControlEnvelope<AgentListResponse>),
-    AgentGet(ControlEnvelope<AgentGetResponse>),
     NodeList(ControlEnvelope<NodeListResponse>),
     NodeGet(ControlEnvelope<NodeGetResponse>),
     NodeDelete(ControlEnvelope<AnyJson>),
@@ -1458,9 +1420,6 @@ impl ControlRequestEnvelope {
             Self::VenomBind(inner) => serde_json::to_value(inner),
             Self::VenomUpsert(inner) => serde_json::to_value(inner),
             Self::VenomGet(inner) => serde_json::to_value(inner),
-            Self::AgentEnsure(inner) => serde_json::to_value(inner),
-            Self::AgentList(inner) => serde_json::to_value(inner),
-            Self::AgentGet(inner) => serde_json::to_value(inner),
             Self::NodeList(inner) => serde_json::to_value(inner),
             Self::NodeGet(inner) => serde_json::to_value(inner),
             Self::NodeDelete(inner) => serde_json::to_value(inner),
@@ -1529,9 +1488,6 @@ impl ControlRequestEnvelope {
             "control.venom_bind" => Ok(Self::VenomBind(serde_json::from_value(value)?)),
             "control.venom_upsert" => Ok(Self::VenomUpsert(serde_json::from_value(value)?)),
             "control.venom_get" => Ok(Self::VenomGet(serde_json::from_value(value)?)),
-            "control.agent_ensure" => Ok(Self::AgentEnsure(serde_json::from_value(value)?)),
-            "control.agent_list" => Ok(Self::AgentList(serde_json::from_value(value)?)),
-            "control.agent_get" => Ok(Self::AgentGet(serde_json::from_value(value)?)),
             "control.node_list" => Ok(Self::NodeList(serde_json::from_value(value)?)),
             "control.node_get" => Ok(Self::NodeGet(serde_json::from_value(value)?)),
             "control.node_delete" => Ok(Self::NodeDelete(serde_json::from_value(value)?)),
@@ -1600,9 +1556,6 @@ impl ControlRequestEnvelope {
             Self::VenomBind(_) => ControlMessageType::VenomBind,
             Self::VenomUpsert(_) => ControlMessageType::VenomUpsert,
             Self::VenomGet(_) => ControlMessageType::VenomGet,
-            Self::AgentEnsure(_) => ControlMessageType::AgentEnsure,
-            Self::AgentList(_) => ControlMessageType::AgentList,
-            Self::AgentGet(_) => ControlMessageType::AgentGet,
             Self::NodeList(_) => ControlMessageType::NodeList,
             Self::NodeGet(_) => ControlMessageType::NodeGet,
             Self::NodeDelete(_) => ControlMessageType::NodeDelete,
@@ -1673,9 +1626,6 @@ impl ControlResponseEnvelope {
             Self::VenomBind(inner) => serde_json::to_value(inner),
             Self::VenomUpsert(inner) => serde_json::to_value(inner),
             Self::VenomGet(inner) => serde_json::to_value(inner),
-            Self::AgentEnsure(inner) => serde_json::to_value(inner),
-            Self::AgentList(inner) => serde_json::to_value(inner),
-            Self::AgentGet(inner) => serde_json::to_value(inner),
             Self::NodeList(inner) => serde_json::to_value(inner),
             Self::NodeGet(inner) => serde_json::to_value(inner),
             Self::NodeDelete(inner) => serde_json::to_value(inner),
@@ -1745,9 +1695,6 @@ impl ControlResponseEnvelope {
             "control.venom_bind" => Ok(Self::VenomBind(serde_json::from_value(value)?)),
             "control.venom_upsert" => Ok(Self::VenomUpsert(serde_json::from_value(value)?)),
             "control.venom_get" => Ok(Self::VenomGet(serde_json::from_value(value)?)),
-            "control.agent_ensure" => Ok(Self::AgentEnsure(serde_json::from_value(value)?)),
-            "control.agent_list" => Ok(Self::AgentList(serde_json::from_value(value)?)),
-            "control.agent_get" => Ok(Self::AgentGet(serde_json::from_value(value)?)),
             "control.node_list" => Ok(Self::NodeList(serde_json::from_value(value)?)),
             "control.node_get" => Ok(Self::NodeGet(serde_json::from_value(value)?)),
             "control.node_delete" => Ok(Self::NodeDelete(serde_json::from_value(value)?)),
@@ -1817,9 +1764,6 @@ impl ControlResponseEnvelope {
             Self::VenomBind(_) => ControlMessageType::VenomBind,
             Self::VenomUpsert(_) => ControlMessageType::VenomUpsert,
             Self::VenomGet(_) => ControlMessageType::VenomGet,
-            Self::AgentEnsure(_) => ControlMessageType::AgentEnsure,
-            Self::AgentList(_) => ControlMessageType::AgentList,
-            Self::AgentGet(_) => ControlMessageType::AgentGet,
             Self::NodeList(_) => ControlMessageType::NodeList,
             Self::NodeGet(_) => ControlMessageType::NodeGet,
             Self::NodeDelete(_) => ControlMessageType::NodeDelete,

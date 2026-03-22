@@ -516,24 +516,6 @@ const node_get_response_fields = [_]FieldSpec{
     field("node", "NodeInfo"),
 };
 
-const agent_info_fields = [_]FieldSpec{
-    field("agent_id", "string"),
-    field("name", "string"),
-    optionalField("description", "string"),
-    optionalField("is_default", "boolean"),
-    optionalField("identity_loaded", "boolean"),
-    optionalField("needs_hatching", "boolean"),
-    optionalArrayField("capabilities", "string"),
-};
-
-const agent_list_response_fields = [_]FieldSpec{
-    arrayField("agents", "AgentInfo"),
-};
-
-const agent_get_response_fields = [_]FieldSpec{
-    field("agent", "AgentInfo"),
-};
-
 const workspace_up_response_fields = [_]FieldSpec{
     field("workspace_id", "string"),
     optionalNullableField("workspace_token", "string"),
@@ -718,9 +700,6 @@ pub const all_schemas = [_]SchemaSpec{
     .{ .name = "NodeInfo", .kind = .object, .fields = &node_info_fields },
     .{ .name = "NodeListResponse", .kind = .object, .fields = &node_list_response_fields },
     .{ .name = "NodeGetResponse", .kind = .object, .fields = &node_get_response_fields },
-    .{ .name = "AgentInfo", .kind = .object, .fields = &agent_info_fields },
-    .{ .name = "AgentListResponse", .kind = .object, .fields = &agent_list_response_fields },
-    .{ .name = "AgentGetResponse", .kind = .object, .fields = &agent_get_response_fields },
     .{ .name = "WorkspaceUpResponse", .kind = .object, .fields = &workspace_up_response_fields },
     .{ .name = "AcheronAttachResponse", .kind = .object, .fields = &acheron_attach_response_fields },
     .{ .name = "FsHelloRequest", .kind = .object, .fields = &fs_hello_request_fields },
@@ -822,9 +801,6 @@ pub fn controlMessageSchema(control_type: unified.ControlType) MessageSchemaSpec
         .venom_bind => controlSchema(.venom_bind, "venom", .request, "VenomBindRequest", "AnyJson", null),
         .venom_upsert => controlSchema(.venom_upsert, "venom", .request, "AnyJson", "AnyJson", null),
         .venom_get => controlSchema(.venom_get, "venom", .request, "AnyJson", "AnyJson", null),
-        .agent_ensure => controlSchema(.agent_ensure, "agent", .request, "AnyJson", "AnyJson", null),
-        .agent_list => controlSchema(.agent_list, "agent", .request, null, "AgentListResponse", null),
-        .agent_get => controlSchema(.agent_get, "agent", .request, "AgentIdRequest", "AgentGetResponse", null),
         .node_list => controlSchema(.node_list, "node", .request, null, "NodeListResponse", null),
         .node_get => controlSchema(.node_get, "node", .request, "NodeIdRequest", "NodeGetResponse", null),
         .node_delete => controlSchema(.node_delete, "node", .request, "NodeIdRequest", "AnyJson", null),
