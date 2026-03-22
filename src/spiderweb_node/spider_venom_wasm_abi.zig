@@ -1,6 +1,6 @@
 const std = @import("std");
 const zwasm = @import("zwasm");
-const spider_venom_wasm_constants = @import("spider_venom_wasm_constants.zig");
+const spider_venom_wasm_constants = @import("../spider_venom_wasm_constants.zig");
 const spider_venom_wasm_host = @import("spider_venom_wasm_host.zig");
 
 pub const abi_version = spider_venom_wasm_constants.abi_version;

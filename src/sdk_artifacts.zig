@@ -1,7 +1,7 @@
 const std = @import("std");
 const unified = @import("unified.zig");
 const unified_build = @import("unified_build.zig");
-const spider_venom_wasm_constants = @import("spiderweb_node/spider_venom_wasm_constants.zig");
+const spider_venom_wasm_constants = @import("spider_venom_wasm_constants.zig");
 const sdk_schema = @import("sdk_schema.zig");
 
 comptime {
