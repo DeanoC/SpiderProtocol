@@ -466,18 +466,10 @@ pub struct ConnectAckWorkspace {
 pub struct ControlConnectAckPayload {
     pub agent_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_id: Option<String>,
+    pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session: Option<String>,
     pub protocol: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub role: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bootstrap_only: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bootstrap_message: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub requires_session_attach: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace: Option<ConnectAckWorkspace>,
 }
@@ -517,7 +509,7 @@ pub struct BindView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceSummary {
-    #[serde(alias = "id", alias = "project_id")]
+    #[serde(alias = "id")]
     pub workspace_id: String,
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -544,7 +536,7 @@ pub struct WorkspaceSummary {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceDetail {
-    #[serde(alias = "id", alias = "project_id")]
+    #[serde(alias = "id")]
     pub workspace_id: String,
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -563,7 +555,7 @@ pub struct WorkspaceDetail {
     pub created_at_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at_ms: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "project_token")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mounts: Option<Vec<MountView>>,
@@ -602,9 +594,9 @@ pub struct SessionKeyRequest {
 pub struct SessionAttachRequest {
     pub session_key: String,
     pub agent_id: String,
-    pub project_id: String,
+    pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
+    pub workspace_token: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -819,7 +811,7 @@ pub struct VenomBindRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_id: Option<String>,
+    pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
 }
@@ -869,15 +861,14 @@ pub struct WorkspaceBindListResponse {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceDeleteResponse {
     pub deleted: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "id", alias = "project_id")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceTokenMutation {
-    #[serde(alias = "id", alias = "project_id")]
     pub workspace_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "project_token")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at_ms: Option<i64>,
@@ -926,7 +917,7 @@ pub struct AvailabilitySummary {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceStatus {
     pub agent_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "id", alias = "project_id")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_root: Option<String>,
@@ -972,7 +963,7 @@ pub struct SessionStatusResponse {
     pub session_key: String,
     pub agent_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_id: Option<String>,
+    pub workspace_id: Option<String>,
     pub attach: SessionAttachState,
 }
 
@@ -981,7 +972,7 @@ pub struct SessionSummary {
     pub session_key: String,
     pub agent_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_id: Option<String>,
+    pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_active_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1016,8 +1007,8 @@ pub struct SessionHistoryResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ReconcileProjectStatus {
-    pub project_id: String,
+pub struct ReconcileWorkspaceStatus {
+    pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mounts: Option<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1053,7 +1044,7 @@ pub struct ReconcileStatusResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failed_ops: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub projects: Option<Vec<ReconcileProjectStatus>>,
+    pub workspaces: Option<Vec<ReconcileWorkspaceStatus>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]

@@ -225,13 +225,9 @@
       ]},
     "ControlConnectAckPayload": {"kind": "object", "fields": [
         {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
         {"name": "session", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
         {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "role", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "bootstrap_only", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "bootstrap_message", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "requires_session_attach", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "workspace", "type": "ConnectAckWorkspace", "optional": true, "nullable": true, "is_array": false, "aliases": []}
       ]},
     "NodeEnsureRequest": {"kind": "object", "fields": [
@@ -256,7 +252,7 @@
         {"name": "target_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
       ]},
     "WorkspaceSummary": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id", "project_id"]},
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id"]},
         {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
@@ -270,7 +266,7 @@
         {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
       ]},
     "WorkspaceDetail": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id", "project_id"]},
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id"]},
         {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
@@ -280,7 +276,7 @@
         {"name": "token_locked", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "created_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": ["project_token"]},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
         {"name": "mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true, "aliases": []},
         {"name": "binds", "type": "BindView", "optional": true, "nullable": false, "is_array": true, "aliases": []}
       ]},
@@ -303,8 +299,8 @@
     "SessionAttachRequest": {"kind": "object", "fields": [
         {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
       ]},
     "SessionStatusRequest": {"kind": "object", "fields": [
         {"name": "session_key", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
@@ -432,7 +428,7 @@
         {"name": "venom_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "node_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "scope", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "agent_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
       ]},
     "WorkspaceTemplateBind": {"kind": "object", "fields": [
@@ -464,11 +460,11 @@
       ]},
     "WorkspaceDeleteResponse": {"kind": "object", "fields": [
         {"name": "deleted", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": ["id", "project_id"]}
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
       ]},
     "WorkspaceTokenMutation": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id", "project_id"]},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": ["project_token"]},
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
         {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "rotated", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "revoked", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []}
@@ -493,7 +489,7 @@
       ]},
     "WorkspaceStatus": {"kind": "object", "fields": [
         {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": ["id", "project_id"]},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
         {"name": "workspace_root", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
         {"name": "mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true, "aliases": []},
         {"name": "desired_mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true, "aliases": []},
@@ -517,13 +513,13 @@
     "SessionStatusResponse": {"kind": "object", "fields": [
         {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
         {"name": "attach", "type": "SessionAttachState", "optional": false, "nullable": false, "is_array": false, "aliases": []}
       ]},
     "SessionSummary": {"kind": "object", "fields": [
         {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
         {"name": "last_active_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "message_count", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "summary", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []}
@@ -544,8 +540,8 @@
     "SessionHistoryResponse": {"kind": "object", "fields": [
         {"name": "sessions", "type": "SessionSummary", "optional": false, "nullable": false, "is_array": true, "aliases": []}
       ]},
-    "ReconcileProjectStatus": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
+    "ReconcileWorkspaceStatus": {"kind": "object", "fields": [
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "selected_mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "online_mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
@@ -563,7 +559,7 @@
         {"name": "failed_ops_total", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "cycles_total", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "failed_ops", "type": "string", "optional": true, "nullable": false, "is_array": true, "aliases": []},
-        {"name": "projects", "type": "ReconcileProjectStatus", "optional": true, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "workspaces", "type": "ReconcileWorkspaceStatus", "optional": true, "nullable": false, "is_array": true, "aliases": []}
       ]},
     "NodeInfo": {"kind": "object", "fields": [
         {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},

@@ -827,12 +827,12 @@ fn renderFixtureControlConnectAckResponse(allocator: std.mem.Allocator) ![]u8 {
         allocator,
         .connect_ack,
         "connect-1",
-        "{\"agent_id\":\"spiderweb\",\"project_id\":\"proj-demo\",\"session\":\"sess-demo\",\"protocol\":\"spiderweb-control\",\"role\":\"admin\",\"bootstrap_only\":false,\"bootstrap_message\":null,\"requires_session_attach\":true,\"workspace\":{\"mounts\":[{\"mount_path\":\"/nodes/local/fs\",\"fs_url\":\"ws://127.0.0.1:18891/fs\",\"state\":\"online\",\"online\":true}]}}",
+        "{\"agent_id\":\"spiderweb\",\"workspace_id\":\"proj-demo\",\"session\":\"sess-demo\",\"protocol\":\"spiderweb-control\",\"workspace\":{\"mounts\":[{\"mount_path\":\"/nodes/local/fs\",\"fs_url\":\"ws://127.0.0.1:18891/fs\",\"state\":\"online\",\"online\":true}]}}",
     );
 }
 
 fn renderFixtureControlErrorResponse(allocator: std.mem.Allocator) ![]u8 {
-    return unified_build.buildControlError(allocator, "connect-1", "missing_field", "project_id is required");
+    return unified_build.buildControlError(allocator, "connect-1", "missing_field", "workspace_id is required");
 }
 
 fn renderFixtureAcheronTVersionRequest(allocator: std.mem.Allocator) ![]u8 {

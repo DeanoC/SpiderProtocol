@@ -83,10 +83,6 @@ fn optionalNullableAliasField(name: []const u8, type_name: []const u8, aliases: 
 }
 
 const id_aliases = [_][]const u8{"id"};
-const workspace_id_aliases = [_][]const u8{ "id", "project_id" };
-const project_id_aliases = [_][]const u8{ "id", "workspace_id" };
-const workspace_token_aliases = [_][]const u8{"project_token"};
-const project_token_aliases = [_][]const u8{"workspace_token"};
 
 const control_error_fields = [_]FieldSpec{
     field("code", "string"),
@@ -127,13 +123,9 @@ const connect_ack_workspace_fields = [_]FieldSpec{
 
 const connect_ack_payload_fields = [_]FieldSpec{
     field("agent_id", "string"),
-    optionalNullableField("project_id", "string"),
+    optionalNullableField("workspace_id", "string"),
     optionalNullableField("session", "string"),
     field("protocol", "string"),
-    optionalField("role", "string"),
-    optionalField("bootstrap_only", "boolean"),
-    optionalNullableField("bootstrap_message", "string"),
-    optionalField("requires_session_attach", "boolean"),
     optionalNullableField("workspace", "ConnectAckWorkspace"),
 };
 
@@ -163,7 +155,7 @@ const bind_view_fields = [_]FieldSpec{
 };
 
 const workspace_summary_fields = [_]FieldSpec{
-    aliasField("workspace_id", "string", &workspace_id_aliases),
+    aliasField("workspace_id", "string", &id_aliases),
     field("name", "string"),
     optionalField("vision", "string"),
     optionalField("status", "string"),
@@ -178,7 +170,7 @@ const workspace_summary_fields = [_]FieldSpec{
 };
 
 const workspace_detail_fields = [_]FieldSpec{
-    aliasField("workspace_id", "string", &workspace_id_aliases),
+    aliasField("workspace_id", "string", &id_aliases),
     field("name", "string"),
     optionalField("vision", "string"),
     optionalField("status", "string"),
@@ -188,7 +180,7 @@ const workspace_detail_fields = [_]FieldSpec{
     optionalField("token_locked", "boolean"),
     optionalField("created_at_ms", "i64"),
     optionalField("updated_at_ms", "i64"),
-    optionalNullableAliasField("workspace_token", "string", &workspace_token_aliases),
+    optionalNullableField("workspace_token", "string"),
     optionalArrayField("mounts", "MountView"),
     optionalArrayField("binds", "BindView"),
 };
@@ -217,8 +209,8 @@ const session_key_request_fields = [_]FieldSpec{
 const session_attach_request_fields = [_]FieldSpec{
     field("session_key", "string"),
     field("agent_id", "string"),
-    field("project_id", "string"),
-    optionalField("project_token", "string"),
+    field("workspace_id", "string"),
+    optionalField("workspace_token", "string"),
 };
 
 const session_status_request_fields = [_]FieldSpec{
@@ -366,7 +358,7 @@ const venom_bind_request_fields = [_]FieldSpec{
     field("venom_id", "string"),
     optionalField("node_id", "string"),
     optionalField("scope", "string"),
-    optionalField("project_id", "string"),
+    optionalField("workspace_id", "string"),
     optionalField("agent_id", "string"),
 };
 
@@ -405,12 +397,12 @@ const workspace_bind_list_response_fields = [_]FieldSpec{
 
 const delete_response_fields = [_]FieldSpec{
     field("deleted", "boolean"),
-    optionalAliasField("workspace_id", "string", &workspace_id_aliases),
+    optionalField("workspace_id", "string"),
 };
 
 const token_mutation_workspace_fields = [_]FieldSpec{
-    aliasField("workspace_id", "string", &workspace_id_aliases),
-    optionalNullableAliasField("workspace_token", "string", &workspace_token_aliases),
+    field("workspace_id", "string"),
+    optionalNullableField("workspace_token", "string"),
     optionalField("updated_at_ms", "i64"),
     optionalField("rotated", "boolean"),
     optionalField("revoked", "boolean"),
@@ -439,7 +431,7 @@ const availability_fields = [_]FieldSpec{
 
 const workspace_status_fields = [_]FieldSpec{
     field("agent_id", "string"),
-    optionalNullableAliasField("workspace_id", "string", &workspace_id_aliases),
+    optionalNullableField("workspace_id", "string"),
     optionalNullableField("workspace_root", "string"),
     optionalArrayField("mounts", "MountView"),
     optionalArrayField("desired_mounts", "MountView"),
@@ -465,14 +457,14 @@ const session_attach_state_fields = [_]FieldSpec{
 const session_status_response_fields = [_]FieldSpec{
     field("session_key", "string"),
     field("agent_id", "string"),
-    optionalNullableField("project_id", "string"),
+    optionalNullableField("workspace_id", "string"),
     field("attach", "SessionAttachState"),
 };
 
 const session_summary_fields = [_]FieldSpec{
     field("session_key", "string"),
     field("agent_id", "string"),
-    optionalNullableField("project_id", "string"),
+    optionalNullableField("workspace_id", "string"),
     optionalField("last_active_ms", "i64"),
     optionalField("message_count", "u64"),
     optionalNullableField("summary", "string"),
@@ -498,8 +490,8 @@ const session_history_response_fields = [_]FieldSpec{
     arrayField("sessions", "SessionSummary"),
 };
 
-const reconcile_project_status_fields = [_]FieldSpec{
-    field("project_id", "string"),
+const reconcile_workspace_status_fields = [_]FieldSpec{
+    field("workspace_id", "string"),
     optionalField("mounts", "u64"),
     optionalField("selected_mounts", "u64"),
     optionalField("online_mounts", "u64"),
@@ -518,7 +510,7 @@ const reconcile_status_response_fields = [_]FieldSpec{
     optionalField("failed_ops_total", "u64"),
     optionalField("cycles_total", "u64"),
     optionalArrayField("failed_ops", "string"),
-    optionalArrayField("projects", "ReconcileProjectStatus"),
+    optionalArrayField("workspaces", "ReconcileWorkspaceStatus"),
 };
 
 const node_info_fields = [_]FieldSpec{
@@ -735,7 +727,7 @@ pub const all_schemas = [_]SchemaSpec{
     .{ .name = "SessionCloseResponse", .kind = .object, .fields = &session_close_response_fields },
     .{ .name = "SessionRestoreResponse", .kind = .object, .fields = &session_restore_response_fields },
     .{ .name = "SessionHistoryResponse", .kind = .object, .fields = &session_history_response_fields },
-    .{ .name = "ReconcileProjectStatus", .kind = .object, .fields = &reconcile_project_status_fields },
+    .{ .name = "ReconcileWorkspaceStatus", .kind = .object, .fields = &reconcile_workspace_status_fields },
     .{ .name = "ReconcileStatusResponse", .kind = .object, .fields = &reconcile_status_response_fields },
     .{ .name = "NodeInfo", .kind = .object, .fields = &node_info_fields },
     .{ .name = "NodeListResponse", .kind = .object, .fields = &node_list_response_fields },
