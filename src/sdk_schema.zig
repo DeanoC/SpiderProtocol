@@ -177,21 +177,6 @@ const workspace_summary_fields = [_]FieldSpec{
     optionalField("updated_at_ms", "i64"),
 };
 
-const project_summary_fields = [_]FieldSpec{
-    aliasField("project_id", "string", &project_id_aliases),
-    field("name", "string"),
-    optionalField("vision", "string"),
-    optionalField("status", "string"),
-    optionalNullableField("template_id", "string"),
-    optionalNullableField("kind", "string"),
-    optionalField("is_delete_protected", "boolean"),
-    optionalField("token_locked", "boolean"),
-    optionalField("mount_count", "u64"),
-    optionalField("bind_count", "u64"),
-    optionalField("created_at_ms", "i64"),
-    optionalField("updated_at_ms", "i64"),
-};
-
 const workspace_detail_fields = [_]FieldSpec{
     aliasField("workspace_id", "string", &workspace_id_aliases),
     field("name", "string"),
@@ -208,30 +193,9 @@ const workspace_detail_fields = [_]FieldSpec{
     optionalArrayField("binds", "BindView"),
 };
 
-const project_detail_fields = [_]FieldSpec{
-    aliasField("project_id", "string", &project_id_aliases),
-    field("name", "string"),
-    optionalField("vision", "string"),
-    optionalField("status", "string"),
-    optionalNullableField("template_id", "string"),
-    optionalNullableField("kind", "string"),
-    optionalField("is_delete_protected", "boolean"),
-    optionalField("token_locked", "boolean"),
-    optionalField("created_at_ms", "i64"),
-    optionalField("updated_at_ms", "i64"),
-    optionalNullableAliasField("project_token", "string", &project_token_aliases),
-    optionalArrayField("mounts", "MountView"),
-    optionalArrayField("binds", "BindView"),
-};
-
 const workspace_ref_request_fields = [_]FieldSpec{
     field("workspace_id", "string"),
     optionalField("workspace_token", "string"),
-};
-
-const project_ref_request_fields = [_]FieldSpec{
-    field("project_id", "string"),
-    optionalField("project_token", "string"),
 };
 
 const node_id_request_fields = [_]FieldSpec{
@@ -336,28 +300,9 @@ const workspace_create_request_fields = [_]FieldSpec{
     optionalField("access_policy", "AnyJson"),
 };
 
-const project_create_request_fields = [_]FieldSpec{
-    field("name", "string"),
-    field("vision", "string"),
-    optionalField("status", "string"),
-    optionalField("template_id", "string"),
-    optionalField("operator_token", "string"),
-    optionalField("access_policy", "AnyJson"),
-};
-
 const workspace_update_request_fields = [_]FieldSpec{
     field("workspace_id", "string"),
     optionalField("workspace_token", "string"),
-    optionalField("name", "string"),
-    optionalField("vision", "string"),
-    optionalField("status", "string"),
-    optionalField("template_id", "string"),
-    optionalField("access_policy", "AnyJson"),
-};
-
-const project_update_request_fields = [_]FieldSpec{
-    field("project_id", "string"),
-    optionalField("project_token", "string"),
     optionalField("name", "string"),
     optionalField("vision", "string"),
     optionalField("status", "string"),
@@ -373,25 +318,9 @@ const workspace_mount_set_request_fields = [_]FieldSpec{
     field("mount_path", "string"),
 };
 
-const project_mount_set_request_fields = [_]FieldSpec{
-    field("project_id", "string"),
-    optionalField("project_token", "string"),
-    field("node_id", "string"),
-    field("export_name", "string"),
-    field("mount_path", "string"),
-};
-
 const workspace_mount_remove_request_fields = [_]FieldSpec{
     field("workspace_id", "string"),
     optionalField("workspace_token", "string"),
-    field("mount_path", "string"),
-    optionalField("node_id", "string"),
-    optionalField("export_name", "string"),
-};
-
-const project_mount_remove_request_fields = [_]FieldSpec{
-    field("project_id", "string"),
-    optionalField("project_token", "string"),
     field("mount_path", "string"),
     optionalField("node_id", "string"),
     optionalField("export_name", "string"),
@@ -404,22 +333,9 @@ const workspace_bind_set_request_fields = [_]FieldSpec{
     field("target_path", "string"),
 };
 
-const project_bind_set_request_fields = [_]FieldSpec{
-    field("project_id", "string"),
-    optionalField("project_token", "string"),
-    field("bind_path", "string"),
-    field("target_path", "string"),
-};
-
 const workspace_bind_remove_request_fields = [_]FieldSpec{
     field("workspace_id", "string"),
     optionalField("workspace_token", "string"),
-    field("bind_path", "string"),
-};
-
-const project_bind_remove_request_fields = [_]FieldSpec{
-    field("project_id", "string"),
-    optionalField("project_token", "string"),
     field("bind_path", "string"),
 };
 
@@ -431,20 +347,6 @@ const workspace_up_request_fields = [_]FieldSpec{
     optionalField("status", "string"),
     optionalField("template_id", "string"),
     optionalField("workspace_token", "string"),
-    optionalField("access_policy", "AnyJson"),
-    optionalField("desired_mounts", "AnyJson"),
-    optionalField("desired_binds", "AnyJson"),
-    optionalField("activate", "boolean"),
-};
-
-const project_up_request_fields = [_]FieldSpec{
-    optionalField("project_id", "string"),
-    optionalField("project_name", "string"),
-    optionalField("name", "string"),
-    optionalField("vision", "string"),
-    optionalField("status", "string"),
-    optionalField("template_id", "string"),
-    optionalField("project_token", "string"),
     optionalField("access_policy", "AnyJson"),
     optionalField("desired_mounts", "AnyJson"),
     optionalField("desired_binds", "AnyJson"),
@@ -492,27 +394,12 @@ const workspace_list_response_fields = [_]FieldSpec{
     arrayField("workspaces", "WorkspaceSummary"),
 };
 
-const project_list_response_fields = [_]FieldSpec{
-    arrayField("projects", "ProjectSummary"),
-};
-
 const workspace_mount_list_response_fields = [_]FieldSpec{
     field("workspace_id", "string"),
     arrayField("mounts", "MountView"),
 };
-
-const project_mount_list_response_fields = [_]FieldSpec{
-    field("project_id", "string"),
-    arrayField("mounts", "MountView"),
-};
-
 const workspace_bind_list_response_fields = [_]FieldSpec{
     field("workspace_id", "string"),
-    arrayField("binds", "BindView"),
-};
-
-const project_bind_list_response_fields = [_]FieldSpec{
-    field("project_id", "string"),
     arrayField("binds", "BindView"),
 };
 
@@ -521,22 +408,9 @@ const delete_response_fields = [_]FieldSpec{
     optionalAliasField("workspace_id", "string", &workspace_id_aliases),
 };
 
-const delete_project_response_fields = [_]FieldSpec{
-    field("deleted", "boolean"),
-    optionalAliasField("project_id", "string", &project_id_aliases),
-};
-
 const token_mutation_workspace_fields = [_]FieldSpec{
     aliasField("workspace_id", "string", &workspace_id_aliases),
     optionalNullableAliasField("workspace_token", "string", &workspace_token_aliases),
-    optionalField("updated_at_ms", "i64"),
-    optionalField("rotated", "boolean"),
-    optionalField("revoked", "boolean"),
-};
-
-const token_mutation_project_fields = [_]FieldSpec{
-    aliasField("project_id", "string", &project_id_aliases),
-    optionalNullableAliasField("project_token", "string", &project_token_aliases),
     optionalField("updated_at_ms", "i64"),
     optionalField("rotated", "boolean"),
     optionalField("revoked", "boolean"),
@@ -577,12 +451,6 @@ const workspace_status_fields = [_]FieldSpec{
     optionalField("last_success_ms", "i64"),
     optionalNullableField("last_error", "string"),
     optionalField("queue_depth", "u64"),
-};
-
-const project_activation_fields = [_]FieldSpec{
-    field("agent_id", "string"),
-    aliasField("project_id", "string", &project_id_aliases),
-    optionalNullableField("workspace_root", "string"),
 };
 
 const session_attach_state_fields = [_]FieldSpec{
@@ -691,14 +559,6 @@ const agent_get_response_fields = [_]FieldSpec{
 const workspace_up_response_fields = [_]FieldSpec{
     field("workspace_id", "string"),
     optionalNullableField("workspace_token", "string"),
-    field("created", "boolean"),
-    field("activated", "boolean"),
-    field("workspace", "AnyJson"),
-};
-
-const project_up_response_fields = [_]FieldSpec{
-    field("project_id", "string"),
-    optionalNullableField("project_token", "string"),
     field("created", "boolean"),
     field("activated", "boolean"),
     field("workspace", "AnyJson"),
@@ -828,11 +688,8 @@ pub const all_schemas = [_]SchemaSpec{
     .{ .name = "MountView", .kind = .object, .fields = &mount_view_fields },
     .{ .name = "BindView", .kind = .object, .fields = &bind_view_fields },
     .{ .name = "WorkspaceSummary", .kind = .object, .fields = &workspace_summary_fields },
-    .{ .name = "ProjectSummary", .kind = .object, .fields = &project_summary_fields },
     .{ .name = "WorkspaceDetail", .kind = .object, .fields = &workspace_detail_fields },
-    .{ .name = "ProjectDetail", .kind = .object, .fields = &project_detail_fields },
     .{ .name = "WorkspaceRefRequest", .kind = .object, .fields = &workspace_ref_request_fields },
-    .{ .name = "ProjectRefRequest", .kind = .object, .fields = &project_ref_request_fields },
     .{ .name = "NodeIdRequest", .kind = .object, .fields = &node_id_request_fields },
     .{ .name = "AgentIdRequest", .kind = .object, .fields = &agent_id_request_fields },
     .{ .name = "WorkspaceTemplateGetRequest", .kind = .object, .fields = &template_get_request_fields },
@@ -849,19 +706,12 @@ pub const all_schemas = [_]SchemaSpec{
     .{ .name = "MountFileWriteRequest", .kind = .object, .fields = &mount_file_write_request_fields },
     .{ .name = "MountFileWriteResponse", .kind = .object, .fields = &mount_file_write_response_fields },
     .{ .name = "WorkspaceCreateRequest", .kind = .object, .fields = &workspace_create_request_fields },
-    .{ .name = "ProjectCreateRequest", .kind = .object, .fields = &project_create_request_fields },
     .{ .name = "WorkspaceUpdateRequest", .kind = .object, .fields = &workspace_update_request_fields },
-    .{ .name = "ProjectUpdateRequest", .kind = .object, .fields = &project_update_request_fields },
     .{ .name = "WorkspaceMountSetRequest", .kind = .object, .fields = &workspace_mount_set_request_fields },
-    .{ .name = "ProjectMountSetRequest", .kind = .object, .fields = &project_mount_set_request_fields },
     .{ .name = "WorkspaceMountRemoveRequest", .kind = .object, .fields = &workspace_mount_remove_request_fields },
-    .{ .name = "ProjectMountRemoveRequest", .kind = .object, .fields = &project_mount_remove_request_fields },
     .{ .name = "WorkspaceBindSetRequest", .kind = .object, .fields = &workspace_bind_set_request_fields },
-    .{ .name = "ProjectBindSetRequest", .kind = .object, .fields = &project_bind_set_request_fields },
     .{ .name = "WorkspaceBindRemoveRequest", .kind = .object, .fields = &workspace_bind_remove_request_fields },
-    .{ .name = "ProjectBindRemoveRequest", .kind = .object, .fields = &project_bind_remove_request_fields },
     .{ .name = "WorkspaceUpRequest", .kind = .object, .fields = &workspace_up_request_fields },
-    .{ .name = "ProjectUpRequest", .kind = .object, .fields = &project_up_request_fields },
     .{ .name = "WorkspaceStatusRequest", .kind = .object, .fields = &workspace_status_request_fields },
     .{ .name = "ReconcileStatusRequest", .kind = .object, .fields = &reconcile_status_request_fields },
     .{ .name = "VenomBindRequest", .kind = .object, .fields = &venom_bind_request_fields },
@@ -870,20 +720,14 @@ pub const all_schemas = [_]SchemaSpec{
     .{ .name = "WorkspaceTemplateListResponse", .kind = .object, .fields = &workspace_template_list_response_fields },
     .{ .name = "WorkspaceTemplateGetResponse", .kind = .object, .fields = &workspace_template_get_response_fields },
     .{ .name = "WorkspaceListResponse", .kind = .object, .fields = &workspace_list_response_fields },
-    .{ .name = "ProjectListResponse", .kind = .object, .fields = &project_list_response_fields },
     .{ .name = "WorkspaceMountListResponse", .kind = .object, .fields = &workspace_mount_list_response_fields },
-    .{ .name = "ProjectMountListResponse", .kind = .object, .fields = &project_mount_list_response_fields },
     .{ .name = "WorkspaceBindListResponse", .kind = .object, .fields = &workspace_bind_list_response_fields },
-    .{ .name = "ProjectBindListResponse", .kind = .object, .fields = &project_bind_list_response_fields },
     .{ .name = "WorkspaceDeleteResponse", .kind = .object, .fields = &delete_response_fields },
-    .{ .name = "ProjectDeleteResponse", .kind = .object, .fields = &delete_project_response_fields },
     .{ .name = "WorkspaceTokenMutation", .kind = .object, .fields = &token_mutation_workspace_fields },
-    .{ .name = "ProjectTokenMutation", .kind = .object, .fields = &token_mutation_project_fields },
     .{ .name = "DriftItem", .kind = .object, .fields = &drift_item_fields },
     .{ .name = "DriftSummary", .kind = .object, .fields = &drift_summary_fields },
     .{ .name = "AvailabilitySummary", .kind = .object, .fields = &availability_fields },
     .{ .name = "WorkspaceStatus", .kind = .object, .fields = &workspace_status_fields },
-    .{ .name = "ProjectActivation", .kind = .object, .fields = &project_activation_fields },
     .{ .name = "SessionAttachState", .kind = .object, .fields = &session_attach_state_fields },
     .{ .name = "SessionStatusResponse", .kind = .object, .fields = &session_status_response_fields },
     .{ .name = "SessionSummary", .kind = .object, .fields = &session_summary_fields },
@@ -900,7 +744,6 @@ pub const all_schemas = [_]SchemaSpec{
     .{ .name = "AgentListResponse", .kind = .object, .fields = &agent_list_response_fields },
     .{ .name = "AgentGetResponse", .kind = .object, .fields = &agent_get_response_fields },
     .{ .name = "WorkspaceUpResponse", .kind = .object, .fields = &workspace_up_response_fields },
-    .{ .name = "ProjectUpResponse", .kind = .object, .fields = &project_up_response_fields },
     .{ .name = "AcheronAttachResponse", .kind = .object, .fields = &acheron_attach_response_fields },
     .{ .name = "FsHelloRequest", .kind = .object, .fields = &fs_hello_request_fields },
     .{ .name = "FsHelloCapabilities", .kind = .object, .fields = &fs_hello_capabilities_fields },
@@ -1024,20 +867,8 @@ pub fn controlMessageSchema(control_type: unified.ControlType) MessageSchemaSpec
         .workspace_token_revoke => controlSchema(.workspace_token_revoke, "workspace", .request, "WorkspaceRefRequest", "WorkspaceTokenMutation", null),
         .workspace_activate => controlSchema(.workspace_activate, "workspace", .request, "WorkspaceRefRequest", "WorkspaceStatus", null),
         .workspace_up => controlSchema(.workspace_up, "workspace", .request, "WorkspaceUpRequest", "WorkspaceUpResponse", null),
-        .project_create => controlSchema(.project_create, "project", .request, "ProjectCreateRequest", "ProjectDetail", "control.workspace_create"),
-        .project_update => controlSchema(.project_update, "project", .request, "ProjectUpdateRequest", "ProjectDetail", "control.workspace_update"),
-        .project_delete => controlSchema(.project_delete, "project", .request, "ProjectRefRequest", "ProjectDeleteResponse", "control.workspace_delete"),
-        .project_list => controlSchema(.project_list, "project", .request, null, "ProjectListResponse", "control.workspace_list"),
-        .project_get => controlSchema(.project_get, "project", .request, "ProjectRefRequest", "ProjectDetail", "control.workspace_get"),
-        .project_mount_set => controlSchema(.project_mount_set, "project", .request, "ProjectMountSetRequest", "ProjectDetail", "control.workspace_mount_set"),
-        .project_mount_remove => controlSchema(.project_mount_remove, "project", .request, "ProjectMountRemoveRequest", "ProjectDetail", "control.workspace_mount_remove"),
-        .project_mount_list => controlSchema(.project_mount_list, "project", .request, "ProjectRefRequest", "ProjectMountListResponse", "control.workspace_mount_list"),
-        .project_token_rotate => controlSchema(.project_token_rotate, "project", .request, "ProjectRefRequest", "ProjectTokenMutation", "control.workspace_token_rotate"),
-        .project_token_revoke => controlSchema(.project_token_revoke, "project", .request, "ProjectRefRequest", "ProjectTokenMutation", "control.workspace_token_revoke"),
-        .project_activate => controlSchema(.project_activate, "project", .request, "ProjectRefRequest", "ProjectActivation", "control.workspace_activate"),
         .workspace_status => controlSchema(.workspace_status, "workspace", .request, "WorkspaceStatusRequest", "WorkspaceStatus", null),
         .reconcile_status => controlSchema(.reconcile_status, "workspace", .request, "ReconcileStatusRequest", "ReconcileStatusResponse", null),
-        .project_up => controlSchema(.project_up, "project", .request, "ProjectUpRequest", "ProjectUpResponse", "control.workspace_up"),
         .audit_tail => controlSchema(.audit_tail, "audit", .request, "AnyJson", "AnyJson", null),
         .err => .{
             .channel = .control,

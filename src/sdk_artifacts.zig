@@ -1747,7 +1747,6 @@ fn controlCategory(control_type: unified.ControlType) []const u8 {
         .node_invite_create, .node_join_request, .node_join_pending_list, .node_join_approve, .node_join_deny, .node_join, .node_ensure, .node_lease_refresh, .node_list, .node_get, .node_delete => "node",
         .venom_bind, .venom_upsert, .venom_get => "venom",
         .workspace_create, .workspace_update, .workspace_delete, .workspace_list, .workspace_get, .workspace_template_list, .workspace_template_get, .workspace_mount_set, .workspace_mount_remove, .workspace_mount_list, .workspace_bind_set, .workspace_bind_remove, .workspace_bind_list, .workspace_token_rotate, .workspace_token_revoke, .workspace_activate, .workspace_up, .workspace_status, .reconcile_status => "workspace",
-        .project_create, .project_update, .project_delete, .project_list, .project_get, .project_mount_set, .project_mount_remove, .project_mount_list, .project_token_rotate, .project_token_revoke, .project_activate, .project_up => "project",
         .auth_status, .auth_rotate => "auth",
         .audit_tail => "audit",
         .err => "error",

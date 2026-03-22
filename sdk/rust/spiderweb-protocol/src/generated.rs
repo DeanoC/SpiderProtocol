@@ -150,34 +150,10 @@ pub enum ControlMessageType {
     WorkspaceActivate,
     #[serde(rename = "control.workspace_up")]
     WorkspaceUp,
-    #[serde(rename = "control.project_create")]
-    ProjectCreate,
-    #[serde(rename = "control.project_update")]
-    ProjectUpdate,
-    #[serde(rename = "control.project_delete")]
-    ProjectDelete,
-    #[serde(rename = "control.project_list")]
-    ProjectList,
-    #[serde(rename = "control.project_get")]
-    ProjectGet,
-    #[serde(rename = "control.project_mount_set")]
-    ProjectMountSet,
-    #[serde(rename = "control.project_mount_remove")]
-    ProjectMountRemove,
-    #[serde(rename = "control.project_mount_list")]
-    ProjectMountList,
-    #[serde(rename = "control.project_token_rotate")]
-    ProjectTokenRotate,
-    #[serde(rename = "control.project_token_revoke")]
-    ProjectTokenRevoke,
-    #[serde(rename = "control.project_activate")]
-    ProjectActivate,
     #[serde(rename = "control.workspace_status")]
     WorkspaceStatus,
     #[serde(rename = "control.reconcile_status")]
     ReconcileStatus,
-    #[serde(rename = "control.project_up")]
-    ProjectUp,
     #[serde(rename = "control.audit_tail")]
     AuditTail,
     #[serde(rename = "control.error")]
@@ -567,33 +543,6 @@ pub struct WorkspaceSummary {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectSummary {
-    #[serde(alias = "id", alias = "workspace_id")]
-    pub project_id: String,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vision: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub is_delete_protected: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token_locked: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mount_count: Option<u64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bind_count: Option<u64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created_at_ms: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at_ms: Option<i64>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceDetail {
     #[serde(alias = "id", alias = "project_id")]
     pub workspace_id: String,
@@ -623,46 +572,10 @@ pub struct WorkspaceDetail {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectDetail {
-    #[serde(alias = "id", alias = "workspace_id")]
-    pub project_id: String,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vision: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub is_delete_protected: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token_locked: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created_at_ms: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at_ms: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "workspace_token")]
-    pub project_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub mounts: Option<Vec<MountView>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub binds: Option<Vec<BindView>>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceRefRequest {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectRefRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -803,41 +716,10 @@ pub struct WorkspaceCreateRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectCreateRequest {
-    pub name: String,
-    pub vision: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operator_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub access_policy: Option<AnyJson>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceUpdateRequest {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vision: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub access_policy: Option<AnyJson>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectUpdateRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -861,32 +743,10 @@ pub struct WorkspaceMountSetRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectMountSetRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
-    pub node_id: String,
-    pub export_name: String,
-    pub mount_path: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceMountRemoveRequest {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    pub mount_path: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub node_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub export_name: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectMountRemoveRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
     pub mount_path: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub node_id: Option<String>,
@@ -904,27 +764,10 @@ pub struct WorkspaceBindSetRequest {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectBindSetRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
-    pub bind_path: String,
-    pub target_path: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceBindRemoveRequest {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    pub bind_path: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectBindRemoveRequest {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
     pub bind_path: String,
 }
 
@@ -944,32 +787,6 @@ pub struct WorkspaceUpRequest {
     pub template_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub access_policy: Option<AnyJson>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub desired_mounts: Option<AnyJson>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub desired_binds: Option<AnyJson>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub activate: Option<bool>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectUpRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vision: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub access_policy: Option<AnyJson>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1038,31 +855,14 @@ pub struct WorkspaceListResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectListResponse {
-    pub projects: Vec<ProjectSummary>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceMountListResponse {
     pub workspace_id: String,
     pub mounts: Vec<MountView>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectMountListResponse {
-    pub project_id: String,
-    pub mounts: Vec<MountView>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceBindListResponse {
     pub workspace_id: String,
-    pub binds: Vec<BindView>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectBindListResponse {
-    pub project_id: String,
     pub binds: Vec<BindView>,
 }
 
@@ -1074,32 +874,11 @@ pub struct WorkspaceDeleteResponse {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectDeleteResponse {
-    pub deleted: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "id", alias = "workspace_id")]
-    pub project_id: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceTokenMutation {
     #[serde(alias = "id", alias = "project_id")]
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none", alias = "project_token")]
     pub workspace_token: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at_ms: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub rotated: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub revoked: Option<bool>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectTokenMutation {
-    #[serde(alias = "id", alias = "workspace_id")]
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none", alias = "workspace_token")]
-    pub project_token: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1171,15 +950,6 @@ pub struct WorkspaceStatus {
     pub last_error: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub queue_depth: Option<u64>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectActivation {
-    pub agent_id: String,
-    #[serde(alias = "id", alias = "workspace_id")]
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub workspace_root: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -1342,16 +1112,6 @@ pub struct WorkspaceUpResponse {
     pub workspace_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_token: Option<String>,
-    pub created: bool,
-    pub activated: bool,
-    pub workspace: AnyJson,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProjectUpResponse {
-    pub project_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub project_token: Option<String>,
     pub created: bool,
     pub activated: bool,
     pub workspace: AnyJson,
@@ -1588,20 +1348,8 @@ pub enum ControlRequestEnvelope {
     WorkspaceTokenRevoke(ControlEnvelope<WorkspaceRefRequest>),
     WorkspaceActivate(ControlEnvelope<WorkspaceRefRequest>),
     WorkspaceUp(ControlEnvelope<WorkspaceUpRequest>),
-    ProjectCreate(ControlEnvelope<ProjectCreateRequest>),
-    ProjectUpdate(ControlEnvelope<ProjectUpdateRequest>),
-    ProjectDelete(ControlEnvelope<ProjectRefRequest>),
-    ProjectList(ControlEnvelope<EmptyObject>),
-    ProjectGet(ControlEnvelope<ProjectRefRequest>),
-    ProjectMountSet(ControlEnvelope<ProjectMountSetRequest>),
-    ProjectMountRemove(ControlEnvelope<ProjectMountRemoveRequest>),
-    ProjectMountList(ControlEnvelope<ProjectRefRequest>),
-    ProjectTokenRotate(ControlEnvelope<ProjectRefRequest>),
-    ProjectTokenRevoke(ControlEnvelope<ProjectRefRequest>),
-    ProjectActivate(ControlEnvelope<ProjectRefRequest>),
     WorkspaceStatus(ControlEnvelope<WorkspaceStatusRequest>),
     ReconcileStatus(ControlEnvelope<ReconcileStatusRequest>),
-    ProjectUp(ControlEnvelope<ProjectUpRequest>),
     AuditTail(ControlEnvelope<AnyJson>),
 }
 
@@ -1670,20 +1418,8 @@ pub enum ControlResponseEnvelope {
     WorkspaceTokenRevoke(ControlEnvelope<WorkspaceTokenMutation>),
     WorkspaceActivate(ControlEnvelope<WorkspaceStatus>),
     WorkspaceUp(ControlEnvelope<WorkspaceUpResponse>),
-    ProjectCreate(ControlEnvelope<ProjectDetail>),
-    ProjectUpdate(ControlEnvelope<ProjectDetail>),
-    ProjectDelete(ControlEnvelope<ProjectDeleteResponse>),
-    ProjectList(ControlEnvelope<ProjectListResponse>),
-    ProjectGet(ControlEnvelope<ProjectDetail>),
-    ProjectMountSet(ControlEnvelope<ProjectDetail>),
-    ProjectMountRemove(ControlEnvelope<ProjectDetail>),
-    ProjectMountList(ControlEnvelope<ProjectMountListResponse>),
-    ProjectTokenRotate(ControlEnvelope<ProjectTokenMutation>),
-    ProjectTokenRevoke(ControlEnvelope<ProjectTokenMutation>),
-    ProjectActivate(ControlEnvelope<ProjectActivation>),
     WorkspaceStatus(ControlEnvelope<WorkspaceStatus>),
     ReconcileStatus(ControlEnvelope<ReconcileStatusResponse>),
-    ProjectUp(ControlEnvelope<ProjectUpResponse>),
     AuditTail(ControlEnvelope<AnyJson>),
 }
 
@@ -1757,20 +1493,8 @@ impl ControlRequestEnvelope {
             Self::WorkspaceTokenRevoke(inner) => serde_json::to_value(inner),
             Self::WorkspaceActivate(inner) => serde_json::to_value(inner),
             Self::WorkspaceUp(inner) => serde_json::to_value(inner),
-            Self::ProjectCreate(inner) => serde_json::to_value(inner),
-            Self::ProjectUpdate(inner) => serde_json::to_value(inner),
-            Self::ProjectDelete(inner) => serde_json::to_value(inner),
-            Self::ProjectList(inner) => serde_json::to_value(inner),
-            Self::ProjectGet(inner) => serde_json::to_value(inner),
-            Self::ProjectMountSet(inner) => serde_json::to_value(inner),
-            Self::ProjectMountRemove(inner) => serde_json::to_value(inner),
-            Self::ProjectMountList(inner) => serde_json::to_value(inner),
-            Self::ProjectTokenRotate(inner) => serde_json::to_value(inner),
-            Self::ProjectTokenRevoke(inner) => serde_json::to_value(inner),
-            Self::ProjectActivate(inner) => serde_json::to_value(inner),
             Self::WorkspaceStatus(inner) => serde_json::to_value(inner),
             Self::ReconcileStatus(inner) => serde_json::to_value(inner),
-            Self::ProjectUp(inner) => serde_json::to_value(inner),
             Self::AuditTail(inner) => serde_json::to_value(inner),
         }
     }
@@ -1840,20 +1564,8 @@ impl ControlRequestEnvelope {
             "control.workspace_token_revoke" => Ok(Self::WorkspaceTokenRevoke(serde_json::from_value(value)?)),
             "control.workspace_activate" => Ok(Self::WorkspaceActivate(serde_json::from_value(value)?)),
             "control.workspace_up" => Ok(Self::WorkspaceUp(serde_json::from_value(value)?)),
-            "control.project_create" => Ok(Self::ProjectCreate(serde_json::from_value(value)?)),
-            "control.project_update" => Ok(Self::ProjectUpdate(serde_json::from_value(value)?)),
-            "control.project_delete" => Ok(Self::ProjectDelete(serde_json::from_value(value)?)),
-            "control.project_list" => Ok(Self::ProjectList(serde_json::from_value(value)?)),
-            "control.project_get" => Ok(Self::ProjectGet(serde_json::from_value(value)?)),
-            "control.project_mount_set" => Ok(Self::ProjectMountSet(serde_json::from_value(value)?)),
-            "control.project_mount_remove" => Ok(Self::ProjectMountRemove(serde_json::from_value(value)?)),
-            "control.project_mount_list" => Ok(Self::ProjectMountList(serde_json::from_value(value)?)),
-            "control.project_token_rotate" => Ok(Self::ProjectTokenRotate(serde_json::from_value(value)?)),
-            "control.project_token_revoke" => Ok(Self::ProjectTokenRevoke(serde_json::from_value(value)?)),
-            "control.project_activate" => Ok(Self::ProjectActivate(serde_json::from_value(value)?)),
             "control.workspace_status" => Ok(Self::WorkspaceStatus(serde_json::from_value(value)?)),
             "control.reconcile_status" => Ok(Self::ReconcileStatus(serde_json::from_value(value)?)),
-            "control.project_up" => Ok(Self::ProjectUp(serde_json::from_value(value)?)),
             "control.audit_tail" => Ok(Self::AuditTail(serde_json::from_value(value)?)),
             _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "unsupported type"))),
         }
@@ -1923,20 +1635,8 @@ impl ControlRequestEnvelope {
             Self::WorkspaceTokenRevoke(_) => ControlMessageType::WorkspaceTokenRevoke,
             Self::WorkspaceActivate(_) => ControlMessageType::WorkspaceActivate,
             Self::WorkspaceUp(_) => ControlMessageType::WorkspaceUp,
-            Self::ProjectCreate(_) => ControlMessageType::ProjectCreate,
-            Self::ProjectUpdate(_) => ControlMessageType::ProjectUpdate,
-            Self::ProjectDelete(_) => ControlMessageType::ProjectDelete,
-            Self::ProjectList(_) => ControlMessageType::ProjectList,
-            Self::ProjectGet(_) => ControlMessageType::ProjectGet,
-            Self::ProjectMountSet(_) => ControlMessageType::ProjectMountSet,
-            Self::ProjectMountRemove(_) => ControlMessageType::ProjectMountRemove,
-            Self::ProjectMountList(_) => ControlMessageType::ProjectMountList,
-            Self::ProjectTokenRotate(_) => ControlMessageType::ProjectTokenRotate,
-            Self::ProjectTokenRevoke(_) => ControlMessageType::ProjectTokenRevoke,
-            Self::ProjectActivate(_) => ControlMessageType::ProjectActivate,
             Self::WorkspaceStatus(_) => ControlMessageType::WorkspaceStatus,
             Self::ReconcileStatus(_) => ControlMessageType::ReconcileStatus,
-            Self::ProjectUp(_) => ControlMessageType::ProjectUp,
             Self::AuditTail(_) => ControlMessageType::AuditTail,
         }
     }
@@ -2008,20 +1708,8 @@ impl ControlResponseEnvelope {
             Self::WorkspaceTokenRevoke(inner) => serde_json::to_value(inner),
             Self::WorkspaceActivate(inner) => serde_json::to_value(inner),
             Self::WorkspaceUp(inner) => serde_json::to_value(inner),
-            Self::ProjectCreate(inner) => serde_json::to_value(inner),
-            Self::ProjectUpdate(inner) => serde_json::to_value(inner),
-            Self::ProjectDelete(inner) => serde_json::to_value(inner),
-            Self::ProjectList(inner) => serde_json::to_value(inner),
-            Self::ProjectGet(inner) => serde_json::to_value(inner),
-            Self::ProjectMountSet(inner) => serde_json::to_value(inner),
-            Self::ProjectMountRemove(inner) => serde_json::to_value(inner),
-            Self::ProjectMountList(inner) => serde_json::to_value(inner),
-            Self::ProjectTokenRotate(inner) => serde_json::to_value(inner),
-            Self::ProjectTokenRevoke(inner) => serde_json::to_value(inner),
-            Self::ProjectActivate(inner) => serde_json::to_value(inner),
             Self::WorkspaceStatus(inner) => serde_json::to_value(inner),
             Self::ReconcileStatus(inner) => serde_json::to_value(inner),
-            Self::ProjectUp(inner) => serde_json::to_value(inner),
             Self::AuditTail(inner) => serde_json::to_value(inner),
         }
     }
@@ -2092,20 +1780,8 @@ impl ControlResponseEnvelope {
             "control.workspace_token_revoke" => Ok(Self::WorkspaceTokenRevoke(serde_json::from_value(value)?)),
             "control.workspace_activate" => Ok(Self::WorkspaceActivate(serde_json::from_value(value)?)),
             "control.workspace_up" => Ok(Self::WorkspaceUp(serde_json::from_value(value)?)),
-            "control.project_create" => Ok(Self::ProjectCreate(serde_json::from_value(value)?)),
-            "control.project_update" => Ok(Self::ProjectUpdate(serde_json::from_value(value)?)),
-            "control.project_delete" => Ok(Self::ProjectDelete(serde_json::from_value(value)?)),
-            "control.project_list" => Ok(Self::ProjectList(serde_json::from_value(value)?)),
-            "control.project_get" => Ok(Self::ProjectGet(serde_json::from_value(value)?)),
-            "control.project_mount_set" => Ok(Self::ProjectMountSet(serde_json::from_value(value)?)),
-            "control.project_mount_remove" => Ok(Self::ProjectMountRemove(serde_json::from_value(value)?)),
-            "control.project_mount_list" => Ok(Self::ProjectMountList(serde_json::from_value(value)?)),
-            "control.project_token_rotate" => Ok(Self::ProjectTokenRotate(serde_json::from_value(value)?)),
-            "control.project_token_revoke" => Ok(Self::ProjectTokenRevoke(serde_json::from_value(value)?)),
-            "control.project_activate" => Ok(Self::ProjectActivate(serde_json::from_value(value)?)),
             "control.workspace_status" => Ok(Self::WorkspaceStatus(serde_json::from_value(value)?)),
             "control.reconcile_status" => Ok(Self::ReconcileStatus(serde_json::from_value(value)?)),
-            "control.project_up" => Ok(Self::ProjectUp(serde_json::from_value(value)?)),
             "control.audit_tail" => Ok(Self::AuditTail(serde_json::from_value(value)?)),
             _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "unsupported type"))),
         }
@@ -2176,20 +1852,8 @@ impl ControlResponseEnvelope {
             Self::WorkspaceTokenRevoke(_) => ControlMessageType::WorkspaceTokenRevoke,
             Self::WorkspaceActivate(_) => ControlMessageType::WorkspaceActivate,
             Self::WorkspaceUp(_) => ControlMessageType::WorkspaceUp,
-            Self::ProjectCreate(_) => ControlMessageType::ProjectCreate,
-            Self::ProjectUpdate(_) => ControlMessageType::ProjectUpdate,
-            Self::ProjectDelete(_) => ControlMessageType::ProjectDelete,
-            Self::ProjectList(_) => ControlMessageType::ProjectList,
-            Self::ProjectGet(_) => ControlMessageType::ProjectGet,
-            Self::ProjectMountSet(_) => ControlMessageType::ProjectMountSet,
-            Self::ProjectMountRemove(_) => ControlMessageType::ProjectMountRemove,
-            Self::ProjectMountList(_) => ControlMessageType::ProjectMountList,
-            Self::ProjectTokenRotate(_) => ControlMessageType::ProjectTokenRotate,
-            Self::ProjectTokenRevoke(_) => ControlMessageType::ProjectTokenRevoke,
-            Self::ProjectActivate(_) => ControlMessageType::ProjectActivate,
             Self::WorkspaceStatus(_) => ControlMessageType::WorkspaceStatus,
             Self::ReconcileStatus(_) => ControlMessageType::ReconcileStatus,
-            Self::ProjectUp(_) => ControlMessageType::ProjectUp,
             Self::AuditTail(_) => ControlMessageType::AuditTail,
         }
     }

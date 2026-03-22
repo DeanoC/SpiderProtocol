@@ -94,20 +94,8 @@
       {"name": "control.workspace_token_revoke", "category": "workspace", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "WorkspaceRefRequest", "result_schema": "WorkspaceTokenMutation"},
       {"name": "control.workspace_activate", "category": "workspace", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "WorkspaceRefRequest", "result_schema": "WorkspaceStatus"},
       {"name": "control.workspace_up", "category": "workspace", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "WorkspaceUpRequest", "result_schema": "WorkspaceUpResponse"},
-      {"name": "control.project_create", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectCreateRequest", "result_schema": "ProjectDetail", "alias_of": "control.workspace_create"},
-      {"name": "control.project_update", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectUpdateRequest", "result_schema": "ProjectDetail", "alias_of": "control.workspace_update"},
-      {"name": "control.project_delete", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectRefRequest", "result_schema": "ProjectDeleteResponse", "alias_of": "control.workspace_delete"},
-      {"name": "control.project_list", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "result_schema": "ProjectListResponse", "alias_of": "control.workspace_list"},
-      {"name": "control.project_get", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectRefRequest", "result_schema": "ProjectDetail", "alias_of": "control.workspace_get"},
-      {"name": "control.project_mount_set", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectMountSetRequest", "result_schema": "ProjectDetail", "alias_of": "control.workspace_mount_set"},
-      {"name": "control.project_mount_remove", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectMountRemoveRequest", "result_schema": "ProjectDetail", "alias_of": "control.workspace_mount_remove"},
-      {"name": "control.project_mount_list", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectRefRequest", "result_schema": "ProjectMountListResponse", "alias_of": "control.workspace_mount_list"},
-      {"name": "control.project_token_rotate", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectRefRequest", "result_schema": "ProjectTokenMutation", "alias_of": "control.workspace_token_rotate"},
-      {"name": "control.project_token_revoke", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectRefRequest", "result_schema": "ProjectTokenMutation", "alias_of": "control.workspace_token_revoke"},
-      {"name": "control.project_activate", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectRefRequest", "result_schema": "ProjectActivation", "alias_of": "control.workspace_activate"},
       {"name": "control.workspace_status", "category": "workspace", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "WorkspaceStatusRequest", "result_schema": "WorkspaceStatus"},
       {"name": "control.reconcile_status", "category": "workspace", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ReconcileStatusRequest", "result_schema": "ReconcileStatusResponse"},
-      {"name": "control.project_up", "category": "project", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "ProjectUpRequest", "result_schema": "ProjectUpResponse", "alias_of": "control.workspace_up"},
       {"name": "control.audit_tail", "category": "audit", "direction": "request", "correlation_field": "id", "root_fields": [], "payload_schema": "AnyJson", "result_schema": "AnyJson"},
       {"name": "control.error", "category": "error", "direction": "error", "correlation_field": "id", "root_fields": [], "error_schema": "ControlError"}
     ],
@@ -281,20 +269,6 @@
         {"name": "created_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
       ]},
-    "ProjectSummary": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id", "workspace_id"]},
-        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "template_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "kind", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "is_delete_protected", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "token_locked", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mount_count", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "bind_count", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "created_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
-      ]},
     "WorkspaceDetail": {"kind": "object", "fields": [
         {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id", "project_id"]},
         {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
@@ -310,28 +284,9 @@
         {"name": "mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true, "aliases": []},
         {"name": "binds", "type": "BindView", "optional": true, "nullable": false, "is_array": true, "aliases": []}
       ]},
-    "ProjectDetail": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id", "workspace_id"]},
-        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "template_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "kind", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "is_delete_protected", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "token_locked", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "created_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": ["workspace_token"]},
-        {"name": "mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true, "aliases": []},
-        {"name": "binds", "type": "BindView", "optional": true, "nullable": false, "is_array": true, "aliases": []}
-      ]},
     "WorkspaceRefRequest": {"kind": "object", "fields": [
         {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
-      ]},
-    "ProjectRefRequest": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
       ]},
     "NodeIdRequest": {"kind": "object", "fields": [
         {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
@@ -419,26 +374,9 @@
         {"name": "operator_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []}
       ]},
-    "ProjectCreateRequest": {"kind": "object", "fields": [
-        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "vision", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "template_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "operator_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []}
-      ]},
     "WorkspaceUpdateRequest": {"kind": "object", "fields": [
         {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "template_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []}
-      ]},
-    "ProjectUpdateRequest": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
@@ -452,23 +390,9 @@
         {"name": "export_name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
       ]},
-    "ProjectMountSetRequest": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "export_name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
-      ]},
     "WorkspaceMountRemoveRequest": {"kind": "object", "fields": [
         {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "export_name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
-      ]},
-    "ProjectMountRemoveRequest": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "node_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "export_name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
@@ -479,20 +403,9 @@
         {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "target_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
       ]},
-    "ProjectBindSetRequest": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "target_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
-      ]},
     "WorkspaceBindRemoveRequest": {"kind": "object", "fields": [
         {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
-      ]},
-    "ProjectBindRemoveRequest": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
       ]},
     "WorkspaceUpRequest": {"kind": "object", "fields": [
@@ -503,19 +416,6 @@
         {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "template_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "desired_mounts", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "desired_binds", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "activate", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []}
-      ]},
-    "ProjectUpRequest": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "template_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "desired_mounts", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "desired_binds", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []},
@@ -554,43 +454,21 @@
     "WorkspaceListResponse": {"kind": "object", "fields": [
         {"name": "workspaces", "type": "WorkspaceSummary", "optional": false, "nullable": false, "is_array": true, "aliases": []}
       ]},
-    "ProjectListResponse": {"kind": "object", "fields": [
-        {"name": "projects", "type": "ProjectSummary", "optional": false, "nullable": false, "is_array": true, "aliases": []}
-      ]},
     "WorkspaceMountListResponse": {"kind": "object", "fields": [
         {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mounts", "type": "MountView", "optional": false, "nullable": false, "is_array": true, "aliases": []}
-      ]},
-    "ProjectMountListResponse": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "mounts", "type": "MountView", "optional": false, "nullable": false, "is_array": true, "aliases": []}
       ]},
     "WorkspaceBindListResponse": {"kind": "object", "fields": [
         {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "binds", "type": "BindView", "optional": false, "nullable": false, "is_array": true, "aliases": []}
       ]},
-    "ProjectBindListResponse": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "binds", "type": "BindView", "optional": false, "nullable": false, "is_array": true, "aliases": []}
-      ]},
     "WorkspaceDeleteResponse": {"kind": "object", "fields": [
         {"name": "deleted", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": ["id", "project_id"]}
       ]},
-    "ProjectDeleteResponse": {"kind": "object", "fields": [
-        {"name": "deleted", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": ["id", "workspace_id"]}
-      ]},
     "WorkspaceTokenMutation": {"kind": "object", "fields": [
         {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id", "project_id"]},
         {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": ["project_token"]},
-        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "rotated", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "revoked", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []}
-      ]},
-    "ProjectTokenMutation": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id", "workspace_id"]},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": ["workspace_token"]},
         {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "rotated", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "revoked", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []}
@@ -627,11 +505,6 @@
         {"name": "last_success_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
         {"name": "last_error", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
         {"name": "queue_depth", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
-      ]},
-    "ProjectActivation": {"kind": "object", "fields": [
-        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id", "workspace_id"]},
-        {"name": "workspace_root", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []}
       ]},
     "SessionAttachState": {"kind": "object", "fields": [
         {"name": "state", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
@@ -724,13 +597,6 @@
     "WorkspaceUpResponse": {"kind": "object", "fields": [
         {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "created", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "activated", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace", "type": "AnyJson", "optional": false, "nullable": false, "is_array": false, "aliases": []}
-      ]},
-    "ProjectUpResponse": {"kind": "object", "fields": [
-        {"name": "project_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "project_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
         {"name": "created", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "activated", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
         {"name": "workspace", "type": "AnyJson", "optional": false, "nullable": false, "is_array": false, "aliases": []}

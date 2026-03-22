@@ -95,20 +95,8 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 | `control.workspace_token_revoke` | workspace | request |
 | `control.workspace_activate` | workspace | request |
 | `control.workspace_up` | workspace | request |
-| `control.project_create` | project | request |
-| `control.project_update` | project | request |
-| `control.project_delete` | project | request |
-| `control.project_list` | project | request |
-| `control.project_get` | project | request |
-| `control.project_mount_set` | project | request |
-| `control.project_mount_remove` | project | request |
-| `control.project_mount_list` | project | request |
-| `control.project_token_rotate` | project | request |
-| `control.project_token_revoke` | project | request |
-| `control.project_activate` | project | request |
 | `control.workspace_status` | workspace | request |
 | `control.reconcile_status` | workspace | request |
-| `control.project_up` | project | request |
 | `control.audit_tail` | audit | request |
 | `control.error` | error | error |
 

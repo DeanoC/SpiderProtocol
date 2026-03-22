@@ -131,13 +131,13 @@ test "unified_parse: parses control connect envelope" {
     try std.testing.expectEqualStrings("c1", parsed.id.?);
 }
 
-test "unified_parse: parses control project op envelope" {
+test "unified_parse: parses control workspace op envelope" {
     const allocator = std.testing.allocator;
-    var parsed = try parseMessage(allocator, "{\"channel\":\"control\",\"type\":\"control.project_list\",\"id\":\"p1\"}");
+    var parsed = try parseMessage(allocator, "{\"channel\":\"control\",\"type\":\"control.workspace_list\",\"id\":\"p1\"}");
     defer parsed.deinit(allocator);
 
     try std.testing.expectEqual(types.Channel.control, parsed.channel);
-    try std.testing.expectEqual(types.ControlType.project_list, parsed.control_type.?);
+    try std.testing.expectEqual(types.ControlType.workspace_list, parsed.control_type.?);
     try std.testing.expectEqualStrings("p1", parsed.id.?);
 }
 
