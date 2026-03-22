@@ -1127,7 +1127,7 @@ pub const NodeOps = struct {
                 .agent_id = "system",
                 .actor_type = "",
                 .actor_id = "",
-                .project_id = "",
+                .workspace_id = "",
             });
             defer self.allocator.free(chat_meta_json);
             _ = try self.namespaceCreateNode(export_index, &ns, chat_dir, "help.md", .file, false, venom_contracts.chat.export_help_md);

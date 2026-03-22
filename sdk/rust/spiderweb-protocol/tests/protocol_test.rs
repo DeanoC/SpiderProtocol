@@ -29,27 +29,6 @@ fn control_alias_request_serializes_workspace_fields() {
 }
 
 #[test]
-fn project_alias_request_serializes_project_fields() {
-    let request = ControlRequestEnvelope::ProjectMountSet(ControlEnvelope {
-        channel: Channel::Control,
-        message_type: ControlMessageType::ProjectMountSet,
-        id: Some("req-2".into()),
-        ok: None,
-        payload: Some(ProjectMountSetRequest {
-            project_id: "proj-1".into(),
-            project_token: Some("tok".into()),
-            node_id: "node-1".into(),
-            export_name: "root".into(),
-            mount_path: "/".into(),
-        }),
-    });
-    let raw = stringify_control_request(&request).unwrap();
-    assert!(raw.contains("\"project_id\":\"proj-1\""));
-    assert!(raw.contains("\"project_token\":\"tok\""));
-    assert!(!raw.contains("\"workspace_id\""));
-}
-
-#[test]
 fn parse_rejects_invalid_channel() {
     let error = parse_control_request(r#"{"channel":"acheron","type":"control.version","id":"x","payload":{"protocol":"spiderweb-control"}}"#).unwrap_err();
     assert_eq!(error.code, "invalid_channel");

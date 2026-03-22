@@ -545,7 +545,7 @@ test "unified_types: mount control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.err, controlTypeFromString(controlTypeName(.err)));
 }
 
-test "unified_types: v2 fsrpc names round-trip as canonical strings" {
+test "unified_types: fsrpc names round-trip as canonical strings" {
     try std.testing.expectEqual(FsrpcType.t_version, fsrpcTypeFromString(fsrpcTypeName(.t_version)));
     try std.testing.expectEqual(FsrpcType.fs_t_hello, fsrpcTypeFromString(fsrpcTypeName(.fs_t_hello)));
     try std.testing.expectEqual(FsrpcType.fs_t_readdirp, fsrpcTypeFromString(fsrpcTypeName(.fs_t_readdirp)));

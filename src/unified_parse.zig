@@ -193,7 +193,7 @@ test "unified_parse: parses fsrpc distributed-fs envelope" {
     try std.testing.expect(std.mem.indexOf(u8, parsed.payload_json.?, "\"name\":\"README.md\"") != null);
 }
 
-test "unified_parse: rejects envelope missing channel in v2" {
+test "unified_parse: rejects envelope missing channel" {
     const allocator = std.testing.allocator;
     try std.testing.expectError(
         types.ParseError.MissingField,

@@ -28,7 +28,7 @@ pub const ChatMeta = struct {
     agent_id: []const u8,
     actor_type: []const u8,
     actor_id: []const u8,
-    project_id: []const u8 = "",
+    workspace_id: []const u8 = "",
 };
 
 pub const chat = struct {
@@ -123,12 +123,12 @@ pub const chat = struct {
         defer allocator.free(escaped_actor_type);
         const escaped_actor_id = try escape(allocator, meta.actor_id);
         defer allocator.free(escaped_actor_id);
-        const escaped_project = try escape(allocator, meta.project_id);
-        defer allocator.free(escaped_project);
+        const escaped_workspace = try escape(allocator, meta.workspace_id);
+        defer allocator.free(escaped_workspace);
         return std.fmt.allocPrint(
             allocator,
-            "{{\"name\":\"chat\",\"version\":\"1\",\"agent_id\":\"{s}\",\"actor_type\":\"{s}\",\"actor_id\":\"{s}\",\"project_id\":\"{s}\",\"cost_hint\":\"provider-dependent\",\"latency_hint\":\"seconds\"}}",
-            .{ escaped_agent, escaped_actor_type, escaped_actor_id, escaped_project },
+            "{{\"name\":\"chat\",\"version\":\"1\",\"agent_id\":\"{s}\",\"actor_type\":\"{s}\",\"actor_id\":\"{s}\",\"workspace_id\":\"{s}\",\"cost_hint\":\"provider-dependent\",\"latency_hint\":\"seconds\"}}",
+            .{ escaped_agent, escaped_actor_type, escaped_actor_id, escaped_workspace },
         );
     }
 
