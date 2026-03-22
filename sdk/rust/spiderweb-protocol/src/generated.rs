@@ -509,7 +509,6 @@ pub struct BindView {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceSummary {
-    #[serde(alias = "id")]
     pub workspace_id: String,
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -536,7 +535,6 @@ pub struct WorkspaceSummary {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceDetail {
-    #[serde(alias = "id")]
     pub workspace_id: String,
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1073,7 +1071,6 @@ pub struct NodeGetResponse {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentInfo {
-    #[serde(alias = "id")]
     pub agent_id: String,
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]

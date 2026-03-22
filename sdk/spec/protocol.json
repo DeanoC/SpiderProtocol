@@ -101,15 +101,15 @@
     ],
     "acheron": [
       {"name": "acheron.t_version", "category": "runtime", "direction": "request", "correlation_field": "tag", "root_fields": [
-        {"name": "msize", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "version", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "msize", "type": "u32", "optional": false, "nullable": false, "is_array": false},
+        {"name": "version", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
       {"name": "acheron.r_version", "category": "runtime", "direction": "response", "correlation_field": "tag", "root_fields": [
-        {"name": "msize", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "version", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "msize", "type": "u32", "optional": false, "nullable": false, "is_array": false},
+        {"name": "version", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
       {"name": "acheron.t_attach", "category": "runtime", "direction": "request", "correlation_field": "tag", "root_fields": [
-        {"name": "fid", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "fid", "type": "u32", "optional": false, "nullable": false, "is_array": false}
       ]},
       {"name": "acheron.r_attach", "category": "runtime", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "AcheronAttachResponse"},
       {"name": "acheron.t_walk", "category": "runtime", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
@@ -131,15 +131,15 @@
       {"name": "acheron.t_fs_exports", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
       {"name": "acheron.r_fs_exports", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
       {"name": "acheron.t_fs_lookup", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [
-        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false}
       ], "payload_schema": "FsLookupRequest"},
       {"name": "acheron.r_fs_lookup", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "FsLookupResponse"},
       {"name": "acheron.t_fs_getattr", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [
-        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false}
       ], "payload_schema": "EmptyObject"},
       {"name": "acheron.r_fs_getattr", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "FsGetattrResponse"},
       {"name": "acheron.t_fs_readdirp", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [
-        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false}
       ], "payload_schema": "FsReaddirpRequest"},
       {"name": "acheron.r_fs_readdirp", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "FsReaddirpResponse"},
       {"name": "acheron.t_fs_symlink", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
@@ -153,15 +153,15 @@
       {"name": "acheron.t_fs_removexattr", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
       {"name": "acheron.r_fs_removexattr", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
       {"name": "acheron.t_fs_open", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [
-        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false}
       ], "payload_schema": "FsOpenRequest"},
       {"name": "acheron.r_fs_open", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "FsOpenResponse"},
       {"name": "acheron.t_fs_read", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [
-        {"name": "h", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "h", "type": "u64", "optional": false, "nullable": false, "is_array": false}
       ], "payload_schema": "FsReadRequest"},
       {"name": "acheron.r_fs_read", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "FsReadResponse"},
       {"name": "acheron.t_fs_close", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [
-        {"name": "h", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "h", "type": "u64", "optional": false, "nullable": false, "is_array": false}
       ], "payload_schema": "EmptyObject"},
       {"name": "acheron.r_fs_close", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "EmptyObject"},
       {"name": "acheron.t_fs_lock", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
@@ -169,7 +169,7 @@
       {"name": "acheron.t_fs_create", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
       {"name": "acheron.r_fs_create", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
       {"name": "acheron.t_fs_write", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [
-        {"name": "h", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "h", "type": "u64", "optional": false, "nullable": false, "is_array": false}
       ], "payload_schema": "FsWriteRequest"},
       {"name": "acheron.r_fs_write", "category": "node_fs", "direction": "response", "correlation_field": "tag", "root_fields": [], "payload_schema": "FsWriteResponse"},
       {"name": "acheron.t_fs_truncate", "category": "node_fs", "direction": "request", "correlation_field": "tag", "root_fields": [], "payload_schema": "AnyJson"},
@@ -194,498 +194,498 @@
     "AnyJson": {"kind": "any"},
     "EmptyObject": {"kind": "object", "fields": []},
     "ControlError": {"kind": "object", "fields": [
-        {"name": "code", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "message", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "code", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "message", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "AcheronError": {"kind": "object", "fields": [
-        {"name": "code", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "message", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "code", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "message", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "AcheronFsError": {"kind": "object", "fields": [
-        {"name": "errno", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "message", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "errno", "type": "u32", "optional": false, "nullable": false, "is_array": false},
+        {"name": "message", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "ControlVersionRequestPayload": {"kind": "object", "fields": [
-        {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "ControlVersionAckPayload": {"kind": "object", "fields": [
-        {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "acheron_runtime", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "acheron_node", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "acheron_node_proto", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "acheron_runtime", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "acheron_node", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "acheron_node_proto", "type": "u32", "optional": false, "nullable": false, "is_array": false}
       ]},
     "ConnectAckWorkspaceMount": {"kind": "object", "fields": [
-        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "fs_url", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "state", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "online", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "fs_url", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "state", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "online", "type": "boolean", "optional": true, "nullable": false, "is_array": false}
       ]},
     "ConnectAckWorkspace": {"kind": "object", "fields": [
-        {"name": "mounts", "type": "ConnectAckWorkspaceMount", "optional": true, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "mounts", "type": "ConnectAckWorkspaceMount", "optional": true, "nullable": false, "is_array": true}
       ]},
     "ControlConnectAckPayload": {"kind": "object", "fields": [
-        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "session", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace", "type": "ConnectAckWorkspace", "optional": true, "nullable": true, "is_array": false, "aliases": []}
+        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "session", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace", "type": "ConnectAckWorkspace", "optional": true, "nullable": true, "is_array": false}
       ]},
     "NodeEnsureRequest": {"kind": "object", "fields": [
-        {"name": "node_name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "fs_url", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "lease_ttl_ms", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node_name", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "fs_url", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "lease_ttl_ms", "type": "u64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "EnsuredNodeIdentity": {"kind": "object", "fields": [
-        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_secret", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "node_name", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "node_secret", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "MountView": {"kind": "object", "fields": [
-        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_name", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "fs_url", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "export_name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "node_name", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "fs_url", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "export_name", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "BindView": {"kind": "object", "fields": [
-        {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "target_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "target_path", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "WorkspaceSummary": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id"]},
-        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "template_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "kind", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "is_delete_protected", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "token_locked", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mount_count", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "bind_count", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "created_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "template_id", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "kind", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "is_delete_protected", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "token_locked", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "mount_count", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "bind_count", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "created_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "WorkspaceDetail": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id"]},
-        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "template_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "kind", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "is_delete_protected", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "token_locked", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "created_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true, "aliases": []},
-        {"name": "binds", "type": "BindView", "optional": true, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "template_id", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "kind", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "is_delete_protected", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "token_locked", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "created_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true},
+        {"name": "binds", "type": "BindView", "optional": true, "nullable": false, "is_array": true}
       ]},
     "WorkspaceRefRequest": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false}
       ]},
     "NodeIdRequest": {"kind": "object", "fields": [
-        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "AgentIdRequest": {"kind": "object", "fields": [
-        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "WorkspaceTemplateGetRequest": {"kind": "object", "fields": [
-        {"name": "template_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "template_id", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "SessionKeyRequest": {"kind": "object", "fields": [
-        {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "SessionAttachRequest": {"kind": "object", "fields": [
-        {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false}
       ]},
     "SessionStatusRequest": {"kind": "object", "fields": [
-        {"name": "session_key", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "session_key", "type": "string", "optional": true, "nullable": false, "is_array": false}
       ]},
     "SessionHistoryRequest": {"kind": "object", "fields": [
-        {"name": "agent_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "limit", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "agent_id", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "limit", "type": "u64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "MountAttachRequest": {"kind": "object", "fields": [
-        {"name": "path", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "depth", "type": "u32", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "path", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "depth", "type": "u32", "optional": true, "nullable": false, "is_array": false}
       ]},
     "MountGraphSource": {"kind": "object", "fields": [
-        {"name": "id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "fs_url", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "export_name", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []}
+        {"name": "id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "fs_url", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "export_name", "type": "string", "optional": true, "nullable": true, "is_array": false}
       ]},
     "MountGraphNode": {"kind": "object", "fields": [
-        {"name": "id", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "parent_id", "type": "u64", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "kind", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mode", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "writable", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "size", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "canonical_node_id", "type": "u64", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "content_mode", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "inline_content_b64", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "source_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []}
+        {"name": "id", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "parent_id", "type": "u64", "optional": true, "nullable": true, "is_array": false},
+        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "kind", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "mode", "type": "u32", "optional": false, "nullable": false, "is_array": false},
+        {"name": "writable", "type": "boolean", "optional": false, "nullable": false, "is_array": false},
+        {"name": "size", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "canonical_node_id", "type": "u64", "optional": true, "nullable": true, "is_array": false},
+        {"name": "content_mode", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "inline_content_b64", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "source_id", "type": "string", "optional": true, "nullable": true, "is_array": false}
       ]},
     "MountAttachResponse": {"kind": "object", "fields": [
-        {"name": "mount_session_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "graph_generation", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "root_node_id", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "nodes", "type": "MountGraphNode", "optional": false, "nullable": false, "is_array": true, "aliases": []},
-        {"name": "sources", "type": "MountGraphSource", "optional": false, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "mount_session_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "graph_generation", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "root_node_id", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "nodes", "type": "MountGraphNode", "optional": false, "nullable": false, "is_array": true},
+        {"name": "sources", "type": "MountGraphSource", "optional": false, "nullable": false, "is_array": true}
       ]},
     "MountFileReadRequest": {"kind": "object", "fields": [
-        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "offset", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "length", "type": "u32", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "offset", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "length", "type": "u32", "optional": true, "nullable": false, "is_array": false}
       ]},
     "MountFileReadResponse": {"kind": "object", "fields": [
-        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "offset", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "n", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "eof", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "data_b64", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "offset", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "n", "type": "u32", "optional": false, "nullable": false, "is_array": false},
+        {"name": "eof", "type": "boolean", "optional": false, "nullable": false, "is_array": false},
+        {"name": "data_b64", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "MountFileWriteRequest": {"kind": "object", "fields": [
-        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "data_b64", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "offset", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "data_b64", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "offset", "type": "u64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "MountFileWriteResponse": {"kind": "object", "fields": [
-        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "offset", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "n", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "offset", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "n", "type": "u32", "optional": false, "nullable": false, "is_array": false}
       ]},
     "WorkspaceCreateRequest": {"kind": "object", "fields": [
-        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "vision", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "template_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "operator_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "vision", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "template_id", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "operator_token", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false}
       ]},
     "WorkspaceUpdateRequest": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "template_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "template_id", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false}
       ]},
     "WorkspaceMountSetRequest": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "export_name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "export_name", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "WorkspaceMountRemoveRequest": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "export_name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "mount_path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "node_id", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "export_name", "type": "string", "optional": true, "nullable": false, "is_array": false}
       ]},
     "WorkspaceBindSetRequest": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "target_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "target_path", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "WorkspaceBindRemoveRequest": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "WorkspaceUpRequest": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "template_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "desired_mounts", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "desired_binds", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "activate", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "workspace_name", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "vision", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "status", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "template_id", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "access_policy", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false},
+        {"name": "desired_mounts", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false},
+        {"name": "desired_binds", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false},
+        {"name": "activate", "type": "boolean", "optional": true, "nullable": false, "is_array": false}
       ]},
     "WorkspaceStatusRequest": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": false, "is_array": false}
       ]},
     "ReconcileStatusRequest": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false}
       ]},
     "VenomBindRequest": {"kind": "object", "fields": [
-        {"name": "venom_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "scope", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "agent_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "venom_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "node_id", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "scope", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "agent_id", "type": "string", "optional": true, "nullable": false, "is_array": false}
       ]},
     "WorkspaceTemplateBind": {"kind": "object", "fields": [
-        {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "venom_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "provider_scope", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "bind_path", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "venom_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "provider_scope", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "WorkspaceTemplate": {"kind": "object", "fields": [
-        {"name": "id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "description", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "binds", "type": "WorkspaceTemplateBind", "optional": true, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "description", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "binds", "type": "WorkspaceTemplateBind", "optional": true, "nullable": false, "is_array": true}
       ]},
     "WorkspaceTemplateListResponse": {"kind": "object", "fields": [
-        {"name": "templates", "type": "WorkspaceTemplate", "optional": false, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "templates", "type": "WorkspaceTemplate", "optional": false, "nullable": false, "is_array": true}
       ]},
     "WorkspaceTemplateGetResponse": {"kind": "object", "fields": [
-        {"name": "template", "type": "WorkspaceTemplate", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "template", "type": "WorkspaceTemplate", "optional": false, "nullable": false, "is_array": false}
       ]},
     "WorkspaceListResponse": {"kind": "object", "fields": [
-        {"name": "workspaces", "type": "WorkspaceSummary", "optional": false, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "workspaces", "type": "WorkspaceSummary", "optional": false, "nullable": false, "is_array": true}
       ]},
     "WorkspaceMountListResponse": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mounts", "type": "MountView", "optional": false, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "mounts", "type": "MountView", "optional": false, "nullable": false, "is_array": true}
       ]},
     "WorkspaceBindListResponse": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "binds", "type": "BindView", "optional": false, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "binds", "type": "BindView", "optional": false, "nullable": false, "is_array": true}
       ]},
     "WorkspaceDeleteResponse": {"kind": "object", "fields": [
-        {"name": "deleted", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "deleted", "type": "boolean", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": false, "is_array": false}
       ]},
     "WorkspaceTokenMutation": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "rotated", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "revoked", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "rotated", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "revoked", "type": "boolean", "optional": true, "nullable": false, "is_array": false}
       ]},
     "DriftItem": {"kind": "object", "fields": [
-        {"name": "mount_path", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "kind", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "severity", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "selected_node_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "desired_node_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "message", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []}
+        {"name": "mount_path", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "kind", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "severity", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "selected_node_id", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "desired_node_id", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "message", "type": "string", "optional": true, "nullable": true, "is_array": false}
       ]},
     "DriftSummary": {"kind": "object", "fields": [
-        {"name": "count", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "items", "type": "DriftItem", "optional": true, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "count", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "items", "type": "DriftItem", "optional": true, "nullable": false, "is_array": true}
       ]},
     "AvailabilitySummary": {"kind": "object", "fields": [
-        {"name": "mounts_total", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "online", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "degraded", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "missing", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "mounts_total", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "online", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "degraded", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "missing", "type": "u64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "WorkspaceStatus": {"kind": "object", "fields": [
-        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "workspace_root", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true, "aliases": []},
-        {"name": "desired_mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true, "aliases": []},
-        {"name": "actual_mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true, "aliases": []},
-        {"name": "drift", "type": "DriftSummary", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "availability", "type": "AvailabilitySummary", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "reconcile_state", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "last_reconcile_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "last_success_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "last_error", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "queue_depth", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "workspace_root", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true},
+        {"name": "desired_mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true},
+        {"name": "actual_mounts", "type": "MountView", "optional": true, "nullable": false, "is_array": true},
+        {"name": "drift", "type": "DriftSummary", "optional": true, "nullable": true, "is_array": false},
+        {"name": "availability", "type": "AvailabilitySummary", "optional": true, "nullable": true, "is_array": false},
+        {"name": "reconcile_state", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "last_reconcile_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "last_success_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "last_error", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "queue_depth", "type": "u64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "SessionAttachState": {"kind": "object", "fields": [
-        {"name": "state", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "runtime_ready", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mount_ready", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "error_code", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "error_message", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "state", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "runtime_ready", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "mount_ready", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "error_code", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "error_message", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "updated_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "SessionStatusResponse": {"kind": "object", "fields": [
-        {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "attach", "type": "SessionAttachState", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "attach", "type": "SessionAttachState", "optional": false, "nullable": false, "is_array": false}
       ]},
     "SessionSummary": {"kind": "object", "fields": [
-        {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "last_active_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "message_count", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "summary", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []}
+        {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_id", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "last_active_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "message_count", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "summary", "type": "string", "optional": true, "nullable": true, "is_array": false}
       ]},
     "SessionListResponse": {"kind": "object", "fields": [
-        {"name": "active_session", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "sessions", "type": "SessionSummary", "optional": false, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "active_session", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "sessions", "type": "SessionSummary", "optional": false, "nullable": false, "is_array": true}
       ]},
     "SessionCloseResponse": {"kind": "object", "fields": [
-        {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "closed", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "active_session", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "session_key", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "closed", "type": "boolean", "optional": false, "nullable": false, "is_array": false},
+        {"name": "active_session", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "SessionRestoreResponse": {"kind": "object", "fields": [
-        {"name": "found", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "session", "type": "SessionSummary", "optional": true, "nullable": true, "is_array": false, "aliases": []}
+        {"name": "found", "type": "boolean", "optional": false, "nullable": false, "is_array": false},
+        {"name": "session", "type": "SessionSummary", "optional": true, "nullable": true, "is_array": false}
       ]},
     "SessionHistoryResponse": {"kind": "object", "fields": [
-        {"name": "sessions", "type": "SessionSummary", "optional": false, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "sessions", "type": "SessionSummary", "optional": false, "nullable": false, "is_array": true}
       ]},
     "ReconcileWorkspaceStatus": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "selected_mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "online_mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "degraded_mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "missing_mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "drift_count", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "queue_depth", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "selected_mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "online_mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "degraded_mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "missing_mounts", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "drift_count", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "queue_depth", "type": "u64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "ReconcileStatusResponse": {"kind": "object", "fields": [
-        {"name": "reconcile_state", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "last_reconcile_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "last_success_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "last_error", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "queue_depth", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "failed_ops_total", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "cycles_total", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "failed_ops", "type": "string", "optional": true, "nullable": false, "is_array": true, "aliases": []},
-        {"name": "workspaces", "type": "ReconcileWorkspaceStatus", "optional": true, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "reconcile_state", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "last_reconcile_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "last_success_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "last_error", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "queue_depth", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "failed_ops_total", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "cycles_total", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "failed_ops", "type": "string", "optional": true, "nullable": false, "is_array": true},
+        {"name": "workspaces", "type": "ReconcileWorkspaceStatus", "optional": true, "nullable": false, "is_array": true}
       ]},
     "NodeInfo": {"kind": "object", "fields": [
-        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "fs_url", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "joined_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "last_seen_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "lease_expires_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "node_name", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "fs_url", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "joined_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "last_seen_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "lease_expires_at_ms", "type": "i64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "NodeListResponse": {"kind": "object", "fields": [
-        {"name": "nodes", "type": "NodeInfo", "optional": false, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "nodes", "type": "NodeInfo", "optional": false, "nullable": false, "is_array": true}
       ]},
     "NodeGetResponse": {"kind": "object", "fields": [
-        {"name": "node", "type": "NodeInfo", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node", "type": "NodeInfo", "optional": false, "nullable": false, "is_array": false}
       ]},
     "AgentInfo": {"kind": "object", "fields": [
-        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": ["id"]},
-        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "description", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "is_default", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "identity_loaded", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "needs_hatching", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "capabilities", "type": "string", "optional": true, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "agent_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "description", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "is_default", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "identity_loaded", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "needs_hatching", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "capabilities", "type": "string", "optional": true, "nullable": false, "is_array": true}
       ]},
     "AgentListResponse": {"kind": "object", "fields": [
-        {"name": "agents", "type": "AgentInfo", "optional": false, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "agents", "type": "AgentInfo", "optional": false, "nullable": false, "is_array": true}
       ]},
     "AgentGetResponse": {"kind": "object", "fields": [
-        {"name": "agent", "type": "AgentInfo", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "agent", "type": "AgentInfo", "optional": false, "nullable": false, "is_array": false}
       ]},
     "WorkspaceUpResponse": {"kind": "object", "fields": [
-        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "created", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "activated", "type": "boolean", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "workspace", "type": "AnyJson", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "workspace_id", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace_token", "type": "string", "optional": true, "nullable": true, "is_array": false},
+        {"name": "created", "type": "boolean", "optional": false, "nullable": false, "is_array": false},
+        {"name": "activated", "type": "boolean", "optional": false, "nullable": false, "is_array": false},
+        {"name": "workspace", "type": "AnyJson", "optional": false, "nullable": false, "is_array": false}
       ]},
     "AcheronAttachResponse": {"kind": "object", "fields": [
-        {"name": "layout", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "roots", "type": "string", "optional": true, "nullable": false, "is_array": true, "aliases": []}
+        {"name": "layout", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "roots", "type": "string", "optional": true, "nullable": false, "is_array": true}
       ]},
     "FsHelloRequest": {"kind": "object", "fields": [
-        {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "proto", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "auth_token", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_id", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "node_secret", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "proto", "type": "u32", "optional": false, "nullable": false, "is_array": false},
+        {"name": "auth_token", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "node_id", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "node_secret", "type": "string", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsHelloCapabilities": {"kind": "object", "fields": [
-        {"name": "exports", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "read", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "write", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "exports", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "read", "type": "boolean", "optional": true, "nullable": false, "is_array": false},
+        {"name": "write", "type": "boolean", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsHelloResponse": {"kind": "object", "fields": [
-        {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "proto", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "capabilities", "type": "FsHelloCapabilities", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "caps", "type": "AnyJson", "optional": true, "nullable": true, "is_array": false, "aliases": []},
-        {"name": "node", "type": "AnyJson", "optional": true, "nullable": true, "is_array": false, "aliases": []}
+        {"name": "protocol", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "proto", "type": "u32", "optional": false, "nullable": false, "is_array": false},
+        {"name": "capabilities", "type": "FsHelloCapabilities", "optional": true, "nullable": true, "is_array": false},
+        {"name": "caps", "type": "AnyJson", "optional": true, "nullable": true, "is_array": false},
+        {"name": "node", "type": "AnyJson", "optional": true, "nullable": true, "is_array": false}
       ]},
     "FsLookupRequest": {"kind": "object", "fields": [
-        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "name", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "FsLookupResponse": {"kind": "object", "fields": [
-        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "kind", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "attr", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "kind", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "attr", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsGetattrResponse": {"kind": "object", "fields": [
-        {"name": "node", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "kind", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "size", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mode", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "attr", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "kind", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "size", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "mode", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "attr", "type": "AnyJson", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsReaddirpRequest": {"kind": "object", "fields": [
-        {"name": "cookie", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "count", "type": "u32", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "max", "type": "u32", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "cookie", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "count", "type": "u32", "optional": true, "nullable": false, "is_array": false},
+        {"name": "max", "type": "u32", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsDirEntry": {"kind": "object", "fields": [
-        {"name": "node", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "kind", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "size", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "name", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "kind", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "size", "type": "u64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsReaddirpResponse": {"kind": "object", "fields": [
-        {"name": "entries", "type": "FsDirEntry", "optional": true, "nullable": false, "is_array": true, "aliases": []},
-        {"name": "ents", "type": "FsDirEntry", "optional": true, "nullable": false, "is_array": true, "aliases": []},
-        {"name": "next", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "eof", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "entries", "type": "FsDirEntry", "optional": true, "nullable": false, "is_array": true},
+        {"name": "ents", "type": "FsDirEntry", "optional": true, "nullable": false, "is_array": true},
+        {"name": "next", "type": "u64", "optional": true, "nullable": false, "is_array": false},
+        {"name": "eof", "type": "boolean", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsOpenRequest": {"kind": "object", "fields": [
-        {"name": "mode", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "flags", "type": "u32", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "mode", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "flags", "type": "u32", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsOpenResponse": {"kind": "object", "fields": [
-        {"name": "handle", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "mode", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "generation", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "handle", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "mode", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "generation", "type": "u64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsReadRequest": {"kind": "object", "fields": [
-        {"name": "offset", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "count", "type": "u32", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "offset", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "count", "type": "u32", "optional": false, "nullable": false, "is_array": false}
       ]},
     "FsReadResponse": {"kind": "object", "fields": [
-        {"name": "data_b64", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "eof", "type": "boolean", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "data_b64", "type": "string", "optional": false, "nullable": false, "is_array": false},
+        {"name": "eof", "type": "boolean", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsWriteRequest": {"kind": "object", "fields": [
-        {"name": "offset", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "data_b64", "type": "string", "optional": false, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "offset", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "data_b64", "type": "string", "optional": false, "nullable": false, "is_array": false}
       ]},
     "FsWriteResponse": {"kind": "object", "fields": [
-        {"name": "count", "type": "u32", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "n", "type": "u32", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "count", "type": "u32", "optional": true, "nullable": false, "is_array": false},
+        {"name": "n", "type": "u32", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsInvalidateEvent": {"kind": "object", "fields": [
-        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "what", "type": "string", "optional": true, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "gen", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "node", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "what", "type": "string", "optional": true, "nullable": false, "is_array": false},
+        {"name": "gen", "type": "u64", "optional": true, "nullable": false, "is_array": false}
       ]},
     "FsInvalidateDirEvent": {"kind": "object", "fields": [
-        {"name": "dir", "type": "u64", "optional": false, "nullable": false, "is_array": false, "aliases": []},
-        {"name": "dir_gen", "type": "u64", "optional": true, "nullable": false, "is_array": false, "aliases": []}
+        {"name": "dir", "type": "u64", "optional": false, "nullable": false, "is_array": false},
+        {"name": "dir_gen", "type": "u64", "optional": true, "nullable": false, "is_array": false}
       ]}
   },
   "errors": {

@@ -70,20 +70,6 @@ fn optionalArrayField(name: []const u8, type_name: []const u8) FieldSpec {
     return .{ .name = name, .type_name = type_name, .optional = true, .is_array = true };
 }
 
-fn aliasField(name: []const u8, type_name: []const u8, aliases: []const []const u8) FieldSpec {
-    return .{ .name = name, .type_name = type_name, .aliases = aliases };
-}
-
-fn optionalAliasField(name: []const u8, type_name: []const u8, aliases: []const []const u8) FieldSpec {
-    return .{ .name = name, .type_name = type_name, .optional = true, .aliases = aliases };
-}
-
-fn optionalNullableAliasField(name: []const u8, type_name: []const u8, aliases: []const []const u8) FieldSpec {
-    return .{ .name = name, .type_name = type_name, .optional = true, .nullable = true, .aliases = aliases };
-}
-
-const id_aliases = [_][]const u8{"id"};
-
 const control_error_fields = [_]FieldSpec{
     field("code", "string"),
     field("message", "string"),
@@ -155,7 +141,7 @@ const bind_view_fields = [_]FieldSpec{
 };
 
 const workspace_summary_fields = [_]FieldSpec{
-    aliasField("workspace_id", "string", &id_aliases),
+    field("workspace_id", "string"),
     field("name", "string"),
     optionalField("vision", "string"),
     optionalField("status", "string"),
@@ -170,7 +156,7 @@ const workspace_summary_fields = [_]FieldSpec{
 };
 
 const workspace_detail_fields = [_]FieldSpec{
-    aliasField("workspace_id", "string", &id_aliases),
+    field("workspace_id", "string"),
     field("name", "string"),
     optionalField("vision", "string"),
     optionalField("status", "string"),
@@ -531,7 +517,7 @@ const node_get_response_fields = [_]FieldSpec{
 };
 
 const agent_info_fields = [_]FieldSpec{
-    aliasField("agent_id", "string", &id_aliases),
+    field("agent_id", "string"),
     field("name", "string"),
     optionalField("description", "string"),
     optionalField("is_default", "boolean"),

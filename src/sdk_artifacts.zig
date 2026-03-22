@@ -974,10 +974,6 @@ fn writeMessageSchemaSpec(writer: anytype, spec: sdk_schema.MessageSchemaSpec, i
         try writer.writeAll(", \"error_schema\": ");
         try writeJsonString(writer, value);
     }
-    if (spec.alias_of) |value| {
-        try writer.writeAll(", \"alias_of\": ");
-        try writeJsonString(writer, value);
-    }
     try writer.writeAll("}");
 }
 
@@ -1082,16 +1078,10 @@ fn writeRustField(writer: anytype, allocator: std.mem.Allocator, field: sdk_sche
     defer allocator.free(wrapped_type);
 
     try writer.writeAll("    ");
-    if (field.aliases.len > 0 or field.optional) {
+    if (field.optional) {
         try writer.writeAll("#[serde(");
         if (field.optional) {
             try writer.writeAll("default, skip_serializing_if = \"Option::is_none\"");
-            if (field.aliases.len > 0) try writer.writeAll(", ");
-        }
-        for (field.aliases, 0..) |alias, index| {
-            if (index != 0) try writer.writeAll(", ");
-            try writer.writeAll("alias = ");
-            try writeRustString(writer, alias);
         }
         try writer.writeAll(")]\n    ");
     }
@@ -1429,12 +1419,7 @@ fn writeFieldSpec(writer: anytype, field: sdk_schema.FieldSpec, indent: usize) !
     try writer.writeAll(if (field.nullable) "true" else "false");
     try writer.writeAll(", \"is_array\": ");
     try writer.writeAll(if (field.is_array) "true" else "false");
-    try writer.writeAll(", \"aliases\": [");
-    for (field.aliases, 0..) |alias, index| {
-        if (index != 0) try writer.writeAll(", ");
-        try writeJsonString(writer, alias);
-    }
-    try writer.writeAll("]}");
+    try writer.writeAll("}");
 }
 
 fn writeSchemaRegistry(writer: anytype) !void {
