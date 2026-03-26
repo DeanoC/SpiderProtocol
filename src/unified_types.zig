@@ -80,6 +80,21 @@ pub const ControlType = enum {
     workspace_status,
     reconcile_status,
     audit_tail,
+    packages_list,
+    packages_catalog,
+    packages_updates,
+    packages_update,
+    packages_update_all,
+    packages_get,
+    packages_channel_get,
+    packages_channel_set,
+    packages_channel_clear,
+    packages_install,
+    packages_enable,
+    packages_switch,
+    packages_disable,
+    packages_rollback,
+    packages_remove,
     err,
     unknown,
 };
@@ -261,6 +276,21 @@ pub fn controlTypeFromString(value: []const u8) ControlType {
     if (std.mem.eql(u8, value, "control.workspace_status")) return .workspace_status;
     if (std.mem.eql(u8, value, "control.reconcile_status")) return .reconcile_status;
     if (std.mem.eql(u8, value, "control.audit_tail")) return .audit_tail;
+    if (std.mem.eql(u8, value, "control.packages_list")) return .packages_list;
+    if (std.mem.eql(u8, value, "control.packages_catalog")) return .packages_catalog;
+    if (std.mem.eql(u8, value, "control.packages_updates")) return .packages_updates;
+    if (std.mem.eql(u8, value, "control.packages_update")) return .packages_update;
+    if (std.mem.eql(u8, value, "control.packages_update_all")) return .packages_update_all;
+    if (std.mem.eql(u8, value, "control.packages_get")) return .packages_get;
+    if (std.mem.eql(u8, value, "control.packages_channel_get")) return .packages_channel_get;
+    if (std.mem.eql(u8, value, "control.packages_channel_set")) return .packages_channel_set;
+    if (std.mem.eql(u8, value, "control.packages_channel_clear")) return .packages_channel_clear;
+    if (std.mem.eql(u8, value, "control.packages_install")) return .packages_install;
+    if (std.mem.eql(u8, value, "control.packages_enable")) return .packages_enable;
+    if (std.mem.eql(u8, value, "control.packages_switch")) return .packages_switch;
+    if (std.mem.eql(u8, value, "control.packages_disable")) return .packages_disable;
+    if (std.mem.eql(u8, value, "control.packages_rollback")) return .packages_rollback;
+    if (std.mem.eql(u8, value, "control.packages_remove")) return .packages_remove;
     if (std.mem.eql(u8, value, "control.error")) return .err;
     return .unknown;
 }
@@ -409,6 +439,21 @@ pub fn controlTypeName(value: ControlType) []const u8 {
         .workspace_status => "control.workspace_status",
         .reconcile_status => "control.reconcile_status",
         .audit_tail => "control.audit_tail",
+        .packages_list => "control.packages_list",
+        .packages_catalog => "control.packages_catalog",
+        .packages_updates => "control.packages_updates",
+        .packages_update => "control.packages_update",
+        .packages_update_all => "control.packages_update_all",
+        .packages_get => "control.packages_get",
+        .packages_channel_get => "control.packages_channel_get",
+        .packages_channel_set => "control.packages_channel_set",
+        .packages_channel_clear => "control.packages_channel_clear",
+        .packages_install => "control.packages_install",
+        .packages_enable => "control.packages_enable",
+        .packages_switch => "control.packages_switch",
+        .packages_disable => "control.packages_disable",
+        .packages_rollback => "control.packages_rollback",
+        .packages_remove => "control.packages_remove",
         .err => "control.error",
         .unknown => "control.unknown",
     };
@@ -530,6 +575,21 @@ test "unified_types: mount control names round-trip as canonical strings" {
     try std.testing.expectEqual(ControlType.workspace_status, controlTypeFromString(controlTypeName(.workspace_status)));
     try std.testing.expectEqual(ControlType.reconcile_status, controlTypeFromString(controlTypeName(.reconcile_status)));
     try std.testing.expectEqual(ControlType.audit_tail, controlTypeFromString(controlTypeName(.audit_tail)));
+    try std.testing.expectEqual(ControlType.packages_list, controlTypeFromString(controlTypeName(.packages_list)));
+    try std.testing.expectEqual(ControlType.packages_catalog, controlTypeFromString(controlTypeName(.packages_catalog)));
+    try std.testing.expectEqual(ControlType.packages_updates, controlTypeFromString(controlTypeName(.packages_updates)));
+    try std.testing.expectEqual(ControlType.packages_update, controlTypeFromString(controlTypeName(.packages_update)));
+    try std.testing.expectEqual(ControlType.packages_update_all, controlTypeFromString(controlTypeName(.packages_update_all)));
+    try std.testing.expectEqual(ControlType.packages_get, controlTypeFromString(controlTypeName(.packages_get)));
+    try std.testing.expectEqual(ControlType.packages_channel_get, controlTypeFromString(controlTypeName(.packages_channel_get)));
+    try std.testing.expectEqual(ControlType.packages_channel_set, controlTypeFromString(controlTypeName(.packages_channel_set)));
+    try std.testing.expectEqual(ControlType.packages_channel_clear, controlTypeFromString(controlTypeName(.packages_channel_clear)));
+    try std.testing.expectEqual(ControlType.packages_install, controlTypeFromString(controlTypeName(.packages_install)));
+    try std.testing.expectEqual(ControlType.packages_enable, controlTypeFromString(controlTypeName(.packages_enable)));
+    try std.testing.expectEqual(ControlType.packages_switch, controlTypeFromString(controlTypeName(.packages_switch)));
+    try std.testing.expectEqual(ControlType.packages_disable, controlTypeFromString(controlTypeName(.packages_disable)));
+    try std.testing.expectEqual(ControlType.packages_rollback, controlTypeFromString(controlTypeName(.packages_rollback)));
+    try std.testing.expectEqual(ControlType.packages_remove, controlTypeFromString(controlTypeName(.packages_remove)));
     try std.testing.expectEqual(ControlType.err, controlTypeFromString(controlTypeName(.err)));
 }
 
