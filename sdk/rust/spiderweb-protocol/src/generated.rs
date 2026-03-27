@@ -150,6 +150,36 @@ pub enum ControlMessageType {
     ReconcileStatus,
     #[serde(rename = "control.audit_tail")]
     AuditTail,
+    #[serde(rename = "control.packages_list")]
+    PackagesList,
+    #[serde(rename = "control.packages_catalog")]
+    PackagesCatalog,
+    #[serde(rename = "control.packages_updates")]
+    PackagesUpdates,
+    #[serde(rename = "control.packages_update")]
+    PackagesUpdate,
+    #[serde(rename = "control.packages_update_all")]
+    PackagesUpdateAll,
+    #[serde(rename = "control.packages_get")]
+    PackagesGet,
+    #[serde(rename = "control.packages_channel_get")]
+    PackagesChannelGet,
+    #[serde(rename = "control.packages_channel_set")]
+    PackagesChannelSet,
+    #[serde(rename = "control.packages_channel_clear")]
+    PackagesChannelClear,
+    #[serde(rename = "control.packages_install")]
+    PackagesInstall,
+    #[serde(rename = "control.packages_enable")]
+    PackagesEnable,
+    #[serde(rename = "control.packages_switch")]
+    PackagesSwitch,
+    #[serde(rename = "control.packages_disable")]
+    PackagesDisable,
+    #[serde(rename = "control.packages_rollback")]
+    PackagesRollback,
+    #[serde(rename = "control.packages_remove")]
+    PackagesRemove,
     #[serde(rename = "control.error")]
     Err,
 }
@@ -1304,6 +1334,21 @@ pub enum ControlRequestEnvelope {
     WorkspaceStatus(ControlEnvelope<WorkspaceStatusRequest>),
     ReconcileStatus(ControlEnvelope<ReconcileStatusRequest>),
     AuditTail(ControlEnvelope<AnyJson>),
+    PackagesList(ControlEnvelope<EmptyObject>),
+    PackagesCatalog(ControlEnvelope<AnyJson>),
+    PackagesUpdates(ControlEnvelope<EmptyObject>),
+    PackagesUpdate(ControlEnvelope<AnyJson>),
+    PackagesUpdateAll(ControlEnvelope<AnyJson>),
+    PackagesGet(ControlEnvelope<AnyJson>),
+    PackagesChannelGet(ControlEnvelope<AnyJson>),
+    PackagesChannelSet(ControlEnvelope<AnyJson>),
+    PackagesChannelClear(ControlEnvelope<AnyJson>),
+    PackagesInstall(ControlEnvelope<AnyJson>),
+    PackagesEnable(ControlEnvelope<AnyJson>),
+    PackagesSwitch(ControlEnvelope<AnyJson>),
+    PackagesDisable(ControlEnvelope<AnyJson>),
+    PackagesRollback(ControlEnvelope<AnyJson>),
+    PackagesRemove(ControlEnvelope<AnyJson>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -1371,6 +1416,21 @@ pub enum ControlResponseEnvelope {
     WorkspaceStatus(ControlEnvelope<WorkspaceStatus>),
     ReconcileStatus(ControlEnvelope<ReconcileStatusResponse>),
     AuditTail(ControlEnvelope<AnyJson>),
+    PackagesList(ControlEnvelope<AnyJson>),
+    PackagesCatalog(ControlEnvelope<AnyJson>),
+    PackagesUpdates(ControlEnvelope<AnyJson>),
+    PackagesUpdate(ControlEnvelope<AnyJson>),
+    PackagesUpdateAll(ControlEnvelope<AnyJson>),
+    PackagesGet(ControlEnvelope<AnyJson>),
+    PackagesChannelGet(ControlEnvelope<AnyJson>),
+    PackagesChannelSet(ControlEnvelope<AnyJson>),
+    PackagesChannelClear(ControlEnvelope<AnyJson>),
+    PackagesInstall(ControlEnvelope<AnyJson>),
+    PackagesEnable(ControlEnvelope<AnyJson>),
+    PackagesSwitch(ControlEnvelope<AnyJson>),
+    PackagesDisable(ControlEnvelope<AnyJson>),
+    PackagesRollback(ControlEnvelope<AnyJson>),
+    PackagesRemove(ControlEnvelope<AnyJson>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -1443,6 +1503,21 @@ impl ControlRequestEnvelope {
             Self::WorkspaceStatus(inner) => serde_json::to_value(inner),
             Self::ReconcileStatus(inner) => serde_json::to_value(inner),
             Self::AuditTail(inner) => serde_json::to_value(inner),
+            Self::PackagesList(inner) => serde_json::to_value(inner),
+            Self::PackagesCatalog(inner) => serde_json::to_value(inner),
+            Self::PackagesUpdates(inner) => serde_json::to_value(inner),
+            Self::PackagesUpdate(inner) => serde_json::to_value(inner),
+            Self::PackagesUpdateAll(inner) => serde_json::to_value(inner),
+            Self::PackagesGet(inner) => serde_json::to_value(inner),
+            Self::PackagesChannelGet(inner) => serde_json::to_value(inner),
+            Self::PackagesChannelSet(inner) => serde_json::to_value(inner),
+            Self::PackagesChannelClear(inner) => serde_json::to_value(inner),
+            Self::PackagesInstall(inner) => serde_json::to_value(inner),
+            Self::PackagesEnable(inner) => serde_json::to_value(inner),
+            Self::PackagesSwitch(inner) => serde_json::to_value(inner),
+            Self::PackagesDisable(inner) => serde_json::to_value(inner),
+            Self::PackagesRollback(inner) => serde_json::to_value(inner),
+            Self::PackagesRemove(inner) => serde_json::to_value(inner),
         }
     }
 
@@ -1511,6 +1586,21 @@ impl ControlRequestEnvelope {
             "control.workspace_status" => Ok(Self::WorkspaceStatus(serde_json::from_value(value)?)),
             "control.reconcile_status" => Ok(Self::ReconcileStatus(serde_json::from_value(value)?)),
             "control.audit_tail" => Ok(Self::AuditTail(serde_json::from_value(value)?)),
+            "control.packages_list" => Ok(Self::PackagesList(serde_json::from_value(value)?)),
+            "control.packages_catalog" => Ok(Self::PackagesCatalog(serde_json::from_value(value)?)),
+            "control.packages_updates" => Ok(Self::PackagesUpdates(serde_json::from_value(value)?)),
+            "control.packages_update" => Ok(Self::PackagesUpdate(serde_json::from_value(value)?)),
+            "control.packages_update_all" => Ok(Self::PackagesUpdateAll(serde_json::from_value(value)?)),
+            "control.packages_get" => Ok(Self::PackagesGet(serde_json::from_value(value)?)),
+            "control.packages_channel_get" => Ok(Self::PackagesChannelGet(serde_json::from_value(value)?)),
+            "control.packages_channel_set" => Ok(Self::PackagesChannelSet(serde_json::from_value(value)?)),
+            "control.packages_channel_clear" => Ok(Self::PackagesChannelClear(serde_json::from_value(value)?)),
+            "control.packages_install" => Ok(Self::PackagesInstall(serde_json::from_value(value)?)),
+            "control.packages_enable" => Ok(Self::PackagesEnable(serde_json::from_value(value)?)),
+            "control.packages_switch" => Ok(Self::PackagesSwitch(serde_json::from_value(value)?)),
+            "control.packages_disable" => Ok(Self::PackagesDisable(serde_json::from_value(value)?)),
+            "control.packages_rollback" => Ok(Self::PackagesRollback(serde_json::from_value(value)?)),
+            "control.packages_remove" => Ok(Self::PackagesRemove(serde_json::from_value(value)?)),
             _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "unsupported type"))),
         }
     }
@@ -1579,6 +1669,21 @@ impl ControlRequestEnvelope {
             Self::WorkspaceStatus(_) => ControlMessageType::WorkspaceStatus,
             Self::ReconcileStatus(_) => ControlMessageType::ReconcileStatus,
             Self::AuditTail(_) => ControlMessageType::AuditTail,
+            Self::PackagesList(_) => ControlMessageType::PackagesList,
+            Self::PackagesCatalog(_) => ControlMessageType::PackagesCatalog,
+            Self::PackagesUpdates(_) => ControlMessageType::PackagesUpdates,
+            Self::PackagesUpdate(_) => ControlMessageType::PackagesUpdate,
+            Self::PackagesUpdateAll(_) => ControlMessageType::PackagesUpdateAll,
+            Self::PackagesGet(_) => ControlMessageType::PackagesGet,
+            Self::PackagesChannelGet(_) => ControlMessageType::PackagesChannelGet,
+            Self::PackagesChannelSet(_) => ControlMessageType::PackagesChannelSet,
+            Self::PackagesChannelClear(_) => ControlMessageType::PackagesChannelClear,
+            Self::PackagesInstall(_) => ControlMessageType::PackagesInstall,
+            Self::PackagesEnable(_) => ControlMessageType::PackagesEnable,
+            Self::PackagesSwitch(_) => ControlMessageType::PackagesSwitch,
+            Self::PackagesDisable(_) => ControlMessageType::PackagesDisable,
+            Self::PackagesRollback(_) => ControlMessageType::PackagesRollback,
+            Self::PackagesRemove(_) => ControlMessageType::PackagesRemove,
         }
     }
 }
@@ -1649,6 +1754,21 @@ impl ControlResponseEnvelope {
             Self::WorkspaceStatus(inner) => serde_json::to_value(inner),
             Self::ReconcileStatus(inner) => serde_json::to_value(inner),
             Self::AuditTail(inner) => serde_json::to_value(inner),
+            Self::PackagesList(inner) => serde_json::to_value(inner),
+            Self::PackagesCatalog(inner) => serde_json::to_value(inner),
+            Self::PackagesUpdates(inner) => serde_json::to_value(inner),
+            Self::PackagesUpdate(inner) => serde_json::to_value(inner),
+            Self::PackagesUpdateAll(inner) => serde_json::to_value(inner),
+            Self::PackagesGet(inner) => serde_json::to_value(inner),
+            Self::PackagesChannelGet(inner) => serde_json::to_value(inner),
+            Self::PackagesChannelSet(inner) => serde_json::to_value(inner),
+            Self::PackagesChannelClear(inner) => serde_json::to_value(inner),
+            Self::PackagesInstall(inner) => serde_json::to_value(inner),
+            Self::PackagesEnable(inner) => serde_json::to_value(inner),
+            Self::PackagesSwitch(inner) => serde_json::to_value(inner),
+            Self::PackagesDisable(inner) => serde_json::to_value(inner),
+            Self::PackagesRollback(inner) => serde_json::to_value(inner),
+            Self::PackagesRemove(inner) => serde_json::to_value(inner),
         }
     }
 
@@ -1718,6 +1838,21 @@ impl ControlResponseEnvelope {
             "control.workspace_status" => Ok(Self::WorkspaceStatus(serde_json::from_value(value)?)),
             "control.reconcile_status" => Ok(Self::ReconcileStatus(serde_json::from_value(value)?)),
             "control.audit_tail" => Ok(Self::AuditTail(serde_json::from_value(value)?)),
+            "control.packages_list" => Ok(Self::PackagesList(serde_json::from_value(value)?)),
+            "control.packages_catalog" => Ok(Self::PackagesCatalog(serde_json::from_value(value)?)),
+            "control.packages_updates" => Ok(Self::PackagesUpdates(serde_json::from_value(value)?)),
+            "control.packages_update" => Ok(Self::PackagesUpdate(serde_json::from_value(value)?)),
+            "control.packages_update_all" => Ok(Self::PackagesUpdateAll(serde_json::from_value(value)?)),
+            "control.packages_get" => Ok(Self::PackagesGet(serde_json::from_value(value)?)),
+            "control.packages_channel_get" => Ok(Self::PackagesChannelGet(serde_json::from_value(value)?)),
+            "control.packages_channel_set" => Ok(Self::PackagesChannelSet(serde_json::from_value(value)?)),
+            "control.packages_channel_clear" => Ok(Self::PackagesChannelClear(serde_json::from_value(value)?)),
+            "control.packages_install" => Ok(Self::PackagesInstall(serde_json::from_value(value)?)),
+            "control.packages_enable" => Ok(Self::PackagesEnable(serde_json::from_value(value)?)),
+            "control.packages_switch" => Ok(Self::PackagesSwitch(serde_json::from_value(value)?)),
+            "control.packages_disable" => Ok(Self::PackagesDisable(serde_json::from_value(value)?)),
+            "control.packages_rollback" => Ok(Self::PackagesRollback(serde_json::from_value(value)?)),
+            "control.packages_remove" => Ok(Self::PackagesRemove(serde_json::from_value(value)?)),
             _ => Err(serde_json::Error::io(std::io::Error::new(std::io::ErrorKind::InvalidData, "unsupported type"))),
         }
     }
@@ -1787,6 +1922,21 @@ impl ControlResponseEnvelope {
             Self::WorkspaceStatus(_) => ControlMessageType::WorkspaceStatus,
             Self::ReconcileStatus(_) => ControlMessageType::ReconcileStatus,
             Self::AuditTail(_) => ControlMessageType::AuditTail,
+            Self::PackagesList(_) => ControlMessageType::PackagesList,
+            Self::PackagesCatalog(_) => ControlMessageType::PackagesCatalog,
+            Self::PackagesUpdates(_) => ControlMessageType::PackagesUpdates,
+            Self::PackagesUpdate(_) => ControlMessageType::PackagesUpdate,
+            Self::PackagesUpdateAll(_) => ControlMessageType::PackagesUpdateAll,
+            Self::PackagesGet(_) => ControlMessageType::PackagesGet,
+            Self::PackagesChannelGet(_) => ControlMessageType::PackagesChannelGet,
+            Self::PackagesChannelSet(_) => ControlMessageType::PackagesChannelSet,
+            Self::PackagesChannelClear(_) => ControlMessageType::PackagesChannelClear,
+            Self::PackagesInstall(_) => ControlMessageType::PackagesInstall,
+            Self::PackagesEnable(_) => ControlMessageType::PackagesEnable,
+            Self::PackagesSwitch(_) => ControlMessageType::PackagesSwitch,
+            Self::PackagesDisable(_) => ControlMessageType::PackagesDisable,
+            Self::PackagesRollback(_) => ControlMessageType::PackagesRollback,
+            Self::PackagesRemove(_) => ControlMessageType::PackagesRemove,
         }
     }
 }
