@@ -95,6 +95,21 @@ This is the canonical control-plane reference for public Spiderweb clients. The 
 | `control.workspace_status` | workspace | request |
 | `control.reconcile_status` | workspace | request |
 | `control.audit_tail` | audit | request |
+| `control.packages_list` | venom | request |
+| `control.packages_catalog` | venom | request |
+| `control.packages_updates` | venom | request |
+| `control.packages_update` | venom | request |
+| `control.packages_update_all` | venom | request |
+| `control.packages_get` | venom | request |
+| `control.packages_channel_get` | venom | request |
+| `control.packages_channel_set` | venom | request |
+| `control.packages_channel_clear` | venom | request |
+| `control.packages_install` | venom | request |
+| `control.packages_enable` | venom | request |
+| `control.packages_switch` | venom | request |
+| `control.packages_disable` | venom | request |
+| `control.packages_rollback` | venom | request |
+| `control.packages_remove` | venom | request |
 | `control.error` | error | error |
 
 ## Error Envelope
